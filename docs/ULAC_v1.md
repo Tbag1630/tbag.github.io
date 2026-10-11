@@ -191,3 +191,13 @@ have been. Controls that run before a paid job exists:
 
 Non-negotiable: no blind retries, no silent third attempt, no repeated discovery of a known defect, and no paid generation to
 diagnose a problem that can be detected deterministically beforehand.
+
+### Post-generation tool gates found on EP05 (zero credits each)
+
+These came from boards that were wrongly accepted or wrongly refused, and each one is now a deterministic check with a regression test.
+
+- **Palette gate** (`endpoint.palette`, enforced in `relay.next`). Panel interiors are grey or sepia pencil. The share of saturated pixels in a non-warm hue (blue, green, violet, pink) must stay at or under 0.005 per panel; accepted boards read 0.000, SEQ_008 A01 read 0.53 and SEQ_024 A01 read 0.03. Warm saturation alone (a crayon scribble, a lamp glow) is only reported, because the story can ask for it. A failure records `MONOCHROME_STYLE` and opens a repair; an adjudicated `palette ... accept` finding is the only override.
+- **Reference note** (`plan.ref_note`). Image 1 is normally the geometry authority. When the previous end frame is a close shot with no room in it (SEQ_017 to SEQ_018, SEQ_028 to SEQ_029) or carries a tinted glow (the warm-circle chain SEQ_024 to SEQ_029), the plan says so in REFERENCE PRIORITY, MASTER SHOT RULE, ENVIRONMENT LOCK and SPATIAL CONTINUITY LOCK, so the image model is never asked for something its reference cannot give. This is the same wording that fixed the colour dressed masters.
+- **Seat clarity.** A plan that says a character is seated while SEATING says there is no seating makes the model guess (and draw a chair). SEATING names the seat.
+- **Paper-margin crop** (`endpoint._paper_margins`). A final-panel box that overshoots the drawing into the paper gutter is cut at the first run of pure paper in each outer 15 %. Regressed on all accepted final-panel boxes: only SEQ_003 (director-strip text in its END_LOCK) changes, and `SEQ_003/END_LOCK_v2.png` is the versioned replacement for the video stage.
+- **Lesson recorded.** SEQ_023 was accepted with an amber lamp glow as a Class C variation. That frame became image 1 of SEQ_024, which then came back fully coloured. A variation that will be inherited as a reference is judged for what it does downstream, not only for the board it appears on.
