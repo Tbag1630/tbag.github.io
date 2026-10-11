@@ -167,6 +167,25 @@ def video_text(plan: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+FLF_BLUEPRINT = ("Animate from the first frame image, the exact starting frame, to the last frame image, the exact ending "
+                 "lock. Follow the panel beats in order as consecutive shots of one cinematic sequence. Do not render a "
+                 "storyboard sheet; recreate the filmed sequence the panels imply.")
+
+
+def video_text_flf(plan: dict) -> str:
+    """The first-last-frame handoff: the same policy, audio and panel beats as video_text, with the start and end images
+    in place of the storyboard and identity references."""
+    lines = [FLF_BLUEPRINT,
+             "The first frame image is the character and room reference for the whole clip.",
+             f"ENVIRONMENT: {_c(plan['environment'])}.",
+             f"EMOTIONAL GUIDANCE: {_c(plan['emotional_guidance'])}.",
+             f"VISUAL STYLE: {_c(plan['visual_style'])}.",
+             *audio_lines(plan.get("audio")),
+             "PANEL BEATS:"]
+    lines += [f"P{i:02d}: {_c(p['video_beat'])}." for i, p in enumerate(plan["panels"], start=1)]
+    return "\n".join(lines) + "\n"
+
+
 def _rhy_ok(v: str) -> bool:
     parts = [x.strip() for x in v.split("/")]
     return len(parts) == 3 and parts[0] in TEMPO and parts[1] in BLOCK and parts[2] in FEEL

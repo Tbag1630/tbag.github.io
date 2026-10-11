@@ -87,13 +87,18 @@ def prompt_problems(prompt: str, *, authored: bool = True) -> list[str]:
     return out + policy_conflicts(prompt)
 
 
+SEEDANCE_NODES = ("ByteDance2ReferenceNodeV2", "ByteDance2FirstLastFrameNode")
+
+
 def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float) -> list[str]:
     """Zero-spend checks before a paid submission: audio on, the sound-only prompt inside the graph, the references, and
-    the render length against the segment. Only an empty list may be quoted or reserved."""
-    nodes = [(k, n) for k, n in graph.items() if n.get("class_type") == "ByteDance2ReferenceNodeV2"]
+    the render length against the segment. Only an empty list may be quoted or reserved. Covers the reference-to-video
+    graph (storyboard and identity boards) and the first-last-frame graph (start frame and ending lock)."""
+    nodes = [(k, n) for k, n in graph.items() if n.get("class_type") in SEEDANCE_NODES]
     if len(nodes) != 1:
         return [f"expected one Seedance node, found {len(nodes)}"]
     sid, node = nodes[0]
+    flf = node["class_type"] == "ByteDance2FirstLastFrameNode"
     inp = node.get("inputs", {})
     out = []
     prompt_audio = f"AUDIO: {SOUND_POLICY}" in prompt
@@ -116,14 +121,22 @@ def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float)
         out.append(f"the graph renders {dur} s but {seconds} s were requested")
     if not segment_seconds <= seconds <= segment_seconds + 1.0:
         out.append(f"a {seconds} s render must cover the {segment_seconds} s segment and run at most 1 s past it")
-    for key, title in (("model.reference_images.image_1", "@image1 storyboard"),
-                       ("model.reference_images.image_2", "@image2 identity board")):
+    if flf:
+        wired = (("first_frame", "start frame"), ("last_frame", "ending lock"))
+        if "@image" in prompt:
+            out.append("a first-last-frame prompt must not refer to @image inputs")
+        if not all(key in inp for key, _ in wired):
+            out.append("both first_frame and last_frame must be wired")
+    else:
+        wired = (("model.reference_images.image_1", "@image1 storyboard"),
+                 ("model.reference_images.image_2", "@image2 identity board"))
+        if "model.reference_images.image_1" not in inp:
+            out.append("the storyboard reference (image_1) is not wired")
+    for key, title in wired:
         if key in inp:
             src = graph.get(str(inp[key][0]), {})
             if src.get("class_type") != "LoadImage" or src.get("_meta", {}).get("title") != title:
                 out.append(f"{key} must come from the LoadImage titled {title!r}")
-    if "model.reference_images.image_1" not in inp:
-        out.append("the storyboard reference (image_1) is not wired")
     saves = [n for n in graph.values() if n.get("class_type") == "SaveVideo"]
     if len(saves) != 1 or saves[0].get("inputs", {}).get("video") != [sid, 0]:
         out.append("exactly one SaveVideo must take the Seedance output")

@@ -100,6 +100,27 @@ def end_lock_crop_v1(board: str, abs_box: list[int], *, prefix: str) -> dict:
                   "_meta": {"title": "END_LOCK"}}}
 
 
+def seedance_flf_720p(prompt: str, first: str, last: str, *, seconds: int, prefix: str,
+                      model: str = "Seedance 2.0") -> dict:
+    """Video stage from a start frame: first_frame is the exact starting image (the previous clip's last frame) and
+    last_frame is the ending lock. Input names follow the Seedance first-last-frame node. Native audio is always on."""
+    if not 4 <= seconds <= 15:
+        raise ValueError("Seedance 2.0 renders 4-15 whole seconds")
+    problems = video.prompt_problems(prompt, authored=False)
+    if problems:
+        raise ValueError("video prompt refused: " + "; ".join(problems))
+    g = {"1": _load(first, "start frame"), "2": _load(last, "ending lock")}
+    g["10"] = {"class_type": "ByteDance2FirstLastFrameNode",
+               "inputs": {"first_frame": ["1", 0], "last_frame": ["2", 0], "model": model, "model.duration": seconds,
+                          "model.generate_audio": True, "model.prompt": prompt, "model.ratio": "16:9",
+                          "model.resolution": "720p", "seed": 0, "watermark": False},
+               "_meta": {"title": "Seedance 2.0 FLF"}}
+    g["11"] = {"class_type": "SaveVideo", "inputs": {"video": ["10", 0], "filename_prefix": prefix, "format": "auto",
+                                                     "format.codec": "auto", "codec": "auto"},
+               "_meta": {"title": "save"}}
+    return g
+
+
 def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, seconds: int, prefix: str,
                       model: str = "Seedance 2.0") -> dict:
     """Video stage: @image1 storyboard sheet, @image2 identity board (skill handoff). Native audio is always on: the clip
