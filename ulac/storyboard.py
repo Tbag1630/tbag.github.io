@@ -80,7 +80,10 @@ def _chain(panels, key, fmt=None) -> str:
 def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> str:
     P = plan["panels"]
     ident = plan.get("identity_ref")
-    ref_priority = (f"image 1 ({env_ref}) controls set geometry and P01 opens on its exact layout; "
+    # a chained sequence normally inherits the room from image 1; when the previous ending is a close shot with no
+    # room in it, plan["ref_note"] says what image 1 does control, so the prompt never asks a close-up for geometry
+    image1 = plan.get("ref_note") or f"image 1 ({env_ref}) controls set geometry and P01 opens on its exact layout"
+    ref_priority = (image1 + "; "
                     "loose props and their states follow PROP / EFFECT STATE, not image 1; "
                     + (f"image 2 identity reference controls {ident} identity; " if ident else "")
                     + "this storyboard controls staging, motion, geography, continuity; "

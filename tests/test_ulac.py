@@ -1157,3 +1157,22 @@ def test_dim_panel_edges_use_the_looser_row_tests():
     got = endpoint._frames(g, 2, 2, step=18, edge_frac=0.85, min_w=0.12)
     for (gx0, gy0, gx1, gy1), (x0, y0, x1, y1) in zip(got, boxes):
         assert max(abs(gx0 - x0), abs(gy0 - y0), abs(gx1 - x1), abs(gy1 - y1)) <= 12, (got, boxes)
+
+def test_storyboard_ref_note_replaces_only_the_image1_clause(ep):
+    """A close-shot ending carries no room: plan.ref_note says what image 1 controls, the rest of the priority line stays."""
+    from ulac import storyboard
+    e, _ = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    note = json.loads(json.dumps(PLAN))
+    note["ref_note"] = "image 1 (END_LOCK of SEQ_000) is a close shot with no room in it: it controls only P01's framing and pose"
+    a["SEQ_001"]["storyboard"] = note
+    author(e.root, a)
+    out = storyboard.build(e, "SEQ_001")
+    assert out["errors"] == []
+    text = (Path(out["folder"]) / "prompt_storyboard.txt").read_text()
+    line = next(ln for ln in text.splitlines() if ln.startswith("REFERENCE PRIORITY: "))
+    assert "is a close shot with no room in it" in line
+    assert "controls set geometry" not in line
+    assert "loose props and their states follow PROP / EFFECT STATE" in line and "this storyboard controls staging" in line
+    assert "is the ending lock and the next sequence's first frame" in line
