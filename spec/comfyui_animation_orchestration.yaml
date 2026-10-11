@@ -1,0 +1,511 @@
+# ComfyUI Orchestrated Animation Production Configuration
+# Version: 1.0.0
+# Purpose: govern storyboard-to-video animation production as a staged, testable pipeline.
+# This is an orchestration manifest, not a native ComfyUI workflow JSON.
+# Bind each logical operation to installed ComfyUI nodes/custom nodes in an adapter layer.
+# Unknown node names, model fields, and sampler settings must be resolved from the installed workflow;
+# do not invent them or silently substitute incompatible nodes.
+
+config_version: "1.0.0"
+project:
+  id: "${PROJECT_ID}"
+  title: "${PROJECT_TITLE}"
+  sequence_id: "${SEQUENCE_ID}"
+  episode_id: "${EPISODE_ID}"
+  owner: "${PRODUCTION_OWNER}"
+  status: "development"
+  timezone: "UTC"
+  versioning:
+    policy: "immutable_runs_append_only_evidence"
+    run_id_format: "YYYYMMDDTHHmmssZ_<sequence>_<attempt>"
+    never_overwrite_approved_outputs: true
+    record_prompt_hashes: true
+    record_input_hashes: true
+
+execution:
+  orchestrator: "ComfyUI"
+  mode: "staged_dag"
+  concurrency:
+    max_generation_jobs: 2
+    max_retries_per_stage: 2
+    retry_only_transient_failures: true
+  determinism:
+    record_seed_when_supported: true
+    record_model_and_node_versions: true
+    record_comfyui_commit: true
+    record_custom_node_revisions: true
+    note_nondeterministic_operations: true
+  failure_policy:
+    stop_on_blocker: true
+    no_automatic_rewrite_of_approved_evidence: true
+    preserve_failed_artifacts: true
+    require_explicit_approval_to_bypass_gate: true
+  storage:
+    project_root: "${PROJECT_ROOT}"
+    inputs_dir: "inputs"
+    references_dir: "references"
+    storyboard_dir: "storyboard/${SEQUENCE_SLUG}"
+    control_dir: "control"
+    generated_dir: "generated"
+    renders_dir: "renders"
+    qc_dir: "qc"
+    manifests_dir: "manifests"
+    archive_dir: "archive"
+
+delivery_profile:
+  target: "${DELIVERY_TARGET}"   # e.g. YouTube, broadcast, cinema, internal review
+  resolution:
+    width: 1280
+    height: 720
+    override_per_delivery_profile: true
+  frame_rate:
+    numerator: 24
+    denominator: 1
+    policy: "lock_before_generation"
+    override_per_delivery_profile: true
+  pixel_aspect_ratio: "1:1"
+  scan: "progressive"
+  aspect_ratio: "16:9"
+  color:
+    working_space: "${WORKING_COLOR_SPACE}"
+    output_space: "BT.709"
+    transfer: "BT.709"
+    hdr: false
+    policy: "explicit_transform_at_delivery"
+  video_export:
+    container: "mp4"
+    codec: "h264"
+    profile: "${ENCODER_PROFILE}"
+    bitrate_mode: "${ENCODER_BITRATE_MODE}"
+    bitrate_mbps: "${ENCODER_BITRATE_MBPS}"
+    pixel_format: "yuv420p"
+  audio_export:
+    sample_rate_hz: 48000
+    channels: 2
+    codec: "aac"
+    loudness_target_lufs: null
+    true_peak_dbtp: null
+    note: "Set loudness and peak limits from the actual platform/client delivery specification; do not assume a broadcast target."
+  timing:
+    authoritative_clock: "integer_frames"
+    timecode_is_display_only: true
+    allow_fractional_frame_boundaries: false
+    audio_video_sync_tolerance_ms: 20
+
+source_authority:
+  priority_order:
+    - "approved_script_and_supplied_audio"
+    - "approved_character_and_environment_references"
+    - "approved_spatial_state_manifest"
+    - "approved_storyboard"
+    - "shot_prompt"
+    - "model_prior"
+  conflict_policy: "pause_and_report_conflict; never silently choose"
+  reference_roles:
+    character_reference: "controls face, body, wardrobe, proportions, identity"
+    environment_reference: "controls set geometry, layout, anchors, lighting direction"
+    storyboard_reference: "controls staging, shot order, framing, action beats"
+    control_image_or_video: "controls only the properties explicitly assigned to it"
+
+pipeline:
+  stages:
+    - id: "S00_ingest"
+      purpose: "Register source material and verify integrity."
+      inputs: ["script", "audio", "character_refs", "environment_refs", "style_refs", "delivery_profile"]
+      outputs: ["input_manifest.json", "source_hashes.json"]
+      checks:
+        - "all_required_inputs_present"
+        - "file_decode_success"
+        - "source_hashes_recorded"
+      gate: "block_on_failure"
+
+    - id: "S01_audio_analysis"
+      purpose: "Transcribe and align audio without changing the source timing."
+      outputs: ["transcript.json", "word_or_phrase_timestamps.json", "audio_events.json"]
+      rules:
+        preserve_original_audio: true
+        preserve_source_timestamps: true
+        transcript_edits_require_review: true
+        distinguish_speech_from_sfx_and_silence: true
+      checks:
+        - "timestamps_monotonic"
+        - "timestamp_ranges_within_audio_duration"
+        - "unresolved_words_flagged"
+      gate: "block_on_missing_timing_data"
+
+    - id: "S02_semantic_segmentation"
+      purpose: "Group audio into visual beats, then segment to fit the target video model's clip limit."
+      parameters:
+        target_clip_max_seconds: 15
+        clip_duration_is_model_profile: true
+        allow_shorter_clips_at_semantic_boundaries: true
+        never_cut_mid_action_without_explicit_reason: true
+        preserve_audio_event_boundaries: true
+      outputs: ["semantic_beats.json", "clip_plan.json"]
+      checks:
+        - "all_source_intervals_accounted_for"
+        - "no_unapproved_timing_gaps"
+        - "no_unapproved_overlaps"
+        - "every_clip_within_model_duration_limit"
+        - "clip_boundaries_reviewed_against_audio"
+      gate: "block_on_timing_or_coverage_failure"
+
+    - id: "S03_scene_and_state_model"
+      purpose: "Build the spatial and continuity contract before image generation."
+      outputs:
+        - "scene_manifest.json"
+        - "character_state_track.json"
+        - "prop_state_track.json"
+        - "environment_anchor_manifest.json"
+        - "camera_axis_manifest.json"
+      required_state_fields:
+        character:
+          - "character_id"
+          - "screen_side"
+          - "position"
+          - "orientation"
+          - "pose"
+          - "gaze_target"
+          - "wardrobe_id"
+          - "held_objects"
+          - "visible_condition"
+        prop:
+          - "prop_id"
+          - "owner_or_location"
+          - "position"
+          - "orientation"
+          - "state"
+        environment:
+          - "environment_id"
+          - "fixed_anchor_ids"
+          - "doors_and_exits"
+          - "furniture_positions"
+          - "light_source_directions"
+      checks:
+        - "all_entities_have_stable_ids"
+        - "entrances_and_exits_are_defined_when_used"
+        - "prop_state_changes_have_causal_events"
+        - "character_positions_are_physically_plausible"
+        - "camera_axis_and_screen_direction_are_defined"
+      gate: "block_on_unresolved_spatial_conflict"
+
+    - id: "S04_storyboard_prompt"
+      purpose: "Produce a compact director-approved storyboard sheet prompt."
+      outputs:
+        - "storyboard/${SEQUENCE_SLUG}/prompt_storyboard.txt"
+      requirements:
+        grid: "AUTO unless a fixed grid is specified"
+        panel_count: "minimum count that preserves readable cause and effect; maximize useful beats, not redundant panels"
+        visual_style: "clean monochrome light-gray rough sketch"
+        panel_interiors:
+          allow: ["character poses", "environment", "props", "effects", "composition"]
+          forbid: ["text", "arrows", "captions", "subtitles", "labels", "UI", "camera rigs", "timing marks", "ghost poses", "duplicate bodies"]
+        required_sections:
+          - "PROJECT CARD"
+          - "CONTINUITY HEADER when needed"
+          - "SCENE PACKET"
+          - "CHARACTER SANITIZATION"
+          - "IDENTITY CONSISTENCY"
+          - "STORYBOARD PURITY"
+          - "MASTER SHOT RULE"
+          - "EMOTIONAL ARC"
+          - "STYLE LOCKS"
+          - "SPATIAL CONTINUITY LOCK when geometry must persist"
+          - "DIRECTOR STRIP"
+          - "SEQUENCE with only one Grid line"
+        director_strip_tracks:
+          - "BEAT LINE"
+          - "CAMERA PATH"
+          - "ACTION PATH"
+          - "RHYTHM TRACK"
+          - "ESCALATION MAP"
+          - "STATE TRACK"
+          - "STYLE TRACK"
+        rhythm_vocab:
+          tempo: ["hold", "slow reveal", "build", "burst", "impact", "pause", "recover", "final hit"]
+          block: ["short block", "medium block", "long block"]
+          beat_feel: ["clean beat", "match beat", "smash beat", "held beat", "whip beat"]
+        escalation_vocab:
+          intensity: ["L1 calm", "L2 tension", "L3 rise", "L4 surge", "L5 peak"]
+          curve: ["flat", "rise", "spike", "drop", "release", "unresolved"]
+      gate: "block_on_identity_or_continuity_failure"
+
+    - id: "S05_storyboard_render_and_review"
+      purpose: "Generate board, inspect full sheet and panel crops, record evidence."
+      outputs: ["storyboard_sheet.png", "panel_crops/", "storyboard_review.json"]
+      checks:
+        - "panel_count_matches_plan"
+        - "panel_order_is_readable"
+        - "each_panel_has_one_primary_action"
+        - "no_panel_text_or_forbidden_overlays"
+        - "character_identity_consistent"
+        - "spatial_anchors_consistent"
+        - "camera_grammar_is_coherent"
+        - "all_audio_beats_have_visual_coverage_or_documented_exception"
+      review:
+        full_sheet_inspection_required: true
+        crop_inspection_required: true
+        automated_scores_are_not_human_approval: true
+        unresolved_uncertainty_must_be_recorded: true
+      gate: "human_approval_required"
+
+    - id: "S06_control_maps"
+      purpose: "Prepare control inputs compatible with the selected ComfyUI graph."
+      controls:
+        supported_if_installed:
+          - "depth"
+          - "pose"
+          - "canny"
+          - "HED"
+          - "MLSD"
+        preferred_starting_mix:
+          depth: 0.3
+          pose: 0.7
+          note: "Only a starting hypothesis for compatible ControlNet workflows; validate on the installed model and node implementation."
+        resize_policy: "preserve_aspect_then_pad_or_crop_by_profile"
+        control_alignment: "same canvas, crop, and frame geometry as target generation"
+      outputs: ["control_manifest.json", "control_previews/"]
+      checks:
+        - "control_dimensions_match_generation_canvas"
+        - "control_maps_decode"
+        - "control_weight_range_validated_for_node"
+        - "reference_and_control_alignment_reviewed"
+      gate: "block_on_misalignment"
+
+    - id: "S07_shot_generation"
+      purpose: "Generate each approved shot or clip using a pinned workflow profile."
+      outputs: ["generated/shot_<SHOT_ID>/", "generation_manifest.json"]
+      per_shot_manifest:
+        - "shot_id"
+        - "clip_id"
+        - "prompt_hash"
+        - "negative_prompt_hash_if_used"
+        - "seed_if_supported"
+        - "checkpoint_or_model_id"
+        - "vae_id_if_used"
+        - "lora_ids_and_weights"
+        - "control_models_and_weights"
+        - "sampler"
+        - "scheduler"
+        - "steps"
+        - "cfg_or_guidance_value"
+        - "width"
+        - "height"
+        - "frame_count"
+        - "fps"
+        - "custom_node_versions"
+        - "input_reference_hashes"
+      rules:
+        generate_only_from_approved_storyboard: true
+        no_unlogged_model_substitution: true
+        no_prompt_mutation_without_new_run_id: true
+        failed_outputs_preserved: true
+        do_not_claim_seed_reproducibility_without_testing: true
+      gate: "block_on_missing_manifest_or_decode_failure"
+
+    - id: "S08_spatial_and_visual_qc"
+      purpose: "Test the generated frames and clips against the approved shot contract."
+      checks:
+        automated:
+          - "decode_and_frame_count"
+          - "resolution_and_frame_rate"
+          - "black_or_corrupt_frame_scan"
+          - "duplicate_or_unintended_freeze_scan"
+          - "cut_or_scene_change_anomaly_scan"
+          - "identity_similarity_screen"
+          - "control_alignment_screen"
+        human_required:
+          - "character_identity"
+          - "pose_and_gaze"
+          - "hand_object_contact"
+          - "prop_coverage_and_state"
+          - "environment_identity"
+          - "room_and_furniture_continuity"
+          - "camera_logic"
+          - "action_cause_and_effect"
+          - "audio_visual_agreement"
+      severity:
+        blocker: "wrong character, impossible spatial transition, missing required action, corrupted output, critical audio mismatch"
+        major: "unapproved set redesign, prop-state error, unreadable action, camera discontinuity"
+        minor: "small non-story-critical visual defect"
+      gate: "block_on_blocker; major_requires_review"
+
+    - id: "S09_clip_handoff"
+      purpose: "Create the separate video-model handoff prompt for the approved storyboard."
+      outputs:
+        - "storyboard/${SEQUENCE_SLUG}/prompt_video.txt"
+      requirements:
+        max_characters: 2999
+        panel_beats: "one P## beat per storyboard panel"
+        no_timestamps_unless_explicitly_requested: true
+        no_storyboard_sheet_rendering: true
+        preserve_panel_order: true
+        include_environment: true
+        include_emotional_guidance_with_valence_and_arousal: true
+        include_visual_style: true
+        include_audio_policy: true
+        default_audio_policy: "No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence."
+        no_format_subjects_mood_lines: true
+        no_color_logic_section: true
+      continuity:
+        continuous_shot_requires_no_cut_instruction: true
+        same_lens_continuous_move_when_applicable: true
+        exactly_one_character_reference_sentence: true
+      checks:
+        - "character_count_below_3000"
+        - "one_panel_beat_per_panel"
+        - "no_unresolved_template_instructions"
+        - "required_handoff_opening_present"
+        - "audio_policy_matches_project"
+      gate: "block_on_prompt_validation_failure"
+
+    - id: "S10_assembly"
+      purpose: "Assemble approved clips in frame-accurate order with supplied audio."
+      rules:
+        source_audio_is_authoritative: true
+        no_automatic_music_generation: true
+        preserve_required_audio_timing: true
+        transitions_must_be_explicitly_approved: true
+        frame_rate_conversion_requires_declared_method: true
+      outputs: ["assembly_manifest.json", "review_master.mp4"]
+      checks:
+        - "shot_order_matches_edit_decision_list"
+        - "total_duration_matches_delivery_contract"
+        - "audio_video_sync_within_tolerance"
+        - "no_unapproved_gaps_or_overlaps"
+      gate: "block_on_assembly_failure"
+
+    - id: "S11_final_master_qc"
+      purpose: "Validate encoded master and package before release."
+      checks:
+        - "file_decodes_to_end"
+        - "dimensions_match_delivery_profile"
+        - "frame_rate_matches_delivery_profile"
+        - "color_tags_and_transform_match_profile"
+        - "audio_codec_sample_rate_channels_match_profile"
+        - "loudness_and_true_peak_checked_when_required"
+        - "caption_files_checked_when_required"
+        - "runtime_and_frame_count_match"
+        - "metadata_and_filename_match"
+        - "checksum_created"
+      gate: "block_release_on_failure"
+
+    - id: "S12_archive"
+      purpose: "Archive all required source and decision evidence."
+      outputs: ["archive_manifest.json", "checksums.sha256", "qc_report.json"]
+      required:
+        - "approved_source_inputs"
+        - "storyboard_and_video_prompts"
+        - "approved_storyboard_sheet"
+        - "control_inputs"
+        - "generation_manifests"
+        - "approved_renders"
+        - "edit_decision_list"
+        - "QC_evidence"
+        - "tool_and_model_versions"
+        - "approval_records"
+      gate: "release_requires_archive_manifest"
+
+comfyui_adapter:
+  note: "Map logical stage operations to actual installed nodes and workflows. This manifest intentionally does not fabricate node class names or node input schemas."
+  required_capabilities:
+    - "load_image"
+    - "load_video_or_extract_frames"
+    - "image_resize_crop_pad"
+    - "text_prompt_input"
+    - "checkpoint_or_model_loader"
+    - "vae_loader_when_required"
+    - "sampler_or_model_specific_generation"
+    - "controlnet_or_model_control_inputs_when_supported"
+    - "image_save"
+    - "video_combine_or_external_assembly"
+    - "metadata_and_manifest_export"
+  optional_capabilities:
+    - "pose_estimation"
+    - "depth_estimation"
+    - "edge_detection"
+    - "optical_flow"
+    - "interpolation"
+    - "upscaling"
+    - "frame_interpolation"
+    - "audio_mux"
+  startup_validation:
+    - "ComfyUI server reachable"
+    - "required custom nodes installed and importable"
+    - "checkpoint files exist and match expected hashes when available"
+    - "model architecture matches the selected workflow"
+    - "workflow JSON loads without missing-node errors"
+    - "test generation completes and output decodes"
+  model_profile:
+    id: "${MODEL_PROFILE_ID}"
+    model_family: "${MODEL_FAMILY}"
+    checkpoint: "${CHECKPOINT_PATH}"
+    vae: "${VAE_PATH_OR_NULL}"
+    controlnet_models: "${CONTROL_MODEL_MAP}"
+    sampler: "${SAMPLER_FROM_VALIDATED_WORKFLOW}"
+    scheduler: "${SCHEDULER_FROM_VALIDATED_WORKFLOW}"
+    steps: "${VALIDATED_STEP_COUNT}"
+    guidance: "${VALIDATED_GUIDANCE_VALUE}"
+    width: 1280
+    height: 720
+    fps: 24
+    clip_max_seconds: 15
+    note: "These are profile placeholders or project defaults, not universal settings for every model. Use the exact model card and validated workflow."
+
+state_and_evidence:
+  append_only_events:
+    enabled: true
+    event_fields:
+      - "event_id"
+      - "timestamp_utc"
+      - "run_id"
+      - "stage_id"
+      - "entity_id"
+      - "before_state_hash"
+      - "after_state_hash"
+      - "decision"
+      - "reason"
+      - "evidence_paths"
+      - "reviewer"
+  knowledge_registry:
+    record:
+      - "claim"
+      - "evidence"
+      - "confidence"
+      - "known_failure_conditions"
+      - "falsifier"
+      - "last_verified"
+    policy: "new evidence may update confidence; never rewrite prior evidence"
+  quality_reports:
+    required_fields:
+      - "pass_fail"
+      - "blockers"
+      - "major_findings"
+      - "minor_findings"
+      - "automated_measurements"
+      - "human_review"
+      - "uncertainties"
+      - "evidence_paths"
+      - "next_action"
+
+release_policy:
+  release_allowed_only_if:
+    - "all_blocking_gates_pass"
+    - "human_storyboard_approval_recorded"
+    - "all_major_findings_resolved_or_signed_off"
+    - "final_master_qc_passed"
+    - "archive_manifest_exists"
+  never:
+    - "claim_visual_QC_passed_from_prompt_text_alone"
+    - "claim_spatial_continuity_from_similarity_score_alone"
+    - "silently_change_delivery_profile"
+    - "replace_a_failed_output_without_preserving_its_record"
+    - "treat_model_generation_success_as_production_acceptance"
+
+implementation_notes:
+  - "First implement the manifest and gates; then bind stages to concrete ComfyUI workflow JSON files."
+  - "Keep prompt authoring, storyboard approval, generation, QC, and release as separate stages."
+  - "Use separate workflow JSON per model family or generation task where node graphs differ."
+  - "Do not assume ComfyUI natively handles transcription, semantic segmentation, review approval, or production databases; use explicit external services/scripts or manual review adapters."
+  - "Keep all model-specific settings in named profiles so a profile change creates a new run and is measurable."
+  - "Run a small validation batch before scaling to full sequences."

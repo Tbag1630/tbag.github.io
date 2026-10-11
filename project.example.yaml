@@ -1,0 +1,28 @@
+# Project bindings for spec/comfyui_animation_orchestration.yaml.
+# Copy to project/<name>.yaml (gitignored) and fill in. A value left null stays
+# UNRESOLVED on purpose: stages that need it fail closed instead of guessing.
+vars:
+  PROJECT_ID: null
+  PROJECT_TITLE: null
+  SEQUENCE_ID: null
+  SEQUENCE_SLUG: null
+  EPISODE_ID: null
+  PRODUCTION_OWNER: null
+  PROJECT_ROOT: null            # where inputs/, generated/, qc/, manifests/ ... live
+  DELIVERY_TARGET: null         # e.g. YouTube (Made for Kids), internal review
+  WORKING_COLOR_SPACE: null     # e.g. sRGB / Rec.709 (H3 output is tagged sRGB by CreateVideo)
+  ENCODER_PROFILE: null         # e.g. high
+  ENCODER_BITRATE_MODE: null    # e.g. crf / vbr
+  ENCODER_BITRATE_MBPS: null
+  # model_profile placeholders: point at the adapter profile actually used
+  MODEL_PROFILE_ID: minimax_h3_fl2v_turbo4_768p_v1
+  MODEL_FAMILY: minimax_h3
+  CHECKPOINT_PATH: minimax_h3_fl2va_pruned_int8_convrot.safetensors
+  VAE_PATH_OR_NULL: minimax_h3_video_vae_int8_convrot.safetensors
+  CONTROL_MODEL_MAP: null       # minimax_h3_fun_controlnet_union... once a control run is validated
+  SAMPLER_FROM_VALIDATED_WORKFLOW: res_multistep
+  SCHEDULER_FROM_VALIDATED_WORKFLOW: simple
+  VALIDATED_STEP_COUNT: 4
+  VALIDATED_GUIDANCE_VALUE: "BasicGuider (no CFG); sigma shift 6/3"
+  # where the Seedance 2.0 storyboard skill lives on this machine (its validate.py is run, not copied)
+  STORYBOARD_SKILL_DIR: null

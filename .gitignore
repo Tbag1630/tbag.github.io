@@ -1,0 +1,11 @@
+# Project-specific production material stays local (this repository is public).
+evidence/
+project/
+runs/
+*.mp4
+*.wav
+*.png
+!tests/fixtures/*.png
+__pycache__/
+*.pyc
+.pytest_cache/

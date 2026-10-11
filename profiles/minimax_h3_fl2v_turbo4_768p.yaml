@@ -1,0 +1,87 @@
+# Model profile: MiniMax-H3 first+last-frame -> video (+ generated audio), 4-step turbo LoRA.
+# Execution adapter binding. Every value below is copied from a VERIFIED, COMPLETED job
+# (see `verified_from`) or from the live Comfy Cloud node catalog (see `limits_source`).
+# Changing any fixed value is a new profile id, never an in-place edit.
+id: minimax_h3_fl2v_turbo4_768p_v1
+status: verified_executable        # ran successfully on Comfy Cloud; not yet production-accepted
+model_family: minimax_h3
+task: first_last_frame_to_video_with_audio
+backend: comfy_cloud
+submission_route: mcp_handoff       # no direct API access from this container (see docs/READINESS.md)
+
+verified_from:
+  job_id: b2f68b9f-1b6f-46db-980a-53aca342c67b
+  workflow_id: a89ca8f7-a071-4574-aa50-1c6a64cabf79
+  completed_utc: "2026-10-10T21:01:43Z"
+  gpu: rtx_pro_6000
+  gpu_seconds: 22.837431
+  # The raw captured graph contains production prompt text, so it stays in the
+  # gitignored local evidence store; its hash pins the provenance.
+  captured_graph: evidence/captured/job_b2f68b9f_graph.api.json
+  captured_graph_sha256: 6f9aee93fef2cd106798feb06bcd135962838f540a5af01562d749104e29baad
+
+# Captured graph with prompt / input images / filename prefix / seed replaced by
+# placeholders. Every placeholder is a binding below and is overwritten at compile.
+graph_template: profiles/graphs/minimax_h3_fl2v_turbo4.template.api.json
+graph_template_sha256: 47bc6cf83ccbe35e183556ae42af5d295cdc0ce1da96a4ffb9b75aa3048385db
+
+# Which node input receives which per-clip value at compile time: [node_id, input_name]
+bindings:
+  prompt: ["104", "prompt"]
+  first_frame: ["114", "image"]
+  last_frame: ["115", "image"]
+  width: ["104", "width"]
+  height: ["104", "height"]
+  length: ["104", "length"]
+  seed: ["15", "noise_seed"]
+  fps: ["91", "fps"]
+  filename_prefix: ["92", "filename_prefix"]
+
+# Fixed by this profile (asserted at compile time against the template).
+fixed:
+  - {node: "6",   input: unet_name,     value: minimax_h3_fl2va_pruned_int8_convrot.safetensors}
+  - {node: "6",   input: weight_dtype,  value: default}
+  - {node: "11",  input: vae_name,      value: minimax_h3_video_vae_int8_convrot.safetensors}
+  - {node: "24",  input: vae_name,      value: minimax_h3_audio_vae_fp32.safetensors}
+  - {node: "13",  input: clip_name,     value: qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors}
+  - {node: "13",  input: type,          value: minimax}
+  - {node: "121", input: lora_name,     value: minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors}
+  - {node: "121", input: strength_model, value: 1}
+  - {node: "150", input: shift_video,   value: 6}
+  - {node: "150", input: shift_audio,   value: 3}
+  - {node: "17",  input: sampler_name,  value: res_multistep}
+  - {node: "9",   input: scheduler,     value: simple}
+  - {node: "9",   input: steps,         value: 4}
+  - {node: "9",   input: denoise,       value: 1}
+  - {node: "91",  input: bit_depth,     value: 8}
+
+manifest_fields:            # spec S07 per_shot_manifest values that come from the profile
+  checkpoint_or_model_id: minimax_h3_fl2va_pruned_int8_convrot.safetensors
+  vae_id_if_used: [minimax_h3_video_vae_int8_convrot.safetensors, minimax_h3_audio_vae_fp32.safetensors]
+  text_encoder: qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+  lora_ids_and_weights: [{id: minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors, weight: 1}]
+  control_models_and_weights: []
+  sampler: res_multistep
+  scheduler: simple
+  steps: 4
+  cfg_or_guidance_value: "BasicGuider (no CFG); sigma shift video=6 audio=3"
+  negative_prompt_hash_if_used: null   # H3 ignores negative prompts (model guide)
+
+canvas:
+  width: 1344
+  height: 768
+  fps: 24
+  size_multiple: 32
+length:
+  grid: "17k+5"            # MiniMaxH3ImageToVideo snaps length UP to this grid
+  node_min: 5
+  node_max: 3600
+  trained_range: [124, 362]
+  validated_values: [73]   # only lengths actually executed under this profile
+produces_audio: true       # joint audio-video model; see audio policy conflict in READINESS
+negative_prompt_supported: false
+seed_reproducibility: untested   # spec: do_not_claim_seed_reproducibility_without_testing
+
+limits_source:
+  - "Comfy Cloud get_node MiniMaxH3ImageToVideo (2026-10-11): width/height 32-16384, length 5-3600, tooltip '17k+5 grid (124 = ~5s; trained range ~124-362)'"
+  - "Comfy Cloud minimax-h3 prompting guide: native 1344x768, multiples of 32, 24 fps, ~15 s cap"
