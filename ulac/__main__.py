@@ -27,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import adapters, endpoint, firewall, gates, packer, storyboard, validators
+from . import adapters, dag, endpoint, firewall, gates, packer, storyboard, validators
 from .instantiate import InstantiateError, author, instantiate
 from .relay import Episode, RelayError
 
@@ -189,6 +189,9 @@ def main(argv=None) -> int:
     rl.add_argument("--seq", required=True)
     rl.add_argument("--attempt", type=int, required=True)
     rl.add_argument("--reason", required=True)
+    dg = sub.add_parser("dag", help="dependency graph + per-cycle report derived from the relay state")
+    dg.add_argument("ep")
+    dg.add_argument("--inflight", help="JSON with {jobs: [{seq, ...}]}: boards submitted but not yet ingested")
     ad = sub.add_parser("adapt")
     ad.add_argument("ep")
     ad.add_argument("seq")
@@ -305,6 +308,15 @@ def main(argv=None) -> int:
                                                                            "contradicts_authority", "worth_cost",
                                                                            "local_fix")}})
             _p(row)
+            return 0
+        elif c == "dag":
+            jobs = json.loads(Path(args.inflight).read_text())["jobs"] if args.inflight else []
+            seen, uniq = set(), []
+            for j in jobs:
+                if j["prompt_id"] not in seen:
+                    seen.add(j["prompt_id"])
+                    uniq.append(j)
+            _p(dag.report(ep, uniq))
             return 0
         elif c == "gates":
             if args.draft is not None:

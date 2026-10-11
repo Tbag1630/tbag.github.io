@@ -72,7 +72,8 @@ def _long_edges(profile: np.ndarray, thr: float, gap: int) -> list[int]:
     return _cluster([int(i) + 1 for i in np.nonzero(profile >= thr)[0]], gap)
 
 
-def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float = 0.12) -> list[int]:
+def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float = 0.12,
+                min_luma: float = 175.0) -> list[int]:
     """Shrink a panel box past flat margins (rows/cols whose mean pixel-to-pixel luma change is under tol, at
     most max_frac per side). A pale panel edge can fall under the long-edge test; the box then runs on into the
     sheet gutter and the strip below it. Flatness is the mean step along the line, not its spread, so a
@@ -84,7 +85,8 @@ def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float
     cx0, cx1, cy0, cy1 = x0 + w // 10, x1 - w // 10, y0 + h // 10, y1 - h // 10
 
     def flat(line: np.ndarray) -> bool:
-        return float(np.abs(np.diff(line)).mean()) < tol
+        # a margin is pale paper: a flat DARK wall is picture (SEQ_011 A01 P03 lost 250 px of its night wall)
+        return float(np.abs(np.diff(line)).mean()) < tol and float(line.mean()) >= min_luma
 
     t = b = l = r = 0
     while t < my and flat(g[y0 + t, cx0:cx1]):

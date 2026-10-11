@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from ulac import adapters, endpoint, firewall, gates, layout, packer, qc, state
+from ulac import adapters, dag, endpoint, firewall, gates, layout, packer, qc, state
 from ulac.instantiate import InstantiateError, author, instantiate
 from ulac.relay import Episode, RelayError
 
@@ -1037,3 +1037,34 @@ def test_adjudication_classifies_findings_before_any_repair(tmp_path):
     with pytest.raises(ValueError, match="needs requirement"):
         gates.adjudicate(tmp_path, 1, base | {"requirement": ""})
     assert len(gates.adjudications(tmp_path, 1)) == 2
+
+
+def test_dag_report_follows_real_dependencies(ep):
+    e, tmp = ep
+    ids = e.seq_ids()
+    author(e.root, _authored(ids, {ids[2]: "PENV_U"} if len(ids) > 2 else None))
+    e.start()
+    firewall.save_conf(e.root, {"gates_enabled": False})
+    g = dag.graph(e)
+    assert g["video_authorized"] is False
+    assert all(n["state"] == "APPROVAL_REQUIRED" for k, n in g["nodes"].items() if k.startswith("VIDEO:"))
+    boards = {k.split(":")[1]: n for k, n in g["nodes"].items() if k.startswith("BOARD:")}
+    assert boards[ids[0]]["state"] == "READY" and boards[ids[1]]["state"] == "BLOCKED"   # same chain: strictly sequential
+    assert boards[ids[2]]["state"] == "READY" and boards[ids[2]]["chain"] == 2               # a location change opens its own chain
+    rep = dag.report(e, [{"seq": ids[2], "prompt_id": "j1"}])
+    assert rep["running"] == [ids[2]] and ids[0] in rep["ready_now"] and rep["video"]["state"] == "APPROVAL_REQUIRED"
+    assert rep["credits"]["ceiling_estimate"] == 2 * rep["credits"]["first_pass_estimate"]
+
+
+def test_flat_dark_wall_is_picture_not_margin():
+    """SEQ_011 A01 P03: a night wall (flat, dark) filled the sides of the panel and was trimmed as if it were paper,
+    so the panel box came out 1183 px wide instead of 1441 (and an END_LOCK band from it would have lost height)."""
+    from ulac import endpoint
+    rng = np.random.default_rng(11)
+    g = rng.integers(40, 60, (800, 1400)).astype(np.float32)                    # dark, nearly flat wall
+    g[:, 500:900] = rng.integers(30, 220, (800, 400)).astype(np.float32)         # busy figure in the middle
+    assert endpoint._trim_paper(g, [0, 0, 1400, 800]) == [0, 0, 1400, 800]
+    pale = np.full((800, 1400), 245, np.float32)                                  # a pale margin is still trimmed
+    pale[60:740, 60:1340] = rng.integers(40, 200, (680, 1280)).astype(np.float32)
+    got = endpoint._trim_paper(pale, [0, 0, 1400, 800])
+    assert got[0] >= 50 and got[1] >= 50 and got[2] <= 1350 and got[3] <= 750

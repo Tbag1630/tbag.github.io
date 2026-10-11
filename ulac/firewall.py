@@ -273,7 +273,8 @@ def job_events(root: Path) -> list[dict]:
 def cost_report(root: Path, billing: dict | None = None) -> dict:
     """Spend by board, sequence group and episode; first-pass acceptance; credits per accepted board."""
     conf = load_conf(root)
-    billing = billing or {}
+    f = Path(root) / "BILLING_JOBS.json"                    # reconciled feed, when present: real credits, not estimates
+    billing = billing or (json.loads(f.read_text()) if f.exists() else {})
     per: dict[str, dict] = {}
     for r in read_ledger(root):
         tid = r.get("target")
