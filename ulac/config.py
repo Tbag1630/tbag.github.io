@@ -25,7 +25,10 @@ DEFAULT = {
     # the model draws panels at ~1.2:1 whatever the prompt or a wireframe says (probes A-C, 2026-10-11), so the
     # END_LOCK is the central 16:9 band of the measured final panel and every panel is composed for that band
     "ENDPOINT": {"min_short_side": 360, "aspect": 16 / 9, "aspect_tol": 0.03, "fit_band": True},
-    "SHEET_SIZE": "3840x2160",
+    # 2x2 panels on a 2976x2656 canvas (the node caps a canvas at 8.29 MP): the model fills the height it is given,
+    # so this lands every panel near 16:9 (probe G: 1.91:1) and the END_LOCK is ~1300x730 instead of ~900x500
+    "SHEET_SIZE": "2976x2656",
+    "SHEET_GRID": {"rows": 2, "cols": 2},
     "REPAIR_LADDER_MAX": 5,
     "REPEATED_CAUSE_STOP": 2,       # L8 R5: stop at the 2nd failure with the same cause
 }

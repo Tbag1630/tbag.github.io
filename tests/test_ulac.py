@@ -329,6 +329,60 @@ def test_location_change_needs_its_own_master(ep):
     assert e.prompt(ids[1])["start_frame_ref"]["type"] == "DRESSED_MASTER"
 
 
+def _to_first_board(e, tmp):
+    """Lock the grid, identity board and dressed master, then submit SEQ_001's board (status IN_QC)."""
+    ids = e.seq_ids()
+    author(e.root, _authored(ids, None))
+    e.start()
+    man = e.manifest
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid", [("cast_reference", str(e.root / man["authorities"]["cast_references"][0]["path"]))])
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity",
+             [("character_reference", str(e.root / e.asset("CHARACTER_GRID:C1")["path"]))])
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master",
+             [("architecture_source", str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"]))])
+    _pass_all(e)
+    e.next()
+    return e.submit(_board(tmp / "b1.png", 10), "seq1",
+                    [("dressed_master", str(e.root / e.asset("DRESSED_MASTER:PENV_T")["path"])),
+                     ("identity_board", str(e.root / e.asset("IDENTITY_BOARD")["path"]))])
+
+
+def test_reopen_after_an_automated_final_panel_refusal(ep):
+    """SEQ_031 A02: the end-lock gate refused a good board because the extraction tool left a blank strip. The board
+    is re-checked, not regenerated; the refusal stays in the log; only that one automated failure can be reopened."""
+    e, tmp = ep
+    _to_first_board(e, tmp)
+    _pass_all(e)
+    st = e.next(box=[0, 0, 120, 70])                                  # a final-panel crop the gate refuses
+    assert st["status"] == "REPAIR" and st["last_failure"]["failure"] == ["FINAL_PANEL_NOT_USABLE_AS_NEXT_START"]
+    with pytest.raises(RelayError, match="IN_QC"):
+        e.next(rows=2, cols=3)
+    assert e.reopen_endpoint("extraction tool fault, fixed", "director")["status"] == "IN_QC"
+    sid = st["active"]
+    rep = json.loads(e.report_path("seq", sid).read_text())
+    assert rep["checks"]["FINAL_PANEL_NOT_USABLE_AS_NEXT_START"]["value"] == "PENDING" and rep["verdict"] == "PENDING"
+    with pytest.raises(RelayError, match="pending"):
+        e.next(rows=2, cols=3)                                         # the director still has to answer check 11
+    e.set_qc(check=11, value="PASS", evidence="final panel re-extracted, inspected", by="claude-code")
+    assert e.next(rows=2, cols=3)["status"] == "CLOSED"
+    log = [json.loads(x) for x in (e.root / "FAILURE_LOG.jsonl").read_text().splitlines()]
+    assert [x["type"] for x in log if x["seq"] == sid] == ["qc_fail", "reopen"]
+
+
+def test_reopen_refuses_a_board_defect(ep):
+    e, tmp = ep
+    _to_first_board(e, tmp)
+    _pass_all(e)
+    e.set_qc(check=5, value="FAIL", evidence="identity drift", by="claude-code")
+    assert e.next(rows=2, cols=3)["status"] == "REPAIR"
+    with pytest.raises(RelayError, match="repair, do not reopen"):
+        e.reopen_endpoint("try", "director")
+
+
 def test_repair_rules():
     rep = {"rung": 3, "failure": "f", "cause": "identity board omitted", "changed_instruction": "c",
            "unchanged_authorities": "u", "expected_correction": "x"}
@@ -574,3 +628,64 @@ def test_end_lock_band(tmp_path):
     assert m["panel_box"] == [100, 100, 1000, 900]                            # uniform margin trimmed first
     check(m["panel_box"], m["band"]["box"])
     assert Image.open(tmp_path / "e.png").size == tuple(m["size"])
+
+
+def _synthetic_sheet(path, panels, W=2000, H=1800, pale_tail=0):
+    """A sheet with ruled panel frames, header strips and a director strip, for panel detection.
+    pale_tail: the panel's last rows are pale (a light floor against the sheet) and its bottom frame line is
+    left out, so no long edge marks the panel bottom."""
+    import numpy as np
+    from PIL import Image
+    rng = np.random.default_rng(3)
+    im = np.full((H, W, 3), 245, np.uint8)
+    for x0, y0, x1, y1 in panels:
+        im[y0 - 40:y0, x0:x1] = 205                                   # header strip
+        im[y0:y1, x0:x1] = rng.integers(120, 235, (y1 - y0, x1 - x0, 3), dtype=np.uint8)
+        im[y0 - 2:y0 + 2, x0:x1] = 60
+        if pale_tail:
+            im[y1 - pale_tail:y1, x0:x1] = rng.integers(150, 256, (pale_tail, x1 - x0, 3), dtype=np.uint8)
+        else:
+            im[y1 - 2:y1 + 2, x0:x1] = 60
+        im[y0:y1, x0 - 2:x0 + 2] = 60
+        im[y0:y1, x1 - 2:x1 + 2] = 60
+    im[int(H * 0.76):int(H * 0.93), 40:W - 40] = 215                   # director strip (a tall span too)
+    Image.fromarray(im).save(path)
+
+
+def test_find_panels_trims_gutter_below_a_pale_panel_edge(tmp_path):
+    """SEQ_031 A02: the panel bottoms were pale, no long edge, and the box ran 30 px on into the gutter, so the
+    END_LOCK band ended in a blank strip and next() refused it (FINAL_PANEL_NOT_USABLE_AS_NEXT_START)."""
+    from ulac import endpoint
+    two = [[40, 200, 960, 700], [1040, 200, 1960, 700], [40, 780, 960, 1280], [1040, 780, 1960, 1280]]
+    _synthetic_sheet(tmp_path / "p.png", two, H=1700, pale_tail=24)
+    import numpy as np
+    from PIL import Image
+    g = np.asarray(Image.open(tmp_path / "p.png").convert("L"), dtype=np.float32)
+    raw = endpoint._frames(g, 2, 2, step=18, edge_frac=0.85, min_w=0.12)
+    assert raw[-1][3] > two[-1][3] + 10, f"fixture must reproduce the missed bottom edge: {raw}"
+    got = endpoint.find_panels(tmp_path / "p.png", 2, 2)
+    for (gx0, gy0, gx1, gy1), (x0, y0, x1, y1) in zip(got, two):
+        assert max(abs(gx0 - x0), abs(gy0 - y0), abs(gx1 - x1), abs(gy1 - y1)) <= 4, (got, two)
+    box = got[-1]
+    endpoint.crop_box(tmp_path / "p.png", [box[0] + 4, box[1] + 4, box[2] - 4, box[3] - 4], tmp_path / "c.png",
+                      trim=False, fit_aspect=16 / 9)
+    assert all(c["ok"] for c in endpoint.viability(tmp_path / "c.png")), "the band must have no uniform edge"
+
+
+def test_find_panels_grid(tmp_path):
+    from ulac import endpoint
+    two = [[40, 200, 960, 700], [1040, 200, 1960, 700], [40, 800, 960, 1300], [1040, 800, 1960, 1300]]
+    _synthetic_sheet(tmp_path / "g.png", two)
+    got = endpoint.find_panels(tmp_path / "g.png", 2, 2)
+    assert len(got) == 4
+    for (gx0, gy0, gx1, gy1), (x0, y0, x1, y1) in zip(got, two):          # reading order, edges within 4 px
+        assert max(abs(gx0 - x0), abs(gy0 - y0), abs(gx1 - x1), abs(gy1 - y1)) <= 4
+    row = [[40 + i * 490, 560, 40 + i * 490 + 460, 960] for i in range(4)]
+    _synthetic_sheet(tmp_path / "r.png", row)
+    got = endpoint.find_panels(tmp_path / "r.png", 1, 4)
+    assert len(got) == 4 and all(abs(g[0] - r[0]) <= 4 and abs(g[2] - r[2]) <= 4 for g, r in zip(got, row))
+    m = endpoint.panel_crops(tmp_path / "g.png", tmp_path / "p", 2, 2)
+    assert len(m["files"]) == 4 and all(Path(f).exists() for f in m["files"])
+    import pytest
+    with pytest.raises(ValueError, match="panel"):
+        endpoint.find_panels(tmp_path / "g.png", 3, 2)

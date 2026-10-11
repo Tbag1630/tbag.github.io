@@ -124,6 +124,14 @@ def main(argv=None) -> int:
     d.add_argument("--action", choices=["retry", "abort"], required=True)
     d.add_argument("--reason", required=True)
     d.add_argument("--by", required=True)
+    fo = sub.add_parser("focus", help="lane switch: make an open, startable sequence the active target")
+    fo.add_argument("ep")
+    fo.add_argument("seq")
+    ro = sub.add_parser("reopen", help="REPAIR -> IN_QC after an automated final-panel refusal caused by the "
+                                       "extraction tool; the failure stays logged, next() re-runs the gate")
+    ro.add_argument("ep")
+    ro.add_argument("--reason", required=True)
+    ro.add_argument("--by", required=True)
     pn = sub.add_parser("panels", help="crop every panel of the current attempt's board for panel-level QC")
     pn.add_argument("ep")
     sbp = sub.add_parser("storyboard", help="write the skill's two prompt files for a sequence")
@@ -230,10 +238,15 @@ def main(argv=None) -> int:
             rep = validators.run_all(ep)
             _p(rep)
             return 0 if rep["ok"] else 2
+        elif c == "focus":
+            st = ep.focus(args.seq)
+        elif c == "reopen":
+            st = ep.reopen_endpoint(args.reason, args.by)
         elif c == "panels":
             st = ep.state
             att = Path(args.ep) / st["current_attempt"]
-            _p(endpoint.panel_crops(att / "board.png", att / "panels"))
+            gr = ep.cfg["SHEET_GRID"]
+            _p(endpoint.panel_crops(att / "board.png", att / "panels", gr["rows"], gr["cols"]))
             return 0
         elif c == "storyboard":
             out = storyboard.build(ep, args.seq)

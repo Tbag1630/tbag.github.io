@@ -126,9 +126,9 @@ class Episode:
             ref = {"type": "DRESSED_MASTER", "penv_id": rec["penv_id"], "path": a["path"],
                    "sha256": a["sha256"], "pixel_sha256": a.get("pixel_sha256")}
         else:
-            link = st["endpoint_chain"][-1]
-            if link["seq_id"] != ids[k - 1]:
-                raise RelayError(f"{sid}: END_LOCK of {ids[k - 1]} is not the last link in the chain")
+            link = next((x for x in st["endpoint_chain"] if x["seq_id"] == ids[k - 1]), None)
+            if link is None:
+                raise RelayError(f"{sid}: END_LOCK of {ids[k - 1]} does not exist yet (that sequence is not closed)")
             ref = {"type": "END_LOCK", "seq_id": link["seq_id"], "path": link["path"],
                    "sha256": link["sha256"], "pixel_sha256": link["pixel_sha256"]}
         rec["start_frame_ref"] = ref
@@ -165,6 +165,27 @@ class Episode:
         st["status"] = "READY"
         self._advance(st)
         return self._save(st, "started", "precompute validated", st.get("active_asset") or st["active"])
+
+    def closed(self) -> set[str]:
+        return {x["seq_id"] for x in self.state["endpoint_chain"]}
+
+    def focus(self, sid: str) -> dict:
+        """Lane switch. Locations are independent chains (a location change restarts on its dressed master), so
+        several chains can have generations running on Comfy Cloud at once; the relay still handles exactly one
+        target at a time. Only between targets (READY/CLOSED); the sequence must be open and startable."""
+        st = self._require("READY", "CLOSED")
+        ids = self.seq_ids()
+        if sid not in ids:
+            raise RelayError(f"unknown sequence {sid}")
+        if sid in self.closed():
+            raise RelayError(f"{sid} is already closed")
+        k = ids.index(sid)
+        opens = k == 0 or self.prompt(ids[k - 1])["penv_id"] != self.prompt(sid)["penv_id"]
+        if not opens and ids[k - 1] not in self.closed():
+            raise RelayError(f"{sid} continues {ids[k - 1]}, which is not closed: it is not startable")
+        st.update(active=sid, active_asset=None, status="READY")
+        self._advance(st)
+        return self._save(st, "note", f"lane switch: {sid} is now the active target ({st['pending_action']})", sid)
 
     def submit(self, result_png: Path, prompt_text: str, refs: list[tuple[str, str]],
                cloud: dict | None = None) -> dict:
@@ -284,7 +305,8 @@ class Episode:
                                              header_frac=header_frac, strip_frac=strip_frac)
         else:
             try:
-                boxes = endpoint.find_panels(attempt / "board.png")
+                gr = self.cfg["SHEET_GRID"]
+                boxes = endpoint.find_panels(attempt / "board.png", gr["rows"], gr["cols"])
             except ValueError as e:
                 raise RelayError(f"PASS: panel frames not detected ({e}); give the final panel box (x0,y0,x1,y1)")
             x0, y0, x1, y1 = boxes[-1]
@@ -333,6 +355,30 @@ class Episode:
         st["last_repair_rung"][tid] = rep["rung"]
         st.update(status="READY", pending_action=f"REGENERATE_{tid}_R{rep['rung']}")
         return self._save(st, "correction", f"R{rep['rung']}: {rep['cause']}", tid)
+
+    def reopen_endpoint(self, reason: str, by: str) -> dict:
+        """REPAIR -> IN_QC on the same attempt, only after an automated final-panel refusal (check 11) whose board
+        passed every other check, when the extraction tool and not the board was at fault. Nothing is erased: the
+        qc_fail stays in the failure log and a `reopen` entry follows it. Check 11 goes back to PENDING for the
+        director's own verdict and next() runs the automated gate again, so the gate is not bypassed."""
+        st = self._require("REPAIR")
+        kind, tid = self._target(st)
+        code = qc.FAIL_LIST[11][0]
+        lf = st.get("last_failure") or {}
+        if kind != "seq" or lf.get("seq") != tid or lf.get("failure") != [code]:
+            raise RelayError(f"last failure of {tid} is {lf.get('failure')}, not only {code}: repair, do not reopen")
+        rp = self.report_path(kind, tid)
+        rep = json.loads(rp.read_text())
+        chk = rep["checks"][code]
+        if chk["by"] != "automated:endpoint_viability":
+            raise RelayError(f"{code} was not failed by the automated gate (by {chk['by']!r}): repair, do not reopen")
+        chk.update(value="PENDING", evidence="", by="")
+        rep["verdict"] = qc.verdict(rep)
+        self._write(str(rp.relative_to(self.root)), rep)
+        self._log({"type": "reopen", "seq": tid, "attempt": rep["attempt"], "failure": [code], "reason": reason})
+        st.update(status="IN_QC", pending_action=f"QC_{tid}")
+        return self._save(st, "override", f"{tid} A{rep['attempt']} reopened for the final-panel check: {reason}", tid,
+                          reviewer=by)
 
     def decide(self, action: str, reason: str, by: str) -> dict:
         """Director decision after an R5 stop: 'retry' (one more repair round) or 'abort'."""

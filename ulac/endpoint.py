@@ -68,38 +68,95 @@ def _cluster(idx: list[int], gap: int = 8) -> list[int]:
     return [round(sum(c) / len(c)) for c in out]
 
 
-def find_panels(board: Path, n: int = 4, *, step: int = 18, edge_frac: float = 0.85,
-                min_w: float = 0.12, row_band: tuple[float, float] = (0.30, 0.50)) -> list[list[int]]:
-    """Panel image boxes [x0, y0, x1, y1] of a single-row storyboard sheet, left to right.
+def _long_edges(profile: np.ndarray, thr: float, gap: int) -> list[int]:
+    return _cluster([int(i) + 1 for i in np.nonzero(profile >= thr)[0]], gap)
 
-    The panel frames are long straight edges: a column is a vertical frame edge when a brightness step
-    runs down at least edge_frac of the rows in the middle of the panel row; the panel image is the
-    tallest span between straight horizontal edges inside one panel's width (header strip above it and
-    the director strip below it are the shorter spans). Raises ValueError when the frames are not clear,
-    so the QC director supplies the box by eye instead."""
+
+def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float = 0.12) -> list[int]:
+    """Shrink a panel box past flat margins (rows/cols whose mean pixel-to-pixel luma change is under tol, at
+    most max_frac per side). A pale panel edge can fall under the long-edge test; the box then runs on into the
+    sheet gutter and the strip below it. Flatness is the mean step along the line, not its spread, so a
+    one-pixel anti-aliased transition row still counts as flat; rows are judged on the central 80 % of the
+    width (the strips have rounded corners)."""
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    mx, my = int(w * max_frac), int(h * max_frac)
+    cx0, cx1, cy0, cy1 = x0 + w // 10, x1 - w // 10, y0 + h // 10, y1 - h // 10
+
+    def flat(line: np.ndarray) -> bool:
+        return float(np.abs(np.diff(line)).mean()) < tol
+
+    t = b = l = r = 0
+    while t < my and flat(g[y0 + t, cx0:cx1]):
+        t += 1
+    while b < my and flat(g[y1 - 1 - b, cx0:cx1]):
+        b += 1
+    while l < mx and flat(g[cy0:cy1, x0 + l]):
+        l += 1
+    while r < mx and flat(g[cy0:cy1, x1 - 1 - r]):
+        r += 1
+    return [x0 + l, y0 + t, x1 - r, y1 - b]
+
+
+def find_panels(board: Path, rows: int = 1, cols: int = 4, *, step: int = 18, edge_frac: float = 0.85,
+                min_w: float = 0.12) -> list[list[int]]:
+    """Panel image boxes [x0, y0, x1, y1] of a storyboard sheet, in reading order (rows top to bottom,
+    columns left to right), each trimmed of any flat gutter its frame edges left inside it.
+    """
     g = np.asarray(Image.open(board).convert("L"), dtype=np.float32)
+    return [_trim_paper(g, bx) for bx in _frames(g, rows, cols, step=step, edge_frac=edge_frac, min_w=min_w)]
+
+
+def _frames(g: np.ndarray, rows: int, cols: int, *, step: int, edge_frac: float, min_w: float) -> list[list[int]]:
+    """Frame boxes from long straight edges (before the gutter trim).
+
+    The panel frames are long straight edges. Rows: in the left column, horizontal edges that run across
+    90 % of it; a panel is a tall span between two of them (header strips and the director strip are
+    shorter or lie below 80 % of the height). Columns: in each row, vertical edges that run down 85 % of
+    the panel. Raises ValueError when the frames are not clear, so the QC director supplies the box by eye."""
     H, W = g.shape
-    r0, r1 = int(H * row_band[0]), int(H * row_band[1])
-    dx = np.abs(np.diff(g[r0:r1], axis=1)) > step
-    cols = _cluster([int(x) + 1 for x in np.nonzero(dx.mean(axis=0) >= edge_frac)[0]])
+    if rows == 1:
+        r0, r1 = int(H * 0.30), int(H * 0.50)
+        dx = np.abs(np.diff(g[r0:r1], axis=1)) > step
+        cs = _long_edges(dx.mean(axis=0), edge_frac, 8)
+        spans = _col_spans(cs, W, min_w)
+        if len(spans) != cols:
+            raise ValueError(f"found {len(spans)} panel frames, expected {cols}: {spans}")
+        boxes = []
+        for a, b in spans:
+            xa, xb = a + (b - a) // 8, b - (b - a) // 8
+            dy = np.abs(np.diff(g[:, xa:xb], axis=0)) > step
+            ys = [y for y in _long_edges(dy.mean(axis=1), 0.9, 6) if H * 0.1 < y < H * 0.75]
+            gaps = [(y1 - y0, y0, y1) for y0, y1 in zip(ys[:-1], ys[1:])]
+            if not gaps:
+                raise ValueError(f"no horizontal frame edges inside panel {a}-{b}")
+            _, y0, y1 = max(gaps)
+            boxes.append([a, y0, b, y1])
+        return boxes
+    xa, xb = int(W * 0.05), int(W * (0.95 / cols))
+    dy = np.abs(np.diff(g[:, xa:xb], axis=0)) > step
+    ys = _long_edges(dy.mean(axis=1), 0.9, 8)
+    cand = [(y0, y1) for y0, y1 in zip(ys[:-1], ys[1:]) if y1 - y0 >= H * 0.12 and y0 >= H * 0.05 and y1 <= H * 0.95]
+    # panels are the tallest spans (the director strip's frame is shorter); keep the `rows` tallest, top to bottom
+    rspans = sorted(sorted(cand, key=lambda sp: sp[0] - sp[1])[:rows])
+    if len(rspans) != rows:
+        raise ValueError(f"found {len(cand)} candidate panel rows, expected {rows}: {cand}")
+    boxes = []
+    for y0, y1 in rspans:
+        h = y1 - y0
+        dx = np.abs(np.diff(g[y0 + int(h * 0.2):y1 - int(h * 0.2)], axis=1)) > step
+        spans = _col_spans(_long_edges(dx.mean(axis=0), edge_frac, 8), W, min_w)
+        if len(spans) != cols:
+            raise ValueError(f"row {y0}-{y1}: found {len(spans)} panel frames, expected {cols}: {spans}")
+        boxes += [[a, y0, b, y1] for a, b in spans]
+    return boxes
+
+
+def _col_spans(cols: list[int], W: int, min_w: float) -> list[tuple[int, int]]:
     spans = [(a, b) for a, b in zip(cols[:-1], cols[1:]) if b - a >= W * min_w]
     # a frame drawn with a thick line yields two close edges: keep the widest span per panel start
-    spans = [sp for k, sp in enumerate(spans) if not any(o[0] <= sp[0] + 12 and sp[1] <= o[1] + 12 and o != sp
-                                                           and (o[1] - o[0]) > (sp[1] - sp[0]) for o in spans)]
-    if len(spans) != n:
-        raise ValueError(f"found {len(spans)} panel frames, expected {n}: {spans}")
-    boxes = []
-    for a, b in spans:
-        xa, xb = a + (b - a) // 8, b - (b - a) // 8
-        dy = np.abs(np.diff(g[:, xa:xb], axis=0)) > step
-        rows = _cluster([int(y) + 1 for y in np.nonzero(dy.mean(axis=1) >= 0.9)[0]], gap=6)
-        rows = [y for y in rows if H * 0.1 < y < H * 0.75]
-        gaps = [(y1 - y0, y0, y1) for y0, y1 in zip(rows[:-1], rows[1:])]
-        if not gaps:
-            raise ValueError(f"no horizontal frame edges inside panel {a}-{b}")
-        _, y0, y1 = max(gaps)
-        boxes.append([a, y0, b, y1])
-    return boxes
+    return [sp for sp in spans if not any(o != sp and o[0] <= sp[0] + 12 and sp[1] <= o[1] + 12
+                                          and (o[1] - o[0]) > (sp[1] - sp[0]) for o in spans)]
 
 
 def band_box(box: list[int], aspect: float, bias: float = 0.0) -> list[int]:
@@ -188,9 +245,9 @@ def verify_same_pixels(a: Path, b: Path) -> bool:
     return x.shape == y.shape and bool((x == y).all())
 
 
-def panel_crops(board: Path, out_dir: Path, n: int = 4, *, inset: int = 4) -> dict:
+def panel_crops(board: Path, out_dir: Path, rows: int = 1, cols: int = 4, *, inset: int = 4) -> dict:
     """Detect the panel frames and write each panel image as P01.png ... for panel-level inspection."""
-    boxes = find_panels(board, n)
+    boxes = find_panels(board, rows, cols)
     out_dir.mkdir(parents=True, exist_ok=True)
     im = Image.open(board).convert("RGB")
     files = []
