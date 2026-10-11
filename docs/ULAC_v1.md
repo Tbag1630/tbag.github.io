@@ -113,3 +113,81 @@ Two previously failing shots were re-rendered from approved first/last keyframes
 | MiniMax H3 local, 25 steps | head swing; visor reads as a mouth | one squint | GPU only |
 
 All engines rendered 24 fps. Seedance 2.0 at 720p for 15 s is about 684 credits.
+
+## Directorial intent engine
+
+*Understand the story. Define the purpose. Execute with judgment.* It governs every episode, sequence, storyboard and QA
+decision. Order of work: **understand, specify intent, design coverage, execute, inspect, adjudicate, repair only genuine
+defects.** Never: inspect a result, find differences, assume they are errors, redesign, regenerate. A difference is not a
+defect. The objective is zero unresolved *material* defects, not zero reported differences.
+
+**The director owns the creative logic.** The script supplies narrative facts, the audio supplies spoken content and timing,
+approved references supply identity and canon, production constraints supply what can be generated reliably, and directorial
+judgment integrates them. The user is not asked to resolve decisions that belong to the director.
+
+**Sequence intent contract** (`SEQUENCES/SEQ_n/INTENT.json`, gate A; drafted from the pack, then reviewed and signed). It
+holds: narrative purpose, audience comprehension, dramatic objective, essential visual information, emotional progression,
+causal chain, spatial logic, starting state, ending state, continuity invariants, creative freedom, failure conditions,
+timing (15.00 s clip limit). It is the shared authority for the director, the storyboard generator, the production agent
+and the QA critic, and it stops a reviewer inventing requirements after the work is done.
+
+**A storyboard is a visual execution specification**, not a grid of pictures. It resolves, before video generation: what the
+audience sees first, what information arrives and in what order, what the characters do and why, how intentions and
+reactions are read, where the camera is and how perspective changes, how actions connect across shots, how character, prop
+and environment states evolve, what the sequence delivers, and how it ends in a state that supports the next clip. A panel
+with no job (establish geography, communicate an action, reveal, register a reaction, intensify, clarify a relationship,
+set the next state) is questioned; an essential beat that is missing is added.
+
+**Findings are classified before anything is acted on** (`python -m ulac adjudicate`, recorded in `ADJUDICATION.jsonl`):
+
+| Class | Meaning | Action |
+|---|---|---|
+| A | hard violation (wrong dialogue/timing, missing essential action, identity corruption, impossible contact, contradictory geography, unauthorised generation, invalid deliverable) | block, repair the cause |
+| B | meaningful storytelling defect (a reaction the audience needs but cannot see, unclear cause, reveal before setup, angle hides the critical gesture, ending cannot connect) | correct, preserve valid work |
+| C | continuity or generation risk (ambiguous hand placement, unclear chair positions, screen direction, an under-specified prop state) | resolve to the degree reliable production needs; do not over-specify |
+| D | acceptable creative variation (another effective angle, shot size, panel count, gesture that keeps intent) | accept, log it; never manufacture a defect |
+| E | uncertain | investigate against the contract, references and source; escalate only a genuine blocker |
+
+For each consequential finding the seven questions are answered and stored: the exact requirement allegedly violated; the
+evidence; mandatory or preference; does it stop the scene communicating its purpose; does it contradict an authority or only
+differ from a proposed design; is the fix worth its cost and new risk; can it be fixed without regenerating the artifact.
+The relay refuses a repair that is not backed by a Class A/B/C finding with decision `repair` for that attempt.
+
+**Minimum-sufficient correction.** Find the smallest artifact that owns the defect, list what depends on it, correct that,
+revalidate only the affected dependencies, preserve accepted work. A character sheet is not regenerated for a composition
+problem; a scene is not redesigned for one unclear prop; the chain is not restarted for an unrelated failure. Before another
+generation the failure and the specific change that should fix it are written down; if they cannot be, nothing is regenerated.
+
+**Direct the shots, not the panels.** Wide when geography or group relationships matter, medium when interaction must read,
+close when expression or a decision needs it, movement only when it adds meaning. The board is a blueprint for the video
+clip (Seedance 2.0 Standard 720p, 15.00 s maximum), not an illustration judged on its own.
+
+## Credit firewall and first-pass acceptance (`ulac/firewall.py`, `ulac/gates.py`, enforced by the relay)
+
+Generation is the expensive stage, not the place to discover what a prompt, reference, panel layout or acceptance rule should
+have been. Controls that run before a paid job exists:
+
+* **Hard ceiling: two paid generations per board** (initial + one targeted repair). A QC failure at the ceiling STOPs with
+  `FAILURE_REPORT.json` (evidence, likely root cause, cheapest recovery path). A third needs the user's explicit approval
+  (`approve-extra`, which refuses worker, director or automated approvers). The count is durable: the higher of
+  `RUN_STATE.generation_counts` and `CREDIT_LEDGER.jsonl`, so a restart cannot reset it.
+* **One reservation per attempt**, made when the graph is compiled: no duplicate or overlapping spend, no job for a board
+  that has already passed, no new graph while an earlier attempt is paid for but not ingested.
+* **Gates before a graph is produced.** A intent contract; B panel-state ledger (who, where, props and states, what must show,
+  what may change, what must not); C prompt/reference lint (people missing from wide panels, colour words against the
+  monochrome rule, a colour master without the "grey pencil, geography only" label, objects absent from the scene);
+  D tooling stamp (the whole test suite green on the current code hash: parsing, segmentation, cropping, naming, relay);
+  E acceptance contract (hard failures, material defects, continuity risks, cosmetic, uncertain); F frozen validated
+  configuration (a new style, template, model or reference strategy needs one authorised pilot, then `freeze`).
+  Contracts are signed with a content hash; editing one after review voids the signature.
+* **A repair** must be a Blocking defect with a diagnosed cause category (prompt ambiguity, reference conflict, model
+  limitation, continuity defect; a tooling defect is fixed in the tool), the invariants it preserves, and the evidence that
+  would prove it worked. A Nonblocking or Uncertain finding is never repaired with credits.
+* **Ledger** (`python -m ulac ledger [--backfill] [--billing billing_jobs.json]`): every paid job with attempt, parent job,
+  workflow, model, seed, reference hashes, prompt and configuration hash, estimated and actual credits, authorisation,
+  classification and disposition; totals by board and episode, first-pass acceptance, credits per accepted board.
+* **Separate failures:** a deterministic test that fails stops dependent jobs; the tool is fixed and retested, and work resumes
+  from the last valid checkpoint. A parser defect never triggers an image regeneration.
+
+Non-negotiable: no blind retries, no silent third attempt, no repeated discovery of a known defect, and no paid generation to
+diagnose a problem that can be detected deterministically beforehand.

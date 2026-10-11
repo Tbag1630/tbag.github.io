@@ -207,6 +207,11 @@ def test_instantiate_layout(ep):
         "CHARACTER_GRID:C1", "IDENTITY_BOARD", "DRESSED_MASTER:PENV_T", "DRESSED_MASTER:PENV_U"]
 
 
+ADJ = dict(finding="P04 identity differs from the board", **{"class": "B"}, decision="repair",
+           requirement="identity follows the locked identity board (intent contract)", evidence="board A01 panel P04",
+           mandatory=True, prevents_purpose=True, contradicts_authority=True, worth_cost=True, local_fix=True, by="claude-code")
+
+
 def _pass_all(e, n_cues=0):
     st = e.state
     kind, tid = e._target(st)
@@ -272,6 +277,9 @@ def test_relay_end_to_end(ep):
     _pass_all(e)
     e.set_qc(check=5, value="FAIL", evidence="identity drift in P04", by="claude-code")
     assert e.next(rows=2, cols=3)["status"] == "REPAIR"
+    with pytest.raises(RelayError, match="no adjudicated Class A/B/C"):
+        e.repair({"rung": 2})                                   # a finding is evidence, not an order
+    e.adjudicate(ADJ)
     rep = {"rung": 2, "failure": "PRINCIPAL_IDENTITY_CHANGE P04", "cause": "identity board omitted",
            "changed_instruction": "add identity board as REF2; inpaint P04 only",
            "unchanged_authorities": "END_LOCK_SEQ_001 hash", "expected_correction": "P04 on model", "severity": "Blocking", "cause_category": "reference_conflict",
@@ -385,6 +393,7 @@ def test_r2_master_edit_takes_the_failed_board_as_alternate_view(ep):
     _pass_all(e)
     e.set_qc(check=1, value="FAIL", evidence="door open, plan starts closed", by="claude-code")
     assert e.next()["status"] == "REPAIR"
+    e.adjudicate(ADJ | {"finding": "master shows the door open", "class": "A"})
     rep = {"rung": 2, "failure": "ARCHITECTURE_CHANGE door open", "cause": "master shows the door open",
            "changed_instruction": "masked edit closes the door", "unchanged_authorities": "ARCH_SOURCE, bed, window",
            "expected_correction": "closed door, rest identical", "severity": "Blocking", "cause_category": "reference_conflict",
@@ -1010,3 +1019,21 @@ def test_preflight_blocks_until_every_gate_passes(ep):
     f.write_text(json.dumps(d))
     with pytest.raises(RelayError, match="edited after sign-off"):
         e.compile(refs)
+
+
+def test_adjudication_classifies_findings_before_any_repair(tmp_path):
+    base = dict(ADJ)
+    row = gates.adjudicate(tmp_path, 1, base)
+    assert row["class"] == "B" and gates.repairable(tmp_path, 1) and not gates.repairable(tmp_path, 2)
+    with pytest.raises(ValueError, match="Class D is accepted"):
+        gates.adjudicate(tmp_path, 1, base | {"class": "D"})                  # a creative variation is never repaired
+    gates.adjudicate(tmp_path, 1, base | {"class": "D", "decision": "accept", "finding": "different camera angle"})
+    with pytest.raises(ValueError, match="investigated"):
+        gates.adjudicate(tmp_path, 1, base | {"class": "E"})
+    with pytest.raises(ValueError, match="preference is not a hard violation"):
+        gates.adjudicate(tmp_path, 1, base | {"class": "A", "mandatory": False})
+    with pytest.raises(ValueError, match="worth its cost"):
+        gates.adjudicate(tmp_path, 1, base | {"worth_cost": False})
+    with pytest.raises(ValueError, match="needs requirement"):
+        gates.adjudicate(tmp_path, 1, base | {"requirement": ""})
+    assert len(gates.adjudications(tmp_path, 1)) == 2

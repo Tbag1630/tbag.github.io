@@ -269,6 +269,19 @@ class Episode:
         self._write(str(self.report_path(kind, tid).relative_to(self.root)), rep)
         return self._save(st, "note", f"cosmetic (R0, logged): {note}", tid)
 
+    def adjudicate(self, rec: dict) -> dict:
+        """Record the director's judgement of a finding on the current attempt (needs IN_QC or REPAIR)."""
+        st = self._require("IN_QC", "REPAIR")
+        kind, tid = self._target(st)
+        n = st["generation_counts"].get(tid, 0)
+        try:
+            row = gates.adjudicate(self._work(kind, tid), n, rec)
+        except ValueError as e:
+            raise RelayError(f"adjudication refused: {e}") from None
+        self._log({"type": "adjudication", "seq": tid, "attempt": n, "class": row["class"], "decision": row["decision"],
+                   "finding": row["finding"]})
+        return row
+
     def _qc_fail(self, st, kind, tid, rep, codes, reviewer, why) -> dict:
         entry = {"type": "qc_fail", "seq": tid, "attempt": rep["attempt"], "failure": codes,
                  "prompt_sha256": st["current_prompt_sha256"]}
@@ -368,6 +381,10 @@ class Episode:
         kind, tid = self._target(st)
         hist = [f for f in self.failures() if f.get("type") == "repair" and f.get("seq") == tid]
         errs = qc.validate_repair(rep, hist, self.cfg) + firewall.validate_repair_extra(rep)
+        if not gates.repairable(self._work(kind, tid), st["generation_counts"].get(tid, 0)):
+            errs.append(f"no adjudicated Class A/B/C finding with decision 'repair' for attempt "
+                        f"{st['generation_counts'].get(tid, 0)}: judge the finding against the intent contract first "
+                        "(python -m ulac adjudicate)")
         nxt = st["generation_counts"].get(tid, 0) + 1
         if nxt > firewall.load_conf(self.root)["max_attempts"] and not firewall.approved(self.root, tid, nxt):
             return self._stop_at_ceiling(st, kind, tid, f"{tid}: attempt {nxt} is beyond the paid-attempt ceiling")

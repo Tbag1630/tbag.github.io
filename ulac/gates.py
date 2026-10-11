@@ -299,3 +299,54 @@ def gate_sequence(ep, sid: str, prompt: str, ref1_type: str | None) -> dict[str,
             "B": validate_ledger(ledger) + _signed(ledger, "B"),
             "C": lint_prompt(prompt, ledger, ref1_type),
             "E": validate_acceptance(acc) + _signed(acc, "E")}
+
+
+# ---- adjudication (the director's judgement of a finding, before any repair) -----------------------------------------------
+CLASSES = {"A": "hard violation", "B": "meaningful storytelling defect", "C": "continuity or generation risk",
+           "D": "acceptable creative variation", "E": "uncertain finding"}
+ADJ_FILE = "ADJUDICATION.jsonl"
+ADJ_QUESTIONS = ("requirement", "evidence", "mandatory", "prevents_purpose", "contradicts_authority", "worth_cost",
+                 "local_fix")
+
+
+def adjudicate(work: Path, attempt: int, rec: dict) -> dict:
+    """Record the director's answers to the seven adjudication questions for one finding and its class. A finding is
+    evidence, not an order: only Class A, B or C with decision `repair` can open a paid repair; D is accepted and E is
+    investigated against the contract, the references and the source first."""
+    cls, decision = str(rec.get("class", "")).upper(), rec.get("decision")
+    errs = [f"adjudication needs {q}" for q in ADJ_QUESTIONS if rec.get(q) in (None, "")]
+    if not str(rec.get("finding", "")).strip():
+        errs.append("adjudication needs the finding (panel, what was seen)")
+    if cls not in CLASSES:
+        errs.append(f"class must be one of {sorted(CLASSES)}")
+    if decision not in ("repair", "accept", "investigate"):
+        errs.append("decision must be repair, accept or investigate")
+    if not errs:
+        if cls == "A" and not (rec["mandatory"] and (rec["contradicts_authority"] or rec["prevents_purpose"])):
+            errs.append("Class A needs a mandatory requirement that is contradicted or that stops the scene's purpose: "
+                        "a preference is not a hard violation")
+        if cls == "B" and not rec["prevents_purpose"]:
+            errs.append("Class B means the defect keeps the audience from the intended information or feeling")
+        if cls == "D" and decision != "accept":
+            errs.append("Class D is accepted: do not manufacture a defect to justify a revision")
+        if cls == "E" and decision != "investigate":
+            errs.append("Class E is investigated against the contract, references and source before anything is spent")
+        if decision == "repair" and cls in "ABC" and not rec["worth_cost"]:
+            errs.append("a repair must be worth its cost and new risk: say why, or accept the finding")
+    if errs:
+        raise ValueError("; ".join(errs))
+    row = {"utc": utc_iso(), "attempt": attempt, **{k: rec[k] for k in ("finding", "class", "decision", *ADJ_QUESTIONS)},
+           "by": rec.get("by", "")}
+    with open(Path(work) / ADJ_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return row
+
+
+def adjudications(work: Path, attempt: int | None = None) -> list[dict]:
+    p = Path(work) / ADJ_FILE
+    rows = [json.loads(x) for x in p.read_text().splitlines() if x.strip()] if p.exists() else []
+    return [r for r in rows if attempt is None or r["attempt"] == attempt]
+
+
+def repairable(work: Path, attempt: int) -> list[dict]:
+    return [r for r in adjudications(work, attempt) if r["class"] in ("A", "B", "C") and r["decision"] == "repair"]

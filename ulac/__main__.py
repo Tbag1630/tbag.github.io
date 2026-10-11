@@ -145,6 +145,17 @@ def main(argv=None) -> int:
     sbp = sub.add_parser("storyboard", help="write the skill's two prompt files for a sequence")
     sbp.add_argument("ep")
     sbp.add_argument("seq")
+    aj = sub.add_parser("adjudicate", help="the director's judgement of a QC finding (class A-E + the seven questions); "
+                                           "a repair needs a Class A/B/C finding with decision repair")
+    aj.add_argument("ep")
+    aj.add_argument("--finding", required=True, help="panel and what was seen")
+    aj.add_argument("--class", dest="cls", required=True, choices=list("ABCDE"))
+    aj.add_argument("--decision", required=True, choices=["repair", "accept", "investigate"])
+    aj.add_argument("--requirement", required=True, help="the exact requirement allegedly violated (and where it is written)")
+    aj.add_argument("--evidence", required=True, help="where the supporting evidence is")
+    for q in ("mandatory", "prevents-purpose", "contradicts-authority", "worth-cost", "local-fix"):
+        aj.add_argument(f"--{q}", required=True, choices=["yes", "no"])
+    aj.add_argument("--by", required=True)
     gt = sub.add_parser("gates", help="gates A/B/E: draft, check, sign the intent contract, panel ledger, acceptance")
     gt.add_argument("ep")
     gt.add_argument("--draft", nargs="*", metavar="SEQ", help="write missing drafts (all sequences when none named)")
@@ -287,6 +298,14 @@ def main(argv=None) -> int:
             st = ep.focus(args.seq)
         elif c == "reopen":
             st = ep.reopen_endpoint(args.reason, args.by)
+        elif c == "adjudicate":
+            row = ep.adjudicate({"finding": args.finding, "class": args.cls, "decision": args.decision,
+                                 "requirement": args.requirement, "evidence": args.evidence, "by": args.by,
+                                 **{q: getattr(args, q) == "yes" for q in ("mandatory", "prevents_purpose",
+                                                                           "contradicts_authority", "worth_cost",
+                                                                           "local_fix")}})
+            _p(row)
+            return 0
         elif c == "gates":
             if args.draft is not None:
                 _p({"drafted": gates.draft_all(ep, args.draft or None)})
