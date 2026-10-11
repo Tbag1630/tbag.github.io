@@ -351,6 +351,45 @@ def _to_first_board(e, tmp):
                      ("identity_board", str(e.root / e.asset("IDENTITY_BOARD")["path"]))])
 
 
+def test_r2_master_edit_takes_the_failed_board_as_alternate_view(ep):
+    """Bedroom master: the dressed master shows the door open, the plan starts with it closed. The R2 repair is a
+    masked edit of that very board: one reference (the failed attempt), an in-graph mask, the source size."""
+    e, tmp = ep
+    ids = e.seq_ids()
+    author(e.root, _authored(ids, None))
+    e.start()
+    man = e.manifest
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid", [("cast_reference", str(e.root / man["authorities"]["cast_references"][0]["path"]))])
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity",
+             [("character_reference", str(e.root / e.asset("CHARACTER_GRID:C1")["path"]))])
+    _pass_all(e)
+    e.next()
+    arch = str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"])
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master v1", [("architecture_source", arch)],
+             cloud={"prompt_id": "pid-1", "output": "a1b2.png"})
+    _pass_all(e)
+    e.set_qc(check=1, value="FAIL", evidence="door open, plan starts closed", by="claude-code")
+    assert e.next()["status"] == "REPAIR"
+    rep = {"rung": 2, "failure": "ARCHITECTURE_CHANGE door open", "cause": "master shows the door open",
+           "changed_instruction": "masked edit closes the door", "unchanged_authorities": "ARCH_SOURCE, bed, window",
+           "expected_correction": "closed door, rest identical"}
+    assert e.repair(rep)["status"] == "READY"
+    failed = str(e.root / e.state["current_attempt"] / "board.png")
+    with pytest.raises(RelayError, match="only the failed attempt's board"):
+        e.compile([("architecture_source", arch)], "edit v1")
+    with pytest.raises(RelayError, match="not the failed attempt"):
+        e.compile([("alternate_view", str(tmp / "g1.png"))], "edit v1")
+    out = e.compile([("alternate_view", failed)], "edit v1", size="1280x720", mask_box=(1280, 720, 800, 0, 400, 600))
+    g = out["graph"]
+    assert out["refs"][0]["cloud"] == "a1b2.png"
+    assert g["30"]["inputs"]["model.mask"] == ["22", 0] and g["30"]["inputs"]["model.custom_width"] == 1280
+    st = e.submit(_png(tmp / "m2.png", 1280, 720, 12), "edit v1", [("alternate_view", failed)],
+                  cloud={"prompt_id": "pid-2", "output": "c3d4.png"})
+    assert st["edit_calls"] == 1 and st["regen_calls"] == 0
+
+
 def test_reopen_after_an_automated_final_panel_refusal(ep):
     """SEQ_031 A02: the end-lock gate refused a good board because the extraction tool left a blank strip. The board
     is re-checked, not regenerated; the refusal stays in the log; only that one automated failure can be reopened."""

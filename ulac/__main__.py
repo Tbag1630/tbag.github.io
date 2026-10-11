@@ -97,6 +97,8 @@ def main(argv=None) -> int:
     cp.add_argument("--ref", action="append", default=[], help="role=local path")
     cp.add_argument("--prompt", help="prompt file (default for sequences: the storyboard prompt)")
     cp.add_argument("--quality", default="high")
+    cp.add_argument("--size", help="WxH output size (an edit keeps the source size)")
+    cp.add_argument("--mask", help="W,H,x,y,w,h: in-graph inpaint mask rectangle (white = replace); one reference only")
     ci = sub.add_parser("cloudinput", help="record the Comfy Cloud upload name of a supplied authority")
     ci.add_argument("ep")
     ci.add_argument("--file", required=True)
@@ -209,7 +211,9 @@ def main(argv=None) -> int:
                            cloud={"prompt_id": args.cloud_job, "output": args.cloud_output})
         elif c == "compile":
             refs = [tuple(x.split("=", 1)) for x in args.ref]
-            out = ep.compile(refs, Path(args.prompt).read_text() if args.prompt else None, quality=args.quality)
+            mask = tuple(int(v) for v in args.mask.split(",")) if args.mask else None
+            out = ep.compile(refs, Path(args.prompt).read_text() if args.prompt else None, quality=args.quality,
+                             size=args.size, mask_box=mask)
             _p({k: out[k] for k in ("request", "target", "attempt", "prompt_sha256", "refs")})
             return 0
         elif c == "cloudinput":

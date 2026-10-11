@@ -461,7 +461,13 @@ class Episode:
                 if not entry.get("cloud"):
                     raise RelayError(f"{entry['path']} has no registered Comfy Cloud upload name (cloudinput)")
                 return entry["cloud"]
-        raise RelayError(f"{path} is not a registered authority, locked asset or END_LOCK")
+        for board in sorted(self.root.glob("*/*/attempts/A*/board.png")):
+            if layout.sha256_file(board) == sha:
+                info = json.loads((board.parent / "refs.json").read_text()).get("cloud") or {}
+                if info.get("output"):
+                    return info["output"]
+                raise RelayError(f"{board} has no Comfy Cloud output name (submit it with cloud={{output: ...}})")
+        raise RelayError(f"{path} is not a registered authority, locked asset, END_LOCK or attempt board")
 
     def _authority_entries(self, man: dict | None = None) -> list[dict]:
         man = man or self.manifest
@@ -486,7 +492,8 @@ class Episode:
                           st.get("active_asset") or st["active"] or "")
 
     def compile(self, refs: list[tuple[str, str]], prompt_text: str | None = None, *,
-                quality: str = "high") -> dict:
+                quality: str = "high", size: str | None = None,
+                mask_box: tuple[int, int, int, int, int, int] | None = None) -> dict:
         """Build the Comfy Cloud graph for the pending target and run the reference law and the
         never-the-same-prompt rule BEFORE anything is spent. Writes requests/A##.json."""
         st = self._require("READY", "CLOSED")
@@ -511,7 +518,12 @@ class Episode:
             graph = comfy.storyboard_sheet_v1(prompt_text, env, ident, prefix=prefix, quality=quality,
                                               size=self.cfg.get("SHEET_SIZE", comfy.SHEET_SIZE))
         else:
-            graph = comfy.gpt_image(prompt_text, [(r, c) for r, _, c in named], prefix=prefix, quality=quality)
+            extra = {}
+            if size:
+                extra["size"] = size
+            if mask_box:
+                extra["mask_box"] = tuple(mask_box)
+            graph = comfy.gpt_image(prompt_text, [(r, c) for r, _, c in named], prefix=prefix, quality=quality, **extra)
         req = {"target": tid, "attempt": n, "prompt_sha256": ph, "prompt": prompt_text,
                "refs": [{"role": r, "path": p, "cloud": c} for r, p, c in named], "graph": graph}
         path = self._work(kind, tid) / "requests" / f"A{n:02d}.json"
@@ -574,6 +586,16 @@ class Episode:
                 raise RelayError("prop_board differs from the registered prop board")
             return
         a = self.asset(tid)
+        if a["kind"] == "dressed_master" and st["last_repair_rung"].get(tid) in (1, 2):
+            # R1/R2 edit: the single reference is the failed attempt's own board (a masked edit takes one image)
+            if roles != ["alternate_view"]:
+                raise RelayError(f"{tid}: an R{st['last_repair_rung'][tid]} edit takes only the failed attempt's "
+                                 "board as alternate_view")
+            n = st["generation_counts"].get(tid, 0)
+            last = self._work(kind, tid) / "attempts" / f"A{n:02d}" / "board.png"
+            if not last.exists() or sha["alternate_view"] != layout.sha256_file(last):
+                raise RelayError(f"{tid}: alternate_view is not the failed attempt A{n:02d} board")
+            return
         if a["kind"] == "dressed_master":
             if env != ["architecture_source"]:
                 raise RelayError(f"{tid}: the only environment reference is the locked architecture source")
