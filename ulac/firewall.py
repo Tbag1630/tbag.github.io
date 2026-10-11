@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -70,9 +72,12 @@ def read_ledger(root: Path) -> list[dict]:
 
 
 def record(root: Path, event: str, **fields) -> dict:
+    """Append one event and force it to disk: a paid job is only as safe as the record written before it."""
     rec = {"utc": utc_iso(), "event": event, **fields}
     with open(Path(root) / LEDGER, "a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
     return rec
 
 
@@ -195,6 +200,103 @@ def _historic(root: Path, tid: str, attempt: int) -> bool:
                for r in read_ledger(root))
 
 
+# ---- video budget (V): one paid pilot clip, a hard cap, reserved in the ledger before the job exists ----------------
+def video_pilot(root: Path) -> dict:
+    """The user's video pilot (FIREWALL.json `video_pilot`). It is not `authorization.video`: dag.py reads that flag as a
+    switch that opens every VIDEO node, and a pilot scope must not open the whole stage."""
+    return dict(load_conf(root).get("video_pilot") or {})
+
+
+def video_state(root: Path) -> dict:
+    """Fold the ledger. A reservation counts at its estimate until billing replaces it, and it still counts after a crash
+    between reserve and submit: a job that may exist is never treated as free."""
+    res: dict[str, dict] = {}
+    for r in read_ledger(root):
+        if r.get("event") == "video_reserved":
+            res[r["rid"]] = {"rid": r["rid"], "seq": r["seq"], "estimate": r["estimate"],
+                             "graph_sha256": r["graph_sha256"], "state": "reserved", "job_id": None, "billed": None}
+        elif r.get("event") == "video_submitted" and r.get("rid") in res:
+            res[r["rid"]].update(state="submitted", job_id=r["job_id"])
+        elif r.get("event") == "video_billed" and r.get("rid") in res:
+            res[r["rid"]].update(state="billed", billed=float(r["credits"]))
+    committed = sum(x["billed"] if x["state"] == "billed" else x["estimate"] for x in res.values())
+    return {"reservations": list(res.values()), "attempts": len(res), "committed": round(committed, 2)}
+
+
+def video_accept_price(root: Path, *, by: str, quote: str, graph_sha256: str, credits: float) -> dict:
+    """Record the user's acceptance of an estimate that billing has not verified, for one exact graph. The rule of
+    approve_extra applies: the user's own words; a worker, a reviewer or an automated check cannot accept a price."""
+    who = by.strip().lower()
+    if who in ("", "claude", "claude-code", "worker", "director", "agent") or who.startswith(("automated", "claude")):
+        raise FirewallError(f"price acceptance must come from the user, not {by!r}")
+    if len(quote.strip()) < 8:
+        raise FirewallError("quote the user's acceptance (their own words)")
+    conf = load_conf(root)
+    acc = {"graph_sha256": graph_sha256, "credits": round(float(credits), 2), "by": by, "quote": quote.strip(),
+           "utc": utc_iso()}
+    conf["video_pilot"] = {**(conf.get("video_pilot") or {}), "price_acceptance": acc}
+    save_conf(root, conf)
+    record(root, "video_price_accepted", graph_sha256=graph_sha256, credits=acc["credits"], by=by, quote=quote.strip())
+    return acc
+
+
+def video_reserve(root: Path, *, seq: str, estimate: float, graph_sha256: str, prompt_sha256: str) -> dict:
+    """Reserve one paid video submission or refuse it. The caller submits only after this returns. A refusal writes
+    nothing. The platform's submit tool has no per-job cap, so this reservation is the enforcement: a job made without
+    it is outside the firewall."""
+    pilot = video_pilot(root)
+    why = gate_tooling(root)
+    if str(pilot.get("status", "")).upper() != "AUTHORIZED":
+        why.append("no video pilot authorization is recorded (FIREWALL.json video_pilot)")
+    scope = pilot.get("scope") or []
+    if seq not in scope:
+        why.append(f"{seq} is outside the authorized video scope {scope}")
+    cap = pilot.get("cap_credits")
+    capped = isinstance(cap, (int, float)) and not isinstance(cap, bool) and cap > 0
+    if not capped:
+        why.append("no cap_credits recorded: the ceiling must be an explicit positive number")
+    st = video_state(root)
+    limit = int(pilot.get("max_attempts", 1))
+    if st["attempts"] >= limit:
+        why.append(f"{st['attempts']} paid video attempt(s) already reserved; the pilot allows {limit}")
+    est_ok = (isinstance(estimate, (int, float)) and not isinstance(estimate, bool)
+              and math.isfinite(estimate) and estimate > 0)
+    if not est_ok:
+        why.append("the estimate must be a positive, finite credit figure")
+    elif capped and st["committed"] + estimate > cap:
+        why.append(f"{st['committed']} committed + {estimate} would exceed the {cap}-credit cap")
+    acc = pilot.get("price_acceptance") or {}
+    if not (est_ok and acc.get("graph_sha256") == graph_sha256 and abs(float(acc.get("credits", -1)) - estimate) <= 0.005):
+        why.append("the estimate is not verified by a billed job, and no user acceptance covers this exact graph")
+    if why:
+        raise FirewallError("VIDEO FIREWALL refused the submission: " + "; ".join(why))
+    rid = f"V{st['attempts'] + 1:02d}-{graph_sha256[:12]}"
+    return record(root, "video_reserved", rid=rid, seq=seq, estimate=round(float(estimate), 2), cap_credits=cap,
+                  committed_before=st["committed"], graph_sha256=graph_sha256, prompt_sha256=prompt_sha256)
+
+
+def video_submitted(root: Path, rid: str, job_id: str, graph_sha256: str) -> dict:
+    """Record the job id the platform returned for a reserved submission. It must be the reserved graph."""
+    cur = next((r for r in video_state(root)["reservations"] if r["rid"] == rid), None)
+    if cur is None:
+        raise FirewallError(f"{rid} has no reservation in the ledger: nothing may be submitted")
+    if cur["state"] != "reserved":
+        raise FirewallError(f"{rid} is already {cur['state']}: a reservation is submitted once")
+    if not job_id:
+        raise FirewallError(f"{rid}: no job id came back, so the reservation stays counted as spent")
+    if cur["graph_sha256"] != graph_sha256:
+        raise FirewallError(f"{rid}: the graph being submitted is not the reserved graph")
+    return record(root, "video_submitted", rid=rid, job_id=job_id, graph_sha256=graph_sha256)
+
+
+def video_billed(root: Path, rid: str, credits: float, source: str) -> dict:
+    """Record what billing charged for a submitted job, and the feed or invoice it came from."""
+    cur = next((r for r in video_state(root)["reservations"] if r["rid"] == rid), None)
+    if cur is None or cur["state"] != "submitted":
+        raise FirewallError(f"{rid} has no submitted job waiting for a billed amount")
+    return record(root, "video_billed", rid=rid, job_id=cur["job_id"], credits=round(float(credits), 2), source=source)
+
+
 # ---- tooling gate (D) ----------------------------------------------------------------------------------------------
 def tooling_hash() -> str:
     h = hashlib.sha256()
@@ -303,7 +405,7 @@ def cost_report(root: Path, billing: dict | None = None) -> dict:
     over = sum(1 for b in acc if (b["accepted_on"] or 0) > conf["max_attempts"])
     live_blocked = [t for t, b in per.items() if not b["accepted_on"] and len(b["attempts"]) >= conf["max_attempts"]]
     cap = conf["budget"].get("cap_credits")
-    return {"boards": per, "total_credits": round(total, 2),
+    return {"boards": per, "total_credits": round(total, 2), "video_committed": video_state(root)["committed"],
             "accepted": len(acc), "accepted_attempt_1": first, "accepted_attempt_2": second,
             "accepted_beyond_ceiling": over, "blocked_at_ceiling": live_blocked,
             "paid_attempts": sum(len(b["attempts"]) for b in per.values()),
