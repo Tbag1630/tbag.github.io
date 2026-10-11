@@ -45,6 +45,7 @@ python -m ulac submit EP05 --image out.png --prompt prompt.txt --ref ... --cloud
 python -m ulac qc EP05 --check 1=PASS ... --cue 1=PASS --evidence "..." --by claude-code
 python -m ulac NEXT EP05 --box x0,y0,x1,y1    # PASS: END_LOCK.png + .sha256, CLOSED, next pending
 python -m ulac cloudlock EP05 SEQ_001 --name <cloud file> --file <downloaded crop>   # cloud copy, pixel-checked
+python -m ulac cloudinput EP05 --file <authority> --name <upload name> --checked-by "..."
 python -m ulac repair EP05 --rung 2 --failure ... --cause ... --changed ... --unchanged ... --expected ...
 python -m ulac STATUS|PAUSE|RESUME EP05 ;  python -m ulac ABORT EP05 --reason "..."
 python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
@@ -87,7 +88,7 @@ Sheets are 3840×2160 because a 2048×1152 sheet (~18–20 cr) leaves the final 
 4. **@image1 / @image2.** The pasted skill text contains link artifacts (`[@image1](https://x.com/@image1)`); plain `@image1` is used. Comfy's Seedance template refers to references by order ("FIRST reference"), so the first video run verifies the tag is honoured.
 5. **Multiple locations.** The init block has one PENV per episode, but L10 cuts at location changes. Each location gets its own architecture source and dressed master. The first sequence after a `LOCATION_CHANGE` opens on that master instead of the previous END_LOCK.
 6. **Whole seconds.** Seedance 2.0 on Comfy Cloud renders 4–15 whole seconds, so render `ceil(duration)` and trim to exact frames at assembly. Sequences under 13.5 s scale the visual windows so the ending lock stays inside the clip.
-7. **No uploads from this container.** References reach Comfy Cloud as user uploads (content-addressed names), as outputs of earlier jobs, or as the cloud END_LOCK crop. Local copies are hash-checked in every case.
+7. **No uploads from this container.** References reach Comfy Cloud as user uploads, as outputs of earlier jobs, or as the cloud END_LOCK crop. Upload names are not derived from file content, so each one is registered explicitly (`cloudinput`, `--cloud-output`, `cloudlock`); local copies are hash-checked in every case.
 
 ## Findings on the artifact tools (why ULAC is re-implemented, not copied)
 

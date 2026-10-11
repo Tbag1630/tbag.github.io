@@ -382,8 +382,9 @@ class Episode:
 
     # ---- Comfy Cloud requests (checked before any spend) --------------------------------
     def cloud_name(self, path: str) -> str:
-        """Comfy Cloud filename for a local reference: locked assets and END_LOCKs carry the
-        name they were registered with; supplied authorities are content-addressed uploads."""
+        """Comfy Cloud filename for a local reference. Nothing is guessed: locked assets carry the
+        output name they were submitted with, END_LOCKs the pixel-checked cloud copy, and supplied
+        authorities the upload name registered with register_cloud_input."""
         sha = layout.sha256_file(Path(path))
         for a in self.manifest["assets"]:
             if a["status"] == "LOCKED" and a["sha256"] == sha:
@@ -396,13 +397,34 @@ class Episode:
                     raise RelayError(f"END_LOCK {link['seq_id']} is not on Comfy Cloud yet: run end_lock_crop_v1 "
                                      "and register it with cloudlock")
                 return link["cloud"]
-        man = self.manifest
-        known = [x["sha256"] for x in man["authorities"]["cast_references"]] + \
-                [p["arch_source"]["sha256"] for p in man["penvs"].values() if "arch_source" in p] + \
-                [(man["authorities"].get("prop_board") or {}).get("sha256")]
-        if sha in known:
-            return f"{sha}{Path(path).suffix.lower()}"     # Comfy Cloud names uploads by content hash
+        for entry in self._authority_entries():
+            if entry["sha256"] == sha:
+                if not entry.get("cloud"):
+                    raise RelayError(f"{entry['path']} has no registered Comfy Cloud upload name (cloudinput)")
+                return entry["cloud"]
         raise RelayError(f"{path} is not a registered authority, locked asset or END_LOCK")
+
+    def _authority_entries(self, man: dict | None = None) -> list[dict]:
+        man = man or self.manifest
+        out = list(man["authorities"]["cast_references"])
+        out += [p["arch_source"] for p in man["penvs"].values() if "arch_source" in p]
+        out += [man["authorities"][k] for k in ("prop_board", "narration") if man["authorities"].get(k)]
+        return out
+
+    def register_cloud_input(self, path: str, name: str, *, checked_by: str) -> dict:
+        """Record the Comfy Cloud upload name of a supplied authority (arch source, cast reference,
+        prop board, narration). checked_by says how the match was confirmed."""
+        man = self.manifest
+        sha = layout.sha256_file(Path(path))
+        hit = [e for e in self._authority_entries(man) if e["sha256"] == sha]
+        if not hit:
+            raise RelayError(f"{path} is not a registered authority")
+        for e in hit:
+            e.update(cloud=name, cloud_checked_by=checked_by)
+        self._write("ASSET_MANIFEST.json", man)
+        st = self.state
+        return self._save(st, "note", f"{hit[0]['path']} is {name} on Comfy Cloud ({checked_by})",
+                          st.get("active_asset") or st["active"] or "")
 
     def compile(self, refs: list[tuple[str, str]], prompt_text: str | None = None, *,
                 quality: str = "high") -> dict:

@@ -448,9 +448,11 @@ def test_compile_checks_before_spend(ep):
     e.start()
     man = e.manifest
     cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
+    with pytest.raises(RelayError, match="no registered Comfy Cloud upload name"):
+        e.compile([("cast_reference", cast)], "character grid prompt v1")
+    e.register_cloud_input(cast, "group_ref_upload.png", checked_by="user named the uploaded file")
     req = e.compile([("cast_reference", cast)], "character grid prompt v1")
-    cast_sha = man["authorities"]["cast_references"][0]["sha256"]
-    assert req["graph"]["1"]["inputs"]["image"] == f"{cast_sha}.png"          # content-addressed upload
+    assert req["graph"]["1"]["inputs"]["image"] == "group_ref_upload.png"
     assert req["graph"]["30"]["inputs"]["model.size"] == "3840x2160"
     e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "character grid prompt v1", [("cast_reference", cast)],
              cloud={"prompt_id": "job-grid", "output": "grid_out_00001_.png"})
@@ -462,6 +464,7 @@ def test_compile_checks_before_spend(ep):
              cloud={"output": "identity_00001_.png"})
     _pass_all(e)
     e.next()
+    man = e.manifest
     arch = str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"])
     e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master", [("architecture_source", arch)],
              cloud={"output": "master_00001_.png"})
