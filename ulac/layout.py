@@ -22,6 +22,16 @@ def sha256_file(p: Path) -> str:
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 
+def cloud_upload_name(p: Path) -> str:
+    """Comfy Cloud names an uploaded input by the BLAKE3 hash of its bytes plus the extension
+    (verified 2026-10-11: the EP05 narration MP3 hashed to the name Comfy Cloud listed)."""
+    try:
+        import blake3
+    except ImportError as e:  # pragma: no cover
+        raise RuntimeError("pip install blake3 to derive Comfy Cloud upload names") from e
+    return blake3.blake3(Path(p).read_bytes()).hexdigest() + Path(p).suffix.lower()
+
+
 def pixel_sha256(p: Path) -> str:
     """Hash of decoded RGB pixels + size: identical for the same pixels in any PNG encoding
     (used when the same frame also lives on Comfy Cloud)."""

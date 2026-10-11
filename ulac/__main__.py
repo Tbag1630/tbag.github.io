@@ -96,7 +96,7 @@ def main(argv=None) -> int:
     ci = sub.add_parser("cloudinput", help="record the Comfy Cloud upload name of a supplied authority")
     ci.add_argument("ep")
     ci.add_argument("--file", required=True)
-    ci.add_argument("--name", required=True)
+    ci.add_argument("--name", help="upload name; omitted = derive from the file's BLAKE3 hash")
     ci.add_argument("--checked-by", required=True, help="how the match was confirmed")
     cl = sub.add_parser("cloudlock", help="register the Comfy Cloud copy of an END_LOCK")
     cl.add_argument("ep")
@@ -198,7 +198,9 @@ def main(argv=None) -> int:
             _p({k: out[k] for k in ("request", "target", "attempt", "prompt_sha256", "refs")})
             return 0
         elif c == "cloudinput":
-            st = ep.register_cloud_input(args.file, args.name, checked_by=args.checked_by)
+            from .layout import cloud_upload_name
+            st = ep.register_cloud_input(args.file, args.name or cloud_upload_name(Path(args.file)),
+                                         checked_by=args.checked_by)
         elif c == "cloudlock":
             st = ep.cloud_end_lock(args.seq, args.name, Path(args.file))
         elif c == "qc":

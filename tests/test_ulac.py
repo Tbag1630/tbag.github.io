@@ -494,3 +494,11 @@ def test_compile_checks_before_spend(ep):
     assert e.cloud_name(end_lock) == "SEQ_001_END_LOCK_00001_.png"
     with pytest.raises(RelayError, match="pixels"):
         e.cloud_end_lock("SEQ_001", "x.png", _png(tmp / "other.png", 640, 360, 99))
+
+
+def test_cloud_upload_name_is_blake3(tmp_path):
+    pytest.importorskip("blake3")
+    f = tmp_path / "x.MP3"
+    f.write_bytes(b"abc")
+    # BLAKE3("abc") test vector
+    assert layout.cloud_upload_name(f) == "6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85.mp3"

@@ -382,9 +382,9 @@ class Episode:
 
     # ---- Comfy Cloud requests (checked before any spend) --------------------------------
     def cloud_name(self, path: str) -> str:
-        """Comfy Cloud filename for a local reference. Nothing is guessed: locked assets carry the
-        output name they were submitted with, END_LOCKs the pixel-checked cloud copy, and supplied
-        authorities the upload name registered with register_cloud_input."""
+        """Comfy Cloud filename for a local reference. Locked assets carry the output name they were
+        submitted with, END_LOCKs the pixel-checked cloud copy, and supplied authorities the upload
+        name registered with register_cloud_input (for a byte-identical upload: its BLAKE3 name)."""
         sha = layout.sha256_file(Path(path))
         for a in self.manifest["assets"]:
             if a["status"] == "LOCKED" and a["sha256"] == sha:
