@@ -1208,3 +1208,22 @@ def test_palette_flags_colour_but_not_sepia_or_a_warm_crayon(tmp_path):
     save("panels/P02.png", sheet((30, 120, 220), 0.03))
     worst = endpoint.palette_of_panels(d)
     assert not worst["ok"] and not worst["panels"]["P01.png"]["note"] and not worst["panels"]["P02.png"]["ok"]
+
+def test_crop_box_cuts_a_box_that_overshoots_into_the_paper_gutter(tmp_path):
+    """SEQ_025 P04: the detected box ran 40 px past the drawing, through the paper gutter, onto the director strip's top
+    line; the margin trim started at that dark line and never reached the paper. A flat bright wall inside the art stays."""
+    from ulac import endpoint
+    rng = np.random.default_rng(5)
+    board = np.full((600, 800, 3), 241, dtype=np.uint8)
+    art = np.clip(rng.normal(115, 22, (300, 600, 1)), 0, 255).astype(np.uint8).repeat(3, axis=2)
+    board[100:400, 100:700] = art
+    board[100:400, 300:340] = 240                      # a flat bright wall INSIDE the art: textured edges around it
+    board[100:400, 300:340, :] = np.clip(240 + rng.integers(-1, 2, (300, 40, 3)), 0, 255)
+    board[434:438, 90:710] = 60                        # the strip frame line, 34 px below the drawing
+    f = tmp_path / "board.png"
+    Image.fromarray(board).save(f)
+    meta = endpoint.crop_box(f, [100, 100, 700, 440], tmp_path / "out.png", trim=False)
+    assert meta["trim"][3] <= 300 + 2 and meta["panel_size"][1] <= 302          # the gutter and the line are gone
+    assert meta["panel_size"][0] == 600                                          # the flat patch did not shorten the width
+    clean = np.asarray(Image.open(tmp_path / "out.png").convert("L")).astype(float)
+    assert not (clean[-1].std() < 4 and clean[-1].mean() > 225)                  # no paper row left at the bottom

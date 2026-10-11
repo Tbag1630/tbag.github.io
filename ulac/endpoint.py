@@ -318,6 +318,43 @@ def band_box(box: list[int], aspect: float, bias: float = 0.0) -> list[int]:
     return [x0, y0 + off, x1, y0 + off + nh]
 
 
+def _paper_margins(cell: np.ndarray, frac: float = 0.15, min_run: int = 3) -> list[int]:
+    """[l, t, r, b] to cut off a panel cell whose box overshoots the drawing: in each outer `frac` of the cell, the first
+    run of at least min_run rows/columns of pure paper (pale, flat) marks where the art ended; everything from there
+    outward goes, including a sheet frame line that the detector took for the panel edge (SEQ_025 P04: the box ran on
+    40 px through the paper gutter to the director strip's top line, which stopped the margin trim from the outside).
+    Textured or dark art is never pure paper, so a flat bright wall is not cut."""
+    g = cell.astype(float).mean(axis=2) if cell.ndim == 3 else cell.astype(float)
+    h, w = g.shape
+
+    def paper(line: np.ndarray) -> bool:
+        return bool(line.mean() >= 225 and line.std() <= 4)
+
+    def first_run(n: int, get, lo: int, hi: int, step: int) -> int | None:
+        i = lo
+        while (i < hi) if step > 0 else (i > hi):
+            if paper(get(i)):
+                j = i
+                while ((j < hi) if step > 0 else (j > hi)) and paper(get(j)):
+                    j += step
+                if abs(j - i) >= min_run:
+                    return i
+                i = j
+            else:
+                i += step
+        return None
+
+    row = lambda i: g[i, w // 10: w - w // 10]       # noqa: E731
+    col = lambda j: g[h // 10: h - h // 10, j]       # noqa: E731
+    fh, fw = int(h * frac), int(w * frac)
+    b = first_run(h, row, h - fh, h, 1)
+    t = first_run(h, row, fh - 1, -1, -1)
+    r = first_run(w, col, w - fw, w, 1)
+    l = first_run(w, col, fw - 1, -1, -1)
+    out = [0 if l is None else l + 1, 0 if t is None else t + 1, w if r is None else r, h if b is None else b]
+    return out if (out[2] - out[0]) > 0.6 * w and (out[3] - out[1]) > 0.6 * h else [0, 0, w, h]
+
+
 def crop_box(board: Path, box: list[int], out_png: Path, *, trim: bool = True,
              fit_aspect: float | None = None, bias: float = 0.0) -> dict:
     """Crop an explicit [x0, y0, x1, y1] panel box (the QC director reads it off the sheet),
@@ -329,7 +366,7 @@ def crop_box(board: Path, box: list[int], out_png: Path, *, trim: bool = True,
     if not (0 <= x0 < x1 <= W and 0 <= y0 < y1 <= H):
         raise ValueError(f"box {box} outside the {W}x{H} board")
     cell = np.asarray(im.crop((x0, y0, x1, y1)))
-    l, t, rgt, b = _trim_uniform(cell) if trim else (0, 0, x1 - x0, y1 - y0)
+    l, t, rgt, b = _trim_uniform(cell) if trim else _paper_margins(cell)
     panel = [x0 + l, y0 + t, x0 + rgt, y0 + b]
     meta = {"board": str(board), "box": [x0, y0, x1, y1], "trim": [l, t, rgt, b], "panel_box": panel,
             "panel_size": [panel[2] - panel[0], panel[3] - panel[1]]}
