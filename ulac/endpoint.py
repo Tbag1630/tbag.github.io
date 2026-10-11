@@ -234,11 +234,17 @@ def _frames(g: np.ndarray, rows: int, cols: int, *, step: int, edge_frac: float,
             boxes.append([a, y0, b, y1])
         return boxes
     xa, xb = int(W * 0.05), int(W * (0.95 / cols))
-    dy = np.abs(np.diff(g[:, xa:xb], axis=0)) > step
-    ys = _long_edges(dy.mean(axis=1), 0.9, 8)
-    cand = [(y0, y1) for y0, y1 in zip(ys[:-1], ys[1:]) if y1 - y0 >= H * 0.12 and y0 >= H * 0.05 and y1 <= H * 0.95]
-    # panels are the tallest spans (the director strip's frame is shorter); keep the `rows` tallest, top to bottom
-    rspans = sorted(sorted(cand, key=lambda sp: sp[0] - sp[1])[:rows])
+    dstep = np.abs(np.diff(g[:, xa:xb], axis=0))
+    # a dim picture edge (a dark night panel against a pale header) can fall under the strict long-edge test: step
+    # down through a ladder of looser tests until exactly `rows` panel rows are found (SEQ_013 A01: only 1 at 18/0.9)
+    for st, fr in ((step, 0.9), (step, 0.8), (step * 2 / 3, 0.8), (step * 0.55, 0.7)):
+        ys = _long_edges((dstep > st).mean(axis=1), fr, 8)
+        cand = [(y0, y1) for y0, y1 in zip(ys[:-1], ys[1:])
+                if y1 - y0 >= H * 0.12 and y0 >= H * 0.05 and y1 <= H * 0.95]
+        # panels are the tallest spans (the director strip's frame is shorter); keep the `rows` tallest, top to bottom
+        rspans = sorted(sorted(cand, key=lambda sp: sp[0] - sp[1])[:rows])
+        if len(rspans) == rows:
+            break
     if len(rspans) != rows:
         raise ValueError(f"found {len(cand)} candidate panel rows, expected {rows}: {cand}")
     boxes = []

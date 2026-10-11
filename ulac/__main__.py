@@ -27,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import adapters, dag, endpoint, firewall, gates, packer, storyboard, validators
+from . import adapters, audit, dag, endpoint, firewall, gates, packer, storyboard, validators
 from .instantiate import InstantiateError, author, instantiate
 from .relay import Episode, RelayError
 
@@ -192,6 +192,8 @@ def main(argv=None) -> int:
     dg = sub.add_parser("dag", help="dependency graph + per-cycle report derived from the relay state")
     dg.add_argument("ep")
     dg.add_argument("--inflight", help="JSON with {jobs: [{seq, ...}]}: boards submitted but not yet ingested")
+    au = sub.add_parser("audit", help="handoff + continuity audit over every sequence (writes HANDOFF_AUDIT.json)")
+    au.add_argument("ep")
     ad = sub.add_parser("adapt")
     ad.add_argument("ep")
     ad.add_argument("seq")
@@ -309,6 +311,11 @@ def main(argv=None) -> int:
                                                                            "local_fix")}})
             _p(row)
             return 0
+        elif c == "audit":
+            rep = audit.audit(ep)
+            (Path(args.ep) / "HANDOFF_AUDIT.json").write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n")
+            _p({"summary": rep["summary"], "errors": rep["errors"]})
+            return 0 if not rep["errors"] else 2
         elif c == "dag":
             jobs = json.loads(Path(args.inflight).read_text())["jobs"] if args.inflight else []
             seen, uniq = set(), []

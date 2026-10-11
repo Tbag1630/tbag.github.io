@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from ulac import adapters, dag, endpoint, firewall, gates, layout, packer, qc, state
+from ulac import adapters, audit, dag, endpoint, firewall, gates, layout, packer, qc, state
 from ulac.instantiate import InstantiateError, author, instantiate
 from ulac.relay import Episode, RelayError
 
@@ -1116,3 +1116,44 @@ def test_closing_the_last_sequence_does_not_complete_the_run_while_another_chain
     e._write("RUN_STATE.json", st)
     assert e._next_open(ids[-1]) == ids[0]                                 # chain 1 (ids[0:2]) is still open
     assert e._next_open("nonexistent") == ids[0]
+
+
+def test_handoff_audit_flags_missing_and_stale_prompts(ep):
+    from ulac import storyboard
+    e, tmp = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    a["SEQ_001"]["storyboard"] = PLAN
+    author(e.root, a)
+    rep = audit.audit(e)
+    assert rep["summary"]["boards_accepted"] == 0 and not rep["summary"]["video_authorized"]
+    assert all(r["video_state"] == "DRAFT_APPROVAL_REQUIRED" for r in rep["sequences"].values())   # drafts are never released
+    storyboard.build(e, "SEQ_001")
+    assert not audit.audit(e)["errors"].get("SEQ_001")
+    plan_path = e.seq_dir("SEQ_001") / "storyboard_plan.json"
+    plan = json.loads(plan_path.read_text())
+    plan["panels"][0]["video_beat"] = "a different first beat"
+    plan_path.write_text(json.dumps(plan))
+    assert any("stale" in m for m in audit.audit(e)["errors"]["SEQ_001"])
+
+
+def test_dim_panel_edges_use_the_looser_row_tests():
+    """SEQ_013 A01: a night board whose panel tops are pale in places gave one panel row at the strict long-edge test
+    and the extraction stopped ('found 1 candidate panel rows, expected 2')."""
+    from ulac import endpoint
+    H, W = 1800, 2000
+    g = np.full((H, W), 245.0, np.float32)
+    boxes = [[40, 200, 960, 700], [1040, 200, 1960, 700], [40, 860, 960, 1360], [1040, 860, 1960, 1360]]
+    for x0, y0, x1, y1 in boxes:
+        xx, yy = np.arange(x1 - x0), np.arange(y1 - y0)
+        g[y0:y1, x0:x1] = 110 + 25 * np.sin(xx / 37.0)[None, :] + 15 * np.sin(yy / 53.0)[:, None]   # smooth picture
+        c0, c1 = int((x1 - x0) * 0.30), int((x1 - x0) * 0.55)                                       # 25 % of the edge is pale
+        for rs in (slice(y0, y0 + 8), slice(y1 - 8, y1)):
+            g[rs, x0 + c0:x0 + c1] = 245
+    g[int(H * 0.76):int(H * 0.93), 40:W - 40] = 215                                                  # director strip
+    xa, xb = int(W * 0.05), int(W * 0.475)
+    strict = endpoint._long_edges((np.abs(np.diff(g[:, xa:xb], axis=0)) > 18).mean(axis=1), 0.9, 8)
+    assert len([1 for a, b in zip(strict[:-1], strict[1:]) if b - a >= H * 0.12]) < 2     # the fixture defeats the strict test
+    got = endpoint._frames(g, 2, 2, step=18, edge_frac=0.85, min_w=0.12)
+    for (gx0, gy0, gx1, gy1), (x0, y0, x1, y1) in zip(got, boxes):
+        assert max(abs(gx0 - x0), abs(gy0 - y0), abs(gx1 - x1), abs(gy1 - y1)) <= 12, (got, boxes)
