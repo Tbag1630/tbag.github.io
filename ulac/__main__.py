@@ -27,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import adapters, endpoint, packer, storyboard, validators
+from . import adapters, endpoint, firewall, gates, packer, storyboard, validators
 from .instantiate import InstantiateError, author, instantiate
 from .relay import Episode, RelayError
 
@@ -121,6 +121,12 @@ def main(argv=None) -> int:
     r.add_argument("--rung", type=int, required=True)
     for f in ("failure", "cause", "changed", "unchanged", "expected"):
         r.add_argument(f"--{f}", required=True)
+    r.add_argument("--severity", required=True, choices=list(firewall.SEVERITIES),
+                   help="only a Blocking defect is repaired with credits")
+    r.add_argument("--cause-category", required=True, choices=list(firewall.CAUSES))
+    r.add_argument("--preserved", required=True, help="the invariants this repair must leave untouched")
+    r.add_argument("--success", required=True, help="the evidence that would prove the repair worked")
+    r.add_argument("--scope", default="board", help="board | panel:P0n")
     d = sub.add_parser("decide")
     d.add_argument("ep")
     d.add_argument("--action", choices=["retry", "abort"], required=True)
@@ -139,6 +145,39 @@ def main(argv=None) -> int:
     sbp = sub.add_parser("storyboard", help="write the skill's two prompt files for a sequence")
     sbp.add_argument("ep")
     sbp.add_argument("seq")
+    gt = sub.add_parser("gates", help="gates A/B/E: draft, check, sign the intent contract, panel ledger, acceptance")
+    gt.add_argument("ep")
+    gt.add_argument("--draft", nargs="*", metavar="SEQ", help="write missing drafts (all sequences when none named)")
+    gt.add_argument("--check", metavar="SEQ")
+    gt.add_argument("--sign", metavar="SEQ")
+    gt.add_argument("--by")
+    gt.add_argument("--note", default="")
+    tk = sub.add_parser("tooling-check", help="run the deterministic suites and stamp the code hash (gate D)")
+    tk.add_argument("ep")
+    sp = sub.add_parser("spent", help="record that the paid job for an attempt was submitted to Comfy Cloud")
+    sp.add_argument("ep")
+    sp.add_argument("--seq", required=True)
+    sp.add_argument("--attempt", type=int, required=True)
+    sp.add_argument("--job", required=True)
+    ap_ = sub.add_parser("approve-extra", help="record the USER's approval of one attempt beyond the ceiling")
+    ap_.add_argument("ep")
+    ap_.add_argument("--target", required=True)
+    ap_.add_argument("--attempt", type=int, required=True)
+    ap_.add_argument("--by", required=True)
+    ap_.add_argument("--quote", required=True)
+    lg = sub.add_parser("ledger", help="credit ledger: backfill from disk, reconcile billing, report")
+    lg.add_argument("ep")
+    lg.add_argument("--backfill", action="store_true")
+    lg.add_argument("--billing", help="billing_jobs.json: {jobs: {job_id: {credits}}}")
+    fz = sub.add_parser("freeze", help="freeze the configuration of an accepted attempt as validated (gate F)")
+    fz.add_argument("ep")
+    fz.add_argument("--seq", required=True)
+    fz.add_argument("--attempt", type=int, required=True)
+    rl = sub.add_parser("release", help="release an unspent reservation (the graph was never submitted)")
+    rl.add_argument("ep")
+    rl.add_argument("--seq", required=True)
+    rl.add_argument("--attempt", type=int, required=True)
+    rl.add_argument("--reason", required=True)
     ad = sub.add_parser("adapt")
     ad.add_argument("ep")
     ad.add_argument("seq")
@@ -235,7 +274,9 @@ def main(argv=None) -> int:
         elif c == "repair":
             st = ep.repair({"rung": args.rung, "failure": args.failure, "cause": args.cause,
                             "changed_instruction": args.changed, "unchanged_authorities": args.unchanged,
-                            "expected_correction": args.expected})
+                            "expected_correction": args.expected, "severity": args.severity,
+                            "cause_category": args.cause_category, "preserved_invariants": args.preserved,
+                            "success_evidence": args.success, "scope": args.scope})
         elif c == "decide":
             st = ep.decide(args.action, args.reason, args.by)
         elif c == "validate":
@@ -246,6 +287,56 @@ def main(argv=None) -> int:
             st = ep.focus(args.seq)
         elif c == "reopen":
             st = ep.reopen_endpoint(args.reason, args.by)
+        elif c == "gates":
+            if args.draft is not None:
+                _p({"drafted": gates.draft_all(ep, args.draft or None)})
+            if args.sign:
+                bad = gates.sign(ep, args.sign, args.by or "", args.note)
+                _p({"signed": not bad, "problems": bad})
+                return 0 if not bad else 2
+            if args.check:
+                d = ep.seq_dir(args.check)
+                folders = sorted((d / "storyboard").glob("*/prompt_storyboard.txt"))
+                prompt = folders[0].read_text() if len(folders) == 1 else ""
+                ref1 = (ep.prompt(args.check).get("start_frame_ref") or {}).get("type")
+                rep = gates.gate_sequence(ep, args.check, prompt, ref1)
+                _p({"gates": {g: (m or "pass") for g, m in rep.items()}, "prompt_checked": bool(prompt)})
+                return 0 if not any(rep.values()) else 2
+            return 0
+        elif c == "tooling-check":
+            stamp = firewall.tooling_check(Path(args.ep))
+            _p(stamp)
+            return 0 if stamp["ok"] else 2
+        elif c == "spent":
+            firewall.record(Path(args.ep), "submitted", target=args.seq, attempt=args.attempt, job_id=args.job)
+            _p({"recorded": "submitted", "target": args.seq, "attempt": args.attempt, "job": args.job})
+            return 0
+        elif c == "approve-extra":
+            try:
+                _p(firewall.approve_extra(Path(args.ep), args.target, args.attempt, args.by, args.quote))
+            except firewall.FirewallError as e:
+                print(f"ULAC: {e}", file=sys.stderr)
+                return 3
+            return 0
+        elif c == "ledger":
+            if args.backfill:
+                _p(ep.backfill_ledger())
+            billing = json.loads(Path(args.billing).read_text()) if args.billing else None
+            rep = firewall.cost_report(Path(args.ep), billing)
+            rep["boards"] = {t: {"attempts": len(b["attempts"]), "credits": b["credits"], "accepted_on": b["accepted_on"],
+                                 "estimated": b["estimated"]} for t, b in sorted(rep["boards"].items())}
+            _p(rep)
+            return 0
+        elif c == "freeze":
+            req = json.loads((ep.seq_dir(args.seq) / "requests" / f"A{args.attempt:02d}.json").read_text())
+            h = firewall.freeze(Path(args.ep), firewall.config_of(req["graph"], req["prompt"]),
+                                [f"{args.seq} A{args.attempt:02d}"])
+            _p({"frozen_config": h})
+            return 0
+        elif c == "release":
+            firewall.record(Path(args.ep), "released", target=args.seq, attempt=args.attempt, reason=args.reason)
+            _p({"released": args.seq, "attempt": args.attempt})
+            return 0
         elif c == "panels":
             st = ep.state
             att = Path(args.ep) / st["current_attempt"]
@@ -272,7 +363,7 @@ def main(argv=None) -> int:
            | {"endpoint_chain": [(x["seq_id"], x["sha256"][:16]) for x in st.get("endpoint_chain", [])]})
         return 0 if st.get("status") not in ("BLOCKED", "STOPPED") else 2
     except (RelayError, InstantiateError, adapters.AdapterError, storyboard.StoryboardError, ValueError,
-            FileExistsError) as e:
+            FileExistsError, firewall.FirewallError) as e:
         print(f"ULAC: {e}", file=sys.stderr)
         return 3
 

@@ -16,7 +16,8 @@ from pathlib import Path
 from orchestrator.ledger import Ledger
 from orchestrator.util import sha256_text, utc_iso
 
-from . import comfy, endpoint, layout, qc, validators
+from . import comfy, endpoint, firewall, gates, layout, qc, validators
+from .firewall import FirewallError
 from .config import load as load_config
 
 ENV_ROLES = {"dressed_master", "architecture_source", "previous_endpoint", "alternate_view", "old_storyboard"}
@@ -198,6 +199,7 @@ class Episode:
         if ph in history:
             raise RelayError(f"L8: this exact prompt was already submitted for {tid}: change the instruction")
         n = st["generation_counts"].get(tid, 0) + 1
+        self._ceiling(tid, n)
         if n == 1:
             st["primary_calls"] += 1
             call = "primary"
@@ -224,10 +226,27 @@ class Episode:
         self._write(str(self.report_path(kind, tid).relative_to(self.root)), rep)
         history.append(ph)
         st["current_cloud_output"] = (cloud or {}).get("output")
+        firewall.record(self.root, "ingested", target=tid, kind=kind, attempt=n, job_id=(cloud or {}).get("prompt_id"),
+                        output=(cloud or {}).get("output"), prompt_sha256=ph, call=call,
+                        ref_hashes={r: layout.sha256_file(Path(p)) for r, p in refs})
         st["generation_counts"][tid] = n
         st.update(status="IN_QC", pending_action=f"QC_{tid}", current_attempt=str(attempt.relative_to(self.root)),
                   current_prompt_sha256=ph)
         return self._save(st, "job_submitted", f"{tid} attempt {n} ({call})", tid, [str(board)])
+
+    def _ceiling(self, tid: str, n: int) -> None:
+        try:
+            firewall.check_ceiling(self.root, tid, n)
+        except FirewallError as e:
+            raise RelayError(str(e)) from None
+
+    def _stop_at_ceiling(self, st: dict, kind: str, tid: str, why: str) -> dict:
+        """A QC failure with no paid attempt left: STOP with the evidence, the likely cause and the cheapest way on."""
+        rp = firewall.failure_report(self.root, self._work(kind, tid), tid, self.failures(),
+                                     st["generation_counts"].get(tid, 0))
+        st.update(status="STOPPED", pending_action=f"USER_APPROVAL_REQUIRED_{tid}")
+        return self._save(st, "blocked", f"{why}; credit firewall: no paid attempt left, see {rp.name}", tid,
+                          [str(rp)])
 
     def _report(self, st: dict) -> tuple[str, str, dict]:
         kind, tid = self._target(st)
@@ -254,7 +273,12 @@ class Episode:
         entry = {"type": "qc_fail", "seq": tid, "attempt": rep["attempt"], "failure": codes,
                  "prompt_sha256": st["current_prompt_sha256"]}
         self._log(entry)
+        firewall.record(self.root, "failed", target=tid, kind=kind, attempt=rep["attempt"], failure=codes)
         st.update(status="REPAIR", pending_action=f"REPAIR_{tid}", last_failure=entry)
+        nxt = st["generation_counts"].get(tid, 0) + 1
+        if nxt > firewall.load_conf(self.root)["max_attempts"] and not firewall.approved(self.root, tid, nxt):
+            self._save(st, "reject", why, tid, reviewer=reviewer)
+            return self._stop_at_ceiling(st, kind, tid, why)
         return self._save(st, "reject", why, tid, reviewer=reviewer)
 
     def next(self, *, box: list[int] | None = None, rows: int | None = None, cols: int | None = None,
@@ -290,6 +314,7 @@ class Episode:
             self._update_asset(tid, status="LOCKED", sha256=layout.write_sha(dst),
                                pixel_sha256=layout.pixel_sha256(dst), approved_by=who,
                                attempt=st["current_attempt"], cloud=st.get("current_cloud_output"))
+            firewall.record(self.root, "accepted", target=tid, kind=kind, attempt=rep["attempt"])
             st["status"] = "READY"
             self._advance(st)
             return self._save(st, "approve", f"{tid} LOCKED", tid, [str(dst)], reviewer=who)
@@ -324,6 +349,7 @@ class Episode:
             return self._qc_fail(st, kind, tid, rep, [code], "automated:endpoint_viability",
                                  f"{tid}: final panel cannot become the next start")
         saved = endpoint.save_end_lock(cand, self.seq_dir(tid))
+        firewall.record(self.root, "accepted", target=tid, kind=kind, attempt=rep["attempt"])
         (self.seq_dir(tid) / "END_LOCK.meta.json").write_text(json.dumps(meta, indent=2))
         st["endpoint_chain"].append({"seq_id": tid, **saved, "board_cloud": st.get("current_cloud_output"),
                                      "abs_box": meta.get("abs_box")})
@@ -341,17 +367,22 @@ class Episode:
         st = self._require("REPAIR")
         kind, tid = self._target(st)
         hist = [f for f in self.failures() if f.get("type") == "repair" and f.get("seq") == tid]
-        errs = qc.validate_repair(rep, hist, self.cfg)
+        errs = qc.validate_repair(rep, hist, self.cfg) + firewall.validate_repair_extra(rep)
+        nxt = st["generation_counts"].get(tid, 0) + 1
+        if nxt > firewall.load_conf(self.root)["max_attempts"] and not firewall.approved(self.root, tid, nxt):
+            return self._stop_at_ceiling(st, kind, tid, f"{tid}: attempt {nxt} is beyond the paid-attempt ceiling")
         stop = [e for e in errs if e.startswith("STOP")]
         if stop and not [e for e in errs if not e.startswith("STOP")]:
-            self._log({"type": "repair", "seq": tid, **{k: rep.get(k) for k in ("rung", *qc.REPAIR_FIELDS)},
+            self._log({"type": "repair", "seq": tid, **{k: rep.get(k) for k in ("rung", *qc.REPAIR_FIELDS,
+                                                                                     *firewall.REPAIR_EXTRA)},
                        "outcome": "STOP"})
             st.update(status="STOPPED", pending_action=f"DIRECTOR_DECISION_{tid}")
             return self._save(st, "blocked", stop[0], tid)
         if errs:
             raise RelayError("; ".join(errs))
-        self._log({"type": "repair", "seq": tid, **{k: rep[k] for k in ("rung", *qc.REPAIR_FIELDS)},
-                   "outcome": "RECORDED"})
+        self._log({"type": "repair", "seq": tid, **{k: rep[k] for k in ("rung", *qc.REPAIR_FIELDS,
+                                                                             *firewall.REPAIR_EXTRA)},
+                   "scope": rep.get("scope", "board"), "outcome": "RECORDED"})
         st["last_repair_rung"][tid] = rep["rung"]
         st.update(status="READY", pending_action=f"REGENERATE_{tid}_R{rep['rung']}")
         return self._save(st, "correction", f"R{rep['rung']}: {rep['cause']}", tid)
@@ -388,6 +419,10 @@ class Episode:
             return self.abort(reason)
         if action != "retry":
             raise RelayError("action must be retry or abort")
+        nxt = st["generation_counts"].get(tid, 0) + 1
+        if nxt > firewall.load_conf(self.root)["max_attempts"] and not firewall.approved(self.root, tid, nxt):
+            raise RelayError(f"{tid}: attempt {nxt} needs the user's explicit approval (ulac approve-extra); a "
+                             "director retry cannot spend it")
         st.update(status="REPAIR", pending_action=f"REPAIR_{tid}")
         return self._save(st, "override", f"director retry after STOP: {reason}", tid, reviewer=by)
 
@@ -509,7 +544,8 @@ class Episode:
         ph = sha256_text(prompt_text.strip())
         if ph in st["prompt_history"].get(tid, []):
             raise RelayError(f"L8: this exact prompt was already submitted for {tid}: change the instruction")
-        n = st["generation_counts"].get(tid, 0) + 1
+        n = firewall.next_attempt(self.root, tid, st["generation_counts"].get(tid, 0))
+        self._ceiling(tid, n)
         named = [(r, p, self.cloud_name(p)) for r, p in refs]
         prefix = f"ULAC/{st['episode_id']}/{tid.replace(':', '_')}_A{n:02d}"
         if kind == "seq":
@@ -524,12 +560,82 @@ class Episode:
             if mask_box:
                 extra["mask_box"] = tuple(mask_box)
             graph = comfy.gpt_image(prompt_text, [(r, c) for r, _, c in named], prefix=prefix, quality=quality, **extra)
+        fw = self._preflight(kind, tid, n, ph, prompt_text, graph, refs)
         req = {"target": tid, "attempt": n, "prompt_sha256": ph, "prompt": prompt_text,
-               "refs": [{"role": r, "path": p, "cloud": c} for r, p, c in named], "graph": graph}
+               "refs": [{"role": r, "path": p, "cloud": c} for r, p, c in named], "graph": graph,
+               "firewall": fw}
         path = self._work(kind, tid) / "requests" / f"A{n:02d}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(req, indent=2, ensure_ascii=False) + "\n")
         return {"request": str(path), **req}
+
+    def backfill_ledger(self) -> dict:
+        """Rebuild ledger records for attempts that predate the firewall, from what is on disk (refs.json, prompt.txt,
+        qc_report.json, the failure log). Idempotent: an attempt that already has a record is left alone."""
+        have = {(r["target"], r["attempt"]) for r in firewall.read_ledger(self.root) if r["event"] in ("ingested", "backfilled")}
+        names = {a["asset_id"].replace(":", "__"): a["asset_id"] for a in self.manifest["assets"]}
+        fails = [f for f in self.failures() if f.get("type") == "qc_fail"]
+        closed, added = self.closed(), 0
+        for refs in sorted(self.root.glob("*/*/attempts/A*/refs.json")):
+            att = refs.parent
+            n = int(att.name[1:])
+            tid = names.get(att.parent.parent.name, att.parent.parent.name)
+            if (tid, n) in have:
+                continue
+            info = json.loads(refs.read_text())
+            kind = "seq" if tid.startswith("SEQ_") else "asset"
+            prompt = (att / "prompt.txt").read_text() if (att / "prompt.txt").exists() else ""
+            firewall.record(self.root, "backfilled", target=tid, kind=kind, attempt=n,
+                            job_id=(info.get("cloud") or {}).get("prompt_id"), output=(info.get("cloud") or {}).get("output"),
+                            prompt_sha256=sha256_text(prompt.strip()) if prompt else None, call=info.get("call"),
+                            ref_hashes={r["role"]: r["sha256"] for r in info.get("refs", [])})
+            added += 1
+            last = n == max(int(x.parent.name[1:]) for x in att.parent.glob("A*/refs.json"))
+            done = (kind == "seq" and tid in closed) or (kind == "asset" and self.asset(tid)["status"] == "LOCKED")
+            if done and last:
+                firewall.record(self.root, "accepted", target=tid, kind=kind, attempt=n)
+            else:
+                codes = [c for f in fails if f.get("seq") == tid and f.get("attempt") == n for c in f.get("failure", [])]
+                firewall.record(self.root, "failed", target=tid, kind=kind, attempt=n, failure=codes)
+        return {"backfilled": added}
+
+    def _preflight(self, kind: str, tid: str, n: int, ph: str, prompt_text: str, graph: dict, refs) -> dict:
+        """The credit firewall, before any graph leaves the relay: gates A-F, then one reservation for this attempt.
+        Nothing here spends; a failure names the gate and what to fix. Returns the report that rides on the request."""
+        conf = firewall.load_conf(self.root)
+        cfg = firewall.config_of(graph, prompt_text)
+        report: dict[str, list[str]] = {}
+        if conf["gates_enabled"]:
+            report["D"] = firewall.gate_tooling(self.root)
+            if kind == "seq":
+                ref1 = (self.prompt(tid).get("start_frame_ref") or {}).get("type")
+                report.update(gates.gate_sequence(self, tid, prompt_text, ref1))
+                report["F"] = firewall.gate_config(self.root, cfg)
+                if not conf["authorization"].get("sequence_boards"):
+                    report["G"] = ["G: no spend authorization for sequence boards is recorded in FIREWALL.json"]
+        bad = {g: p for g, p in report.items() if p}
+        if bad:
+            raise RelayError("FIREWALL preflight failed, nothing was compiled for spend:\n" +
+                             "\n".join(f"  [{g}] {m}" for g, ms in sorted(bad.items()) for m in ms))
+        costs = firewall.cost_report(self.root)
+        est, cap = conf["budget"].get("estimate_per_board") or 0, conf["budget"].get("cap_credits")
+        if cap and costs["total_credits"] + est > cap:
+            raise RelayError(f"FIREWALL: spend {costs['total_credits']} + {est} would exceed the authorized cap {cap}")
+        node = next((x for x in graph.values() if x.get("class_type") == "OpenAIGPTImageNodeV2"), {"inputs": {}})
+        last = self._work(kind, tid) / "attempts" / f"A{n - 1:02d}" / "refs.json"
+        parent = (json.loads(last.read_text()).get("cloud") or {}).get("prompt_id") if n > 1 and last.exists() else None
+        closed = (kind == "seq" and tid in self.closed()) or (kind == "asset" and self.asset(tid)["status"] == "LOCKED")
+        try:
+            res = firewall.reserve(self.root, tid=tid, kind=kind, attempt=n, prompt_sha=ph,
+                                   ref_hashes={r: layout.sha256_file(Path(p)) for r, p in refs},
+                                   config_hash=firewall.config_hash(cfg) if cfg else "", seed=node["inputs"].get("seed"),
+                                   model=node["inputs"].get("model", ""), workflow="storyboard_sheet_v1" if kind == "seq"
+                                   else "gpt_image", closed=closed, parent_job=parent)
+        except FirewallError as e:
+            raise RelayError(str(e)) from None
+        return {"gates": {g: "pass" for g in report}, "reservation": {k: res.get(k) for k in ("attempt", "est_credits",
+                                                                                              "authorized", "reused")},
+                "spent_so_far": costs["total_credits"], "alert": costs["alert"]}
 
     def cloud_end_lock(self, sid: str, name: str, downloaded: Path) -> dict:
         """Register the Comfy Cloud copy of END_LOCK_sid after proving it has the same pixels."""

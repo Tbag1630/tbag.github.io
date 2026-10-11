@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from ulac import adapters, endpoint, layout, packer, qc, state
+from ulac import adapters, endpoint, firewall, gates, layout, packer, qc, state
 from ulac.instantiate import InstantiateError, author, instantiate
 from ulac.relay import Episode, RelayError
 
@@ -274,7 +274,8 @@ def test_relay_end_to_end(ep):
     assert e.next(rows=2, cols=3)["status"] == "REPAIR"
     rep = {"rung": 2, "failure": "PRINCIPAL_IDENTITY_CHANGE P04", "cause": "identity board omitted",
            "changed_instruction": "add identity board as REF2; inpaint P04 only",
-           "unchanged_authorities": "END_LOCK_SEQ_001 hash", "expected_correction": "P04 on model"}
+           "unchanged_authorities": "END_LOCK_SEQ_001 hash", "expected_correction": "P04 on model", "severity": "Blocking", "cause_category": "reference_conflict",
+           "preserved_invariants": "layout and every other panel unchanged", "success_evidence": "P04 identity on model"}
     assert e.repair(rep)["status"] == "READY"
     with pytest.raises(RelayError, match="already submitted"):
         e.submit(_board(tmp / "b4.png", 13), "seq2 v1", [("previous_endpoint", link["path"])])
@@ -286,12 +287,22 @@ def test_relay_end_to_end(ep):
     # same cause twice -> R5 STOP (L8)
     _pass_all(e)
     e.set_qc(check=5, value="FAIL", evidence="drift again", by="claude-code")
-    e.next(rows=2, cols=3)
-    assert e.repair(rep | {"changed_instruction": "stronger identity wording"})["status"] == "STOPPED"
+    # credit firewall: the second paid attempt failed, so there is no third without the user's approval
+    assert e.next(rows=2, cols=3)["status"] == "STOPPED"
+    assert e.state["pending_action"] == "USER_APPROVAL_REQUIRED_SEQ_002"
+    assert (e.seq_dir("SEQ_002") / "FAILURE_REPORT.json").exists()
+    with pytest.raises(RelayError, match="needs REPAIR"):
+        e.repair(rep | {"changed_instruction": "stronger identity wording"})
+    with pytest.raises(RelayError, match="explicit approval"):
+        e.decide("retry", "try R3 with fewer panels", "director")
+    with pytest.raises(firewall.FirewallError, match="not the worker|from the user"):
+        firewall.approve_extra(e.root, "SEQ_002", 3, "claude-code", "I approve my own retry")
+    firewall.approve_extra(e.root, "SEQ_002", 3, "user", "yes, one more attempt on SEQ_002")
     assert e.decide("retry", "try R3 with fewer panels", "director")["status"] == "REPAIR"
     log = [json.loads(x) for x in (e.root / "FAILURE_LOG.jsonl").read_text().splitlines()]
     repairs = [x for x in log if x["type"] == "repair"]
-    assert set(qc.REPAIR_FIELDS) <= set(repairs[0]) and repairs[-1]["outcome"] == "STOP"
+    assert set(qc.REPAIR_FIELDS) <= set(repairs[0]) and set(firewall.REPAIR_EXTRA) <= set(repairs[0])
+    assert repairs[-1]["outcome"] == "RECORDED"
     Path(link["path"]).write_bytes(b"tampered")
     with pytest.raises(RelayError, match="no longer matches"):
         e.resume()
@@ -334,6 +345,7 @@ def _to_first_board(e, tmp):
     ids = e.seq_ids()
     author(e.root, _authored(ids, None))
     e.start()
+    firewall.save_conf(e.root, {"gates_enabled": False})
     man = e.manifest
     e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid", [("cast_reference", str(e.root / man["authorities"]["cast_references"][0]["path"]))])
     _pass_all(e)
@@ -358,6 +370,7 @@ def test_r2_master_edit_takes_the_failed_board_as_alternate_view(ep):
     ids = e.seq_ids()
     author(e.root, _authored(ids, None))
     e.start()
+    firewall.save_conf(e.root, {"gates_enabled": False})
     man = e.manifest
     e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid", [("cast_reference", str(e.root / man["authorities"]["cast_references"][0]["path"]))])
     _pass_all(e)
@@ -374,7 +387,8 @@ def test_r2_master_edit_takes_the_failed_board_as_alternate_view(ep):
     assert e.next()["status"] == "REPAIR"
     rep = {"rung": 2, "failure": "ARCHITECTURE_CHANGE door open", "cause": "master shows the door open",
            "changed_instruction": "masked edit closes the door", "unchanged_authorities": "ARCH_SOURCE, bed, window",
-           "expected_correction": "closed door, rest identical"}
+           "expected_correction": "closed door, rest identical", "severity": "Blocking", "cause_category": "reference_conflict",
+           "preserved_invariants": "layout and every other panel unchanged", "success_evidence": "door closed, rest identical"}
     assert e.repair(rep)["status"] == "READY"
     failed = str(e.root / e.state["current_attempt"] / "board.png")
     with pytest.raises(RelayError, match="only the failed attempt's board"):
@@ -540,6 +554,7 @@ def test_compile_checks_before_spend(ep):
     a["SEQ_001"]["storyboard"] = PLAN
     author(e.root, a)
     e.start()
+    firewall.save_conf(e.root, {"gates_enabled": False, "authorization": {"sequence_boards": True}})
     man = e.manifest
     cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
     with pytest.raises(RelayError, match="no registered Comfy Cloud upload name"):
@@ -822,3 +837,176 @@ def test_door_jambs_inside_panels_do_not_become_frames():
     assert endpoint._regularize_cols([[38, 247, 1470, 1137], [1957, 247, 2503, 1137],
                                       [491, 1242, 1010, 2017], [1506, 1242, 2940, 2017]], 2, 2) == \
         [[38, 247, 1470, 1137], [1506, 247, 2940, 1137], [38, 1242, 1470, 2017], [1506, 1242, 2940, 2017]]
+
+
+# ---- credit firewall -------------------------------------------------------------------------------------------------
+def test_ceiling_and_approval_are_durable(tmp_path):
+    """SEQ_006 took six paid attempts. The ceiling is two; the count lives in files, so a restart cannot reset it."""
+    root = tmp_path
+    firewall.check_ceiling(root, "SEQ_X", 1)
+    firewall.check_ceiling(root, "SEQ_X", 2)
+    with pytest.raises(firewall.FirewallError, match="explicit approval"):
+        firewall.check_ceiling(root, "SEQ_X", 3)
+    for who in ("claude-code", "automated:qc", "director", "worker", ""):
+        with pytest.raises(firewall.FirewallError, match="from the user"):
+            firewall.approve_extra(root, "SEQ_X", 3, who, "approve my own spend please")
+    with pytest.raises(firewall.FirewallError, match="quote"):
+        firewall.approve_extra(root, "SEQ_X", 3, "user", "ok")
+    with pytest.raises(firewall.FirewallError, match="within the ceiling"):
+        firewall.approve_extra(root, "SEQ_X", 2, "user", "yes go ahead with it")
+    firewall.approve_extra(root, "SEQ_X", 3, "user", "yes, a third attempt on SEQ_X")
+    firewall.check_ceiling(root, "SEQ_X", 3)
+    with pytest.raises(firewall.FirewallError):
+        firewall.check_ceiling(root, "SEQ_X", 4)                            # the approval covers one attempt only
+    firewall.record(root, "backfilled", target="SEQ_Y", attempt=2)
+    assert firewall.attempts_used(root, "SEQ_Y", 0) == 2                    # state lost, ledger remembers
+
+
+def test_repair_must_be_a_classified_blocking_defect():
+    ok = {"severity": "Blocking", "cause_category": "prompt_ambiguity", "preserved_invariants": "other panels",
+          "success_evidence": "P03 shows both children"}
+    assert firewall.validate_repair_extra(ok) == []
+    assert any("missing" in e for e in firewall.validate_repair_extra({}))
+    assert any("cosmetic" in e for e in firewall.validate_repair_extra(ok | {"severity": "Nonblocking"}))
+    assert any("Uncertain" in e for e in firewall.validate_repair_extra(ok | {"severity": "Uncertain"}))
+    assert any("tooling defect" in e for e in firewall.validate_repair_extra(ok | {"cause_category": "tooling_defect"}))
+    assert any("cause_category" in e for e in firewall.validate_repair_extra(ok | {"cause_category": "try again"}))
+
+
+def test_reservation_prevents_duplicate_and_overlapping_spend(tmp_path):
+    kw = dict(tid="SEQ_X", kind="seq", ref_hashes={"previous_endpoint": "a"}, config_hash="c", seed=0, model="m",
+              workflow="w", closed=False)
+    a = firewall.reserve(tmp_path, attempt=1, prompt_sha="p1", **kw)
+    assert not a.get("reused")
+    assert firewall.reserve(tmp_path, attempt=1, prompt_sha="p1", **kw)["reused"]       # same graph again: no new spend
+    firewall.reserve(tmp_path, attempt=1, prompt_sha="p1b", **kw)                       # reworded before submitting: replaced
+    assert [r["event"] for r in firewall.read_ledger(tmp_path)].count("released") == 1
+    firewall.record(tmp_path, "submitted", target="SEQ_X", attempt=1, job_id="job-1")
+    with pytest.raises(firewall.FirewallError, match="already paid for"):
+        firewall.reserve(tmp_path, attempt=1, prompt_sha="p1c", **kw)
+    with pytest.raises(firewall.FirewallError, match="not yet ingested"):
+        firewall.reserve(tmp_path, attempt=2, prompt_sha="p2", **kw)
+    firewall.record(tmp_path, "ingested", target="SEQ_X", attempt=1, job_id="job-1")
+    firewall.record(tmp_path, "accepted", target="SEQ_X", attempt=1)
+    with pytest.raises(firewall.FirewallError, match="already passed"):
+        firewall.reserve(tmp_path, attempt=2, prompt_sha="p2", **(kw | {"closed": True}))
+
+
+def test_tooling_and_config_gates(tmp_path):
+    assert any("no tooling stamp" in m for m in firewall.gate_tooling(tmp_path))
+    (tmp_path / firewall.STAMP).write_text(json.dumps({"ok": False, "sha256": firewall.tooling_hash(), "result": "1 failed"}))
+    assert any("FAILED" in m for m in firewall.gate_tooling(tmp_path))
+    (tmp_path / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": "stale", "result": "63 passed"}))
+    assert any("code changed" in m for m in firewall.gate_tooling(tmp_path))
+    (tmp_path / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "63 passed"}))
+    assert firewall.gate_tooling(tmp_path) == []
+    graph = {"30": {"class_type": "OpenAIGPTImageNodeV2", "inputs": {
+        "model": "gpt-image-2.5-flare", "model.size": "Custom", "model.custom_width": 2976, "model.custom_height": 2656,
+        "model.quality": "high", "model.background": "opaque", "n": 1, "model.images.image_1": ["1", 0]}}}
+    cfg = firewall.config_of(graph, "[PROJECT CARD]\nx\n[SCENE PACKET]\ny\n")
+    assert any("not a validated" in m for m in firewall.gate_config(tmp_path, cfg))
+    firewall.freeze(tmp_path, cfg, ["SEQ_035 A01"])
+    assert firewall.gate_config(tmp_path, cfg) == []
+    graph["30"]["inputs"]["model.quality"] = "medium"                       # a changed setting is a new, unvalidated config
+    assert firewall.gate_config(tmp_path, firewall.config_of(graph, "[PROJECT CARD]\nx\n[SCENE PACKET]\ny\n"))
+
+
+def test_cost_report_counts_first_pass_acceptance(tmp_path):
+    firewall.save_conf(tmp_path, {"budget": {"estimate_per_board": 55.0, "cap_credits": 300.0}})
+    for tid, att, acc in (("SEQ_A", 1, 1), ("SEQ_B", 1, None), ("SEQ_B", 2, 2), ("SEQ_C", 1, None), ("SEQ_C", 2, None)):
+        firewall.record(tmp_path, "ingested", target=tid, attempt=att, job_id=f"{tid}-{att}")
+        if acc:
+            firewall.record(tmp_path, "accepted", target=tid, attempt=acc)
+    rep = firewall.cost_report(tmp_path, {"jobs": {"SEQ_A-1": {"credits": 54.5}}})
+    assert rep["paid_attempts"] == 5 and rep["accepted"] == 2 and rep["accepted_attempt_1"] == 1
+    assert rep["accepted_attempt_2"] == 1 and rep["blocked_at_ceiling"] == ["SEQ_C"]
+    assert rep["total_credits"] == 54.5 + 4 * 55.0 and rep["alert"] is True and rep["boards"]["SEQ_B"]["estimated"]
+
+
+PROMPT = ("[SCENE PACKET]\nCHAIRS: there are no chairs in this room: never draw a chair\n"
+          "[STORYBOARD PURITY]\nPanel images are monochrome. No color.\n[DIRECTOR STRIP]\n"
+          "ACTION PATH: P01 Maria lies in bed, MACA at the door -> P02 close on Maria's face -> P03 MACA sits on the bed\n"
+          "STYLE TRACK: P01 night low light -> P02 night low light -> P03 night low light\n")
+LEDGER = {"absent_objects": ["chair", "lanyard"], "panels": [
+    {"id": "P01", "must_show": [["maria"], ["maca", "robot"]], "must_not_show": [], "colour_ok": []},
+    {"id": "P02", "must_show": [["maria"]], "must_not_show": ["maca"], "colour_ok": []},
+    {"id": "P03", "must_show": [["maca"]], "must_not_show": [], "colour_ok": []}]}
+
+
+def test_prompt_lint_catches_what_cost_credits():
+    assert gates.lint_prompt(PROMPT, LEDGER) == []
+    # SEQ_006: a wide panel text that names only some of the people lets the model drop the rest
+    sparse = PROMPT.replace("Maria lies in bed, MACA at the door", "Maria lies in bed")
+    assert any("P01 must show maca/robot" in e for e in gates.lint_prompt(sparse, LEDGER))
+    # SEQ_008: a colour word in the style track against a monochrome rule, and a colour master without the disclaimer
+    blue = PROMPT.replace("night low light -> P02", "night blue -> P02")
+    assert any("colour words ['blue']" in e for e in gates.lint_prompt(blue, LEDGER))
+    assert gates.lint_prompt(blue, LEDGER | {"panels": [LEDGER["panels"][0] | {"colour_ok": ["blue"]}] + LEDGER["panels"][1:]}) == []
+    assert any("grey pencil" in e for e in gates.lint_prompt(PROMPT, LEDGER, "DRESSED_MASTER"))
+    assert gates.lint_prompt(PROMPT + "grey pencil, geography only", LEDGER, "DRESSED_MASTER") == []
+    # objects that are not in the scene, and text a panel is declared not to carry
+    assert any("'lanyard'" in e for e in gates.lint_prompt(PROMPT.replace("MACA sits", "MACA, lanyard on, sits"), LEDGER))
+    assert any("'chair'" in e for e in gates.lint_prompt(PROMPT.replace("MACA sits on the bed", "MACA sits on a chair"), LEDGER))
+    assert any("P02 names 'maca'" in e for e in gates.lint_prompt(PROMPT.replace("close on Maria's face", "MACA behind Maria"), LEDGER))
+
+
+def _ready_for_boards(e, tmp):
+    """Assets locked, SEQ_001's storyboard prompt built; gates still off. Returns (master, ident)."""
+    from ulac import storyboard
+    ids = e.seq_ids()
+    a = _authored(ids)
+    a["SEQ_001"]["storyboard"] = PLAN
+    author(e.root, a)
+    e.start()
+    firewall.save_conf(e.root, {"gates_enabled": False, "authorization": {"sequence_boards": True}})
+    cast = str(e.root / e.manifest["authorities"]["cast_references"][0]["path"])
+    e.register_cloud_input(cast, "group_ref_upload.png", checked_by="named by the user")
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid v1", [("cast_reference", cast)], cloud={"output": "grid_1.png"})
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity", [("character_reference", str(e.root / e.asset("CHARACTER_GRID:C1")["path"]))],
+             cloud={"output": "identity_1.png"})
+    _pass_all(e)
+    e.next()
+    arch = str(e.root / e.manifest["penvs"]["PENV_T"]["arch_source"]["path"])
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master", [("architecture_source", arch)], cloud={"output": "master_1.png"})
+    _pass_all(e)
+    e.next()
+    storyboard.build(e, "SEQ_001")
+    return str(e.root / e.asset("DRESSED_MASTER:PENV_T")["path"]), str(e.root / e.asset("IDENTITY_BOARD")["path"])
+
+
+def test_preflight_blocks_until_every_gate_passes(ep):
+    """Nothing is compiled for spend until intent, panel ledger, lint, tooling, acceptance and a frozen config pass."""
+    from ulac import comfy
+    e, tmp = ep
+    master, ident = _ready_for_boards(e, tmp)
+    refs = [("dressed_master", master), ("identity_board", ident)]
+    firewall.save_conf(e.root, {"gates_enabled": True, "authorization": {"sequence_boards": True}})
+    with pytest.raises(RelayError) as bad:
+        e.compile(refs)
+    for g in ("[A]", "[B]", "[D]", "[E]", "[F]"):
+        assert g in str(bad.value)
+    assert firewall.read_ledger(e.root)[-1]["event"] != "reserved"                     # nothing was reserved
+    (e.root / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "green"}))
+    assert gates.draft_all(e, ["SEQ_001"])
+    with pytest.raises(RelayError, match="unsigned draft"):
+        e.compile(refs)
+    assert gates.sign(e, "SEQ_001", "claude-code", "reviewed against the plan") == []
+    with pytest.raises(RelayError) as bad:
+        e.compile(refs)
+    assert "[F]" in str(bad.value) and "[A]" not in str(bad.value) and "[B]" not in str(bad.value)
+    prompt = next((e.seq_dir("SEQ_001") / "storyboard").glob("*/prompt_storyboard.txt")).read_text()
+    graph = comfy.storyboard_sheet_v1(prompt, "master_1.png", "identity_1.png", prefix="x", quality="high",
+                                      size=e.cfg["SHEET_SIZE"])
+    firewall.freeze(e.root, firewall.config_of(graph, prompt), ["pilot"])
+    out = e.compile(refs)
+    assert out["firewall"]["reservation"]["attempt"] == 1 and out["firewall"]["reservation"]["authorized"]
+    assert e.compile(refs)["firewall"]["reservation"]["reused"]                         # same graph twice: one reservation
+    # editing a signed contract voids the signature
+    f = e.seq_dir("SEQ_001") / "INTENT.json"
+    d = json.loads(f.read_text())
+    d["dramatic_objective"] = "something else"
+    f.write_text(json.dumps(d))
+    with pytest.raises(RelayError, match="edited after sign-off"):
+        e.compile(refs)
