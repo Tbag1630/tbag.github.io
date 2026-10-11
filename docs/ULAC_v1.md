@@ -3,9 +3,9 @@
 This is the governing workflow. The `ulac/` package implements it. Each section number below refers to the ULAC v1 text.
 
 ```
-STORYBOARD GENERATION ENGINE: ChatGPT Image Creation
+STORYBOARD GENERATION ENGINE: GPT Image 2.5 on Comfy Cloud   (decided 2026-10-11; was ChatGPT Image Creation)
 MASTER DIRECTOR / PLANNER / QC: ChatGPT        (recorded per decision via --by)
-SEEDANCE ENGINE: Seedance 2.0 720p Standard @ 15.00s max
+SEEDANCE ENGINE: Seedance 2.0 720p Standard @ 15.00s max, 24 fps (decided 2026-10-11)
 HIGGSFIELD MCP: NOT AUTHORIZED                 (enforced by config check)
 ```
 
@@ -54,7 +54,7 @@ python -m ulac adapt EP_05 SEQ_003 --target seedance|h3|generic
 
 ## Decisions needed (conflicts, not silently resolved)
 
-1. **fps 25 vs 24.**
+1. **fps: RESOLVED, 24** (decided 2026-10-11; matches every engine's measured output).
    - ULAC sets `fps: 25`.
    - Seedance 2.0, Kling 3.0 and MiniMax-H3 all rendered **24 fps** in a measured test on 2026-10-11. The orchestration spec also locks 24.
    - With 25, every `f = round(t·fps)` target lands about 4% off the frames the engine actually renders.
@@ -69,7 +69,7 @@ python -m ulac adapt EP_05 SEQ_003 --target seedance|h3|generic
 4. **Endpoint geometry.**
    - Seedance reframes non-16:9 inputs (measured), so an END_LOCK that will also serve as a video first frame must be authored at exactly 16:9.
    - Endpoint viability enforces 16:9 (±3%).
-5. **Director tooling.**
+5. **Board engine: RESOLVED, GPT Image 2.5 on Comfy Cloud** (decided 2026-10-11). Original note:
    - Boards come from ChatGPT Image Creation outside this environment and are registered with `submit`.
    - If you want boards generated here, the existing GPT Image workflow on Comfy Cloud can be bound as a board engine. That would be a new run configuration, not a silent swap.
 

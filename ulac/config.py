@@ -6,11 +6,11 @@ from pathlib import Path
 
 DEFAULT = {
     "ULAC_VERSION": "1.0",
-    "ENGINE": "ChatGPT Image Creation",
+    "ENGINE": "GPT Image 2.5 on Comfy Cloud (OpenAIGPTImageNodeV2)",  # decided 2026-10-11
     "DIRECTOR": "ChatGPT",
     "HIGGSFIELD_MCP": "NOT_AUTHORIZED",
-    "SEEDANCE": {"version": "2.0", "resolution": "720p Standard", "max_duration": 15.00, "fps": 25,
-                 "engine_native_fps": None},
+    "SEEDANCE": {"version": "2.0", "resolution": "720p Standard", "max_duration": 15.00, "fps": 24,
+                 "engine_native_fps": 24},  # 24 decided 2026-10-11; measured on Seedance 2.0 output
     "PACKING": {"target_min": 14.20, "target_max": 15.00, "legacy_break_after_s": 8.5},
     "EPISODE_ID": "EP_XX",
     "PENV_ID": "PENV_X",
