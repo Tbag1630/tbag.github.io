@@ -8,7 +8,9 @@ Every stage writes a machine-readable gate report and appends an event to a
 hash-chained ledger. No stage advances unless its gate passes or an override has
 been explicitly recorded.
 
-Current status, blockers and next actions are in **[docs/READINESS.md](docs/READINESS.md)**.
+**The governing workflow is ULAC v1: see [docs/ULAC_v1.md](docs/ULAC_v1.md)** (`python -m ulac ...`).
+`orchestrator/` provides the shared evidence layer (hash-chained ledger, write-once files, media
+measurements, Comfy Cloud adapters). Its readiness report is in [docs/READINESS.md](docs/READINESS.md).
 
 ## Layers
 

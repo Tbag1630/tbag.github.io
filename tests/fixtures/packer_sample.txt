@@ -1,0 +1,14 @@
+[00:00:00.000 - 00:00:03.420] She stares at the closed door, listening. The house is silent.
+[00:00:03.420 - 00:00:07.100] She wants to leave without being seen, clutching the folded letter in her right hand.
+[00:00:07.100 - 00:00:11.800] She steps forward - the hallway floor creaks loudly under her weight.
+[00:00:11.800 - 00:00:14.950] A shadow passes outside the window. She freezes, breath held.
+[00:00:14.950 - 00:00:19.300] Choice: hide the letter or confront. She chooses to hide it - a quick decision.
+[00:00:19.300 - 00:00:23.600] She slides the drawer open, fabric rustling, and tucks the letter beneath the lining.
+[00:00:23.600 - 00:00:27.150] Footsteps approach from downstairs. Resistance - time is short.
+[00:00:27.150 - 00:00:30.900] She closes the drawer silently and stands, facing the door, empty-handed now.
+[00:00:30.900 - 00:00:34.200] She waits, gaze fixed on the window, emotional turn from panic to resolve.
+[00:00:34.200 - 00:00:38.750] EXT. STREET - NIGHT - Cut to outside. The letter is now hidden, but the shadow lingers.
+[00:00:38.750 - 00:00:42.100] She decides to step out. Goal changes - she wants to confront whoever is outside.
+[00:00:42.100 - 00:00:46.500] She opens the door, door hinge creaks, cold air rushes in. She steps into darkness.
+[00:00:46.500 - 00:00:51.000] No one there. Failure - the street is empty. She looks down, disappointed.
+[00:00:51.000 - 00:00:55.200] She realizes the shadow was her own reflection. A small, bitter laugh escapes.
