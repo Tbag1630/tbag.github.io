@@ -98,13 +98,96 @@ def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float
     return [x0 + l, y0 + t, x1 - r, y1 - b]
 
 
+def _header_cut(g: np.ndarray, box: list[int], scan_frac: float = 0.20, dark: float = 110.0,
+                min_dark: int = 6, min_jump: float = 8.0) -> int:
+    """Rows to drop from the top of a frame box that still holds the sheet's header strip ("P04 / 35mm / Picture").
+    The strip is a light, flat band with one short line of dark glyphs; the panel image starts at the strongest
+    row-mean step below that line. The long-edge test misses this step when the image's top rows are pale in
+    places (a bright doorway), so the frame then runs up to the strip's own top edge. Returns 0 when the box
+    holds no glyph line or the step below it is weak (nothing is cut that cannot be shown to be a header)."""
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    xs = slice(x0 + w // 12, x1 - w // 12)
+    sc = int(h * scan_frac)
+    band = g[y0:y0 + sc + 80, xs]
+    cnt = (band[:sc] < dark).sum(axis=1)
+    rows = [r for r in range(4, sc) if cnt[r] >= min_dark]          # rows 0-3 are the frame line itself
+    if not rows or rows[0] > int(h * 0.12):
+        return 0
+    a = b = rows[0]
+    for r in rows[1:]:
+        if r - b <= 8:
+            b = r
+        else:
+            break
+    if not 10 <= b - a <= 64:                                       # one line of text, not image content
+        return 0
+    rm = band.mean(axis=1)
+    above = rm[4:a]
+    if len(above) < 3 or above.min() < 190 or above.max() - above.min() > 12:
+        return 0                                                    # above the glyphs it is not flat paper
+    lo, hi = b + 4, min(len(rm) - 5, b + 72)
+    if hi <= lo:
+        return 0
+    d = np.array([rm[i + 4] - rm[i] for i in range(lo, hi)])
+    j = int(np.argmax(np.abs(d)))
+    return lo + j + 3 if abs(float(d[j])) >= min_jump else 0
+
+
+def _strip_cut(g: np.ndarray, box: list[int], frac: float = 0.10, step: float = 25.0, cover: float = 0.9) -> int:
+    """New bottom edge of a frame box that runs on into the director strip below the grid: a thin dark line
+    across the whole width (the strip's top border), darker than the rows above and below it, in the last
+    `frac` of the box. Returns the box's own bottom when there is none."""
+    x0, y0, x1, y1 = box
+    H = g.shape[0]
+    h = y1 - y0
+    xs = slice(x0 + 4, x1 - 4)
+    hit = None
+    for y in range(max(y0, y1 - int(h * frac)), y1 - 3):
+        up, dn, line = g[max(y - 5, 0), xs], g[min(y + 5, H - 1), xs], g[y, xs]
+        if float(((up - line > step) & (dn - line > step)).mean()) < cover:
+            continue
+        below = g[y + 4:y1, xs]
+        if below.shape[0] >= 6 and float((below >= 190).mean()) < 0.8:
+            continue                              # not the strip: what lies under it is image, not pale sheet
+        hit = y                                   # keep the lowest: a drawn paper edge can sit above the strip
+    return hit if hit is not None else y1
+
+
+def _regularize_cols(boxes: list[list[int]], rows: int, cols: int, tol: float = 0.08) -> list[list[int]]:
+    """Panels in one column of the grid have one x-span. A pale right edge plus a strong vertical structure
+    inside the panel (a counter edge) can truncate one box (SEQ_035 A01 P04: 1220 px against 1434). A box is only
+    ever narrower than its panel, so the widest box is the reference: a box more than tol narrower than it takes the
+    x-span of the widest box in its own column. A column whose widest box is itself short is left as found."""
+    if rows < 2 or len(boxes) != rows * cols:
+        return boxes
+    wmax = max(b[2] - b[0] for b in boxes)
+    out = [list(b) for b in boxes]
+    for c in range(cols):
+        idx = list(range(c, rows * cols, cols))
+        ref = max(idx, key=lambda i: boxes[i][2] - boxes[i][0])
+        if boxes[ref][2] - boxes[ref][0] < (1 - tol) * wmax:
+            continue
+        for i in idx:
+            if boxes[i][2] - boxes[i][0] < (1 - tol) * wmax:
+                out[i][0], out[i][2] = boxes[ref][0], boxes[ref][2]
+    return out
+
+
 def find_panels(board: Path, rows: int = 1, cols: int = 4, *, step: int = 18, edge_frac: float = 0.85,
                 min_w: float = 0.12) -> list[list[int]]:
     """Panel image boxes [x0, y0, x1, y1] of a storyboard sheet, in reading order (rows top to bottom,
-    columns left to right), each trimmed of any flat gutter its frame edges left inside it.
+    columns left to right): a column's boxes share one x-span, the header strip is cut off the top, the director
+    strip off the bottom, and any flat gutter the frame edges left inside is trimmed.
     """
     g = np.asarray(Image.open(board).convert("L"), dtype=np.float32)
-    return [_trim_paper(g, bx) for bx in _frames(g, rows, cols, step=step, edge_frac=edge_frac, min_w=min_w)]
+    out = []
+    for bx in _regularize_cols(_frames(g, rows, cols, step=step, edge_frac=edge_frac, min_w=min_w), rows, cols):
+        x0, y0, x1, y1 = bx
+        y0 += _header_cut(g, bx)
+        y1 = _strip_cut(g, [x0, y0, x1, y1])
+        out.append(_trim_paper(g, [x0, y0, x1, y1]))
+    return out
 
 
 def _frames(g: np.ndarray, rows: int, cols: int, *, step: int, edge_frac: float, min_w: float) -> list[list[int]]:
@@ -119,7 +202,7 @@ def _frames(g: np.ndarray, rows: int, cols: int, *, step: int, edge_frac: float,
         r0, r1 = int(H * 0.30), int(H * 0.50)
         dx = np.abs(np.diff(g[r0:r1], axis=1)) > step
         cs = _long_edges(dx.mean(axis=0), edge_frac, 8)
-        spans = _col_spans(cs, W, min_w)
+        spans = _pick_spans(cs, W, cols, min_w)
         if len(spans) != cols:
             raise ValueError(f"found {len(spans)} panel frames, expected {cols}: {spans}")
         boxes = []
@@ -145,11 +228,50 @@ def _frames(g: np.ndarray, rows: int, cols: int, *, step: int, edge_frac: float,
     for y0, y1 in rspans:
         h = y1 - y0
         dx = np.abs(np.diff(g[y0 + int(h * 0.2):y1 - int(h * 0.2)], axis=1)) > step
-        spans = _col_spans(_long_edges(dx.mean(axis=0), edge_frac, 8), W, min_w)
+        edges = _long_edges(dx.mean(axis=0), edge_frac, 8)
+        spans = _pick_spans(edges, W, cols, min_w)
         if len(spans) != cols:
             raise ValueError(f"row {y0}-{y1}: found {len(spans)} panel frames, expected {cols}: {spans}")
         boxes += [[a, y0, b, y1] for a, b in spans]
     return boxes
+
+
+def _pick_spans(edges: list[int], W: int, cols: int, min_w: float, ratio: float = 0.88) -> list[tuple[int, int]]:
+    """Panel x-spans of one row. The long-edge spans are used when there are `cols` of them and their widths agree;
+    when the count is wrong, or the widths differ by more than `ratio` (a door jamb or counter edge inside a panel
+    read as a frame: SEQ_007 A01 P02/P03 came out 0.7:1), the panels of a row are about equally wide, so the
+    equal-width partition is used instead."""
+    spans = _col_spans(edges, W, min_w)
+    ws = [b - a for a, b in spans]
+    consistent = len(spans) == cols and (cols < 2 or min(ws) >= ratio * max(ws))
+    return spans if consistent else (_equal_spans(edges, cols) or spans)
+
+
+def _equal_spans(edges: list[int], cols: int, tol: float = 0.12) -> list[tuple[int, int]]:
+    """Fallback when a tall vertical structure inside a panel (a door jamb, a pillar) adds frame edges: the
+    panels of one row are about equally wide, so walk left to right and take, for each panel, the right edge that
+    gives the width closest to (span - gutters) / cols. Returns [] when no consistent partition exists."""
+    es = sorted(set(edges))
+    if len(es) < 2 * cols - (cols - 1) or cols < 1:
+        return []
+    gaps = [b - a for a, b in zip(es[:-1], es[1:]) if b - a >= 12]
+    gut = min(gaps) if gaps else 0
+    w0 = (es[-1] - es[0] - (cols - 1) * gut) / cols
+    out, prev = [], None
+    for _ in range(cols):
+        starts = [e for e in es if prev is None or e >= prev + 12]
+        if not starts:
+            return []
+        a = starts[0]
+        ends = [e for e in es if e > a]
+        if not ends:
+            return []
+        b = min(ends, key=lambda e: abs((e - a) - w0))
+        if abs((b - a) - w0) > tol * w0:
+            return []
+        out.append((a, b))
+        prev = b
+    return out
 
 
 def _col_spans(cols: list[int], W: int, min_w: float) -> list[tuple[int, int]]:
@@ -225,6 +347,10 @@ def viability(png: Path, *, min_short_side: int = 360, aspect: float | None = 16
     border = int(sum(bool(e.std() < edge_tol and abs(e.mean() - g.mean()) > 25) for e in edges))
     res.append({"check": "no_residual_border", "ok": border == 0, "detail": f"{border} uniform edge(s)"})
     res.append({"check": "not_blank", "ok": bool(g.std() > 8), "detail": f"luma std {g.std():.1f}"})
+    full = [0, 0, w, h]
+    hc, sc = _header_cut(g.astype(np.float32), full), _strip_cut(g.astype(np.float32), full)
+    res.append({"check": "no_sheet_text", "ok": bool(hc == 0 and sc == h),
+                "detail": f"header strip rows {hc}; director-strip line {'none' if sc == h else f'at row {sc}'}"})
     return res
 
 

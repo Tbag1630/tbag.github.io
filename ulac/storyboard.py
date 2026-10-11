@@ -277,7 +277,9 @@ def build(ep, sid: str, *, write: bool = True) -> dict:
     ids = ep.seq_ids()
     k = ids.index(sid)
     opens_location = k == 0 or ep.prompt(ids[k - 1])["penv_id"] != rec["penv_id"]
-    env_ref = (f"dressed master {rec['penv_id']}" if (ref.get("type") == "DRESSED_MASTER" or opens_location)
+    # the dressed master is a colour painting: say it is geography only, or the sheet comes back painted in colour
+    env_ref = (f"dressed master {rec['penv_id']}, a colour painting used for geography only: draw every panel as a "
+               "grey pencil sketch with no colour" if (ref.get("type") == "DRESSED_MASTER" or opens_location)
                else f"END_LOCK of {ids[k - 1]}")
     sb = storyboard_text(rec, plan, env_ref=env_ref, negative=ep.cfg.get("NEGATIVE", ""))
     video = video_text(plan)

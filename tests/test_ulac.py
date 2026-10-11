@@ -669,24 +669,41 @@ def test_end_lock_band(tmp_path):
     assert Image.open(tmp_path / "e.png").size == tuple(m["size"])
 
 
-def _synthetic_sheet(path, panels, W=2000, H=1800, pale_tail=0):
+def _synthetic_sheet(path, panels, W=2000, H=1800, pale_tail=0, header_in_frame=False, truncate=None):
     """A sheet with ruled panel frames, header strips and a director strip, for panel detection.
     pale_tail: the panel's last rows are pale (a light floor against the sheet) and its bottom frame line is
-    left out, so no long edge marks the panel bottom."""
+    left out, so no long edge marks the panel bottom.
+    header_in_frame: the frame runs up to the header strip's own top line (glyphs inside it) and the image's top
+    rows are pale in a stripe, so no long edge marks the image top (SEQ_035 A01 row 2).
+    truncate: index of a panel whose right frame line is missing and which has a tall vertical structure inside
+    (SEQ_035 A01 P04: a counter edge), so its detected span ends early."""
     import numpy as np
     from PIL import Image
     rng = np.random.default_rng(3)
     im = np.full((H, W, 3), 245, np.uint8)
-    for x0, y0, x1, y1 in panels:
-        im[y0 - 40:y0, x0:x1] = 205                                   # header strip
+    for k, (x0, y0, x1, y1) in enumerate(panels):
+        im[y0 - 40:y0, x0:x1] = 210 if header_in_frame else 205       # header strip
         im[y0:y1, x0:x1] = rng.integers(120, 235, (y1 - y0, x1 - x0, 3), dtype=np.uint8)
-        im[y0 - 2:y0 + 2, x0:x1] = 60
+        if header_in_frame:
+            im[y0 - 42:y0 - 38, x0:x1] = 60
+            for xx in range(x0 + 20, x0 + 300, 14):
+                im[y0 - 30:y0 - 12, xx:xx + 6] = 40                   # one line of header glyphs
+            sx = x0 + int((x1 - x0) * 0.40)
+            im[y0:y0 + 40, sx:sx + int((x1 - x0) * 0.15)] = 212      # pale stripe: not a long edge
+        else:
+            im[y0 - 2:y0 + 2, x0:x1] = 60
         if pale_tail:
             im[y1 - pale_tail:y1, x0:x1] = rng.integers(150, 256, (pale_tail, x1 - x0, 3), dtype=np.uint8)
         else:
             im[y1 - 2:y1 + 2, x0:x1] = 60
-        im[y0:y1, x0 - 2:x0 + 2] = 60
-        im[y0:y1, x1 - 2:x1 + 2] = 60
+        top = y0 - 42 if header_in_frame else y0
+        im[top:y1, x0 - 2:x0 + 2] = 60
+        if truncate == k:
+            sx = x0 + int((x1 - x0) * 0.85)
+            im[y0:y1, x1 - 130:x1] = rng.integers(236, 256, (y1 - y0, 130, 3), dtype=np.uint8)   # pale margin: no frame edge
+            im[y0:y1, sx:sx + 4] = 60                                 # a tall structure inside the panel
+        else:
+            im[top:y1, x1 - 2:x1 + 2] = 60
     im[int(H * 0.76):int(H * 0.93), 40:W - 40] = 215                   # director strip (a tall span too)
     Image.fromarray(im).save(path)
 
@@ -711,6 +728,15 @@ def test_find_panels_trims_gutter_below_a_pale_panel_edge(tmp_path):
     assert all(c["ok"] for c in endpoint.viability(tmp_path / "c.png")), "the band must have no uniform edge"
 
 
+def test_equal_width_fallback_ignores_a_tall_structure_inside_a_panel():
+    """SEQ_034 A01: a door jamb inside P02 added two frame edges (2516, 2560) and split the panel into two."""
+    from ulac import endpoint
+    assert endpoint._equal_spans([33, 1468, 1508, 2516, 2560, 2944], 2) == [(33, 1468), (1508, 2944)]
+    assert endpoint._equal_spans([40, 500, 530, 990, 1020, 1480, 1510, 1970], 4) == [(40, 500), (530, 990), (1020, 1480),
+                                                                                     (1510, 1970)]
+    assert endpoint._equal_spans([33, 700, 1508, 2944], 2) == []         # no consistent partition: left to the director
+
+
 def test_find_panels_grid(tmp_path):
     from ulac import endpoint
     two = [[40, 200, 960, 700], [1040, 200, 1960, 700], [40, 800, 960, 1300], [1040, 800, 1960, 1300]]
@@ -728,3 +754,71 @@ def test_find_panels_grid(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="panel"):
         endpoint.find_panels(tmp_path / "g.png", 3, 2)
+
+
+def test_header_strip_and_truncated_span_are_fixed_in_the_parser(tmp_path):
+    """SEQ_035 A01: row 2's frame ran up to the header strip (the image-top step was not a long edge) and P04's
+    right edge was missed (a counter edge inside the panel), so the END_LOCK took the header and lost 15 % of the
+    width. Both are parser defects: they are fixed here, not by paying for another board."""
+    from ulac import endpoint
+    two = [[40, 200, 960, 700], [1040, 200, 1960, 700], [40, 860, 960, 1360], [1040, 860, 1960, 1360]]
+    _synthetic_sheet(tmp_path / "h.png", two, H=2000, header_in_frame=True, truncate=3)
+    g = np.asarray(Image.open(tmp_path / "h.png").convert("L"), dtype=np.float32)
+    raw = endpoint._frames(g, 2, 2, step=18, edge_frac=0.85, min_w=0.12)
+    assert raw[3][2] < two[3][2] - 100, f"fixture must reproduce the truncated span: {raw}"
+    assert raw[2][1] < two[2][1] - 30, f"fixture must reproduce the header inside the frame: {raw}"
+    got = endpoint.find_panels(tmp_path / "h.png", 2, 2)
+    for (gx0, gy0, gx1, gy1), (x0, y0, x1, y1) in zip(got, two):
+        assert max(abs(gx0 - x0), abs(gy0 - y0), abs(gx1 - x1), abs(gy1 - y1)) <= 6, (got, two)
+    box = got[3]
+    endpoint.crop_box(tmp_path / "h.png", [box[0] + 4, box[1] + 4, box[2] - 4, box[3] - 4], tmp_path / "c.png",
+                      trim=False, fit_aspect=16 / 9)
+    ok = {c["check"]: c["ok"] for c in endpoint.viability(tmp_path / "c.png")}
+    assert ok["no_sheet_text"] and ok["aspect"] and ok["min_resolution"]       # no header strip in the END_LOCK
+
+
+def test_header_cut_and_strip_cut_leave_plain_images_alone():
+    from ulac import endpoint
+    rng = np.random.default_rng(5)
+    g = rng.integers(100, 200, (500, 800)).astype(np.float32)
+    assert endpoint._header_cut(g, [0, 0, 800, 500]) == 0                         # no glyph line: nothing cut
+    assert endpoint._strip_cut(g, [0, 0, 800, 500]) == 500                        # no strip line: bottom kept
+    g[4:70] = 210                                                                 # a header strip with one glyph line
+    for xx in range(100, 420, 14):
+        g[22:40, xx:xx + 6] = 40
+    assert abs(endpoint._header_cut(g, [0, 0, 800, 500]) - 70) <= 4
+    g[460:463] = 60                                                               # a thin line across the frame...
+    assert endpoint._strip_cut(g, [0, 0, 800, 500]) == 500                        # ...with image under it: kept
+    g[463:500] = 233                                                              # ...with a pale strip under it: cut
+    assert abs(endpoint._strip_cut(g, [0, 0, 800, 500]) - 460) <= 2
+
+
+def test_viability_refuses_director_strip_text(tmp_path):
+    """SEQ_003's END_LOCK carried a sliver of the director strip along its bottom edge and nothing flagged it."""
+    from ulac import endpoint
+    rng = np.random.default_rng(9)
+    arr = rng.integers(90, 200, (720, 1280, 3), dtype=np.uint8)
+    Image.fromarray(arr).save(tmp_path / "clean.png")
+    assert all(c["ok"] for c in endpoint.viability(tmp_path / "clean.png"))
+    arr[672:688] = 245                                                            # pale sheet above the strip
+    arr[688:691] = 100                                                            # strip top border
+    arr[691:] = 233                                                               # strip body, with its text
+    arr[700:720, ::20] = 60                                                       # (so the last row is not uniform)
+    Image.fromarray(arr).save(tmp_path / "leak.png")
+    bad = [c for c in endpoint.viability(tmp_path / "leak.png") if not c["ok"]]
+    assert [c["check"] for c in bad] == ["no_sheet_text"]
+
+
+def test_door_jambs_inside_panels_do_not_become_frames():
+    """SEQ_007 A01: the door jambs in P02 and P03 added vertical edges; the span count was right, so the fallback
+    never ran, and the detector returned portrait boxes (0.7:1) for two panels."""
+    from ulac import endpoint
+    row1 = [38, 1470, 1506, 1851, 1860, 1874, 1934, 1944, 1960, 2503, 2535, 2556, 2574, 2615, 2940]
+    row2 = [36, 391, 411, 434, 468, 479, 491, 1010, 1026, 1035, 1066, 1087, 1104, 1149, 1470, 1506, 2940]
+    assert endpoint._pick_spans(row1, 2976, 2, 0.12) == [(38, 1470), (1506, 2940)]
+    assert endpoint._pick_spans(row2, 2976, 2, 0.12) == [(36, 1470), (1506, 2940)]
+    assert endpoint._pick_spans([38, 1470, 1506, 2940], 2976, 2, 0.12) == [(38, 1470), (1506, 2940)]   # clean row
+    # one column short and the other whole: the whole one is the reference
+    assert endpoint._regularize_cols([[38, 247, 1470, 1137], [1957, 247, 2503, 1137],
+                                      [491, 1242, 1010, 2017], [1506, 1242, 2940, 2017]], 2, 2) == \
+        [[38, 247, 1470, 1137], [1506, 247, 2940, 1137], [38, 1242, 1470, 2017], [1506, 1242, 2940, 2017]]
