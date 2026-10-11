@@ -408,3 +408,30 @@ def panel_crops(board: Path, out_dir: Path, rows: int = 1, cols: int = 4, *, ins
             "aspects": [round((b[2] - b[0]) / (b[3] - b[1]), 3) for b in boxes]}
     (out_dir / "panels.json").write_text(json.dumps(meta, indent=2))
     return meta
+
+
+def palette(png: Path, *, off_hue_max: float = 0.005, strong_note: float = 0.10) -> dict:
+    """Is this panel a grey or sepia pencil sketch? Colour the style forbids is any hue outside the warm band
+    (blue, green, violet, pink): its pixel share must stay under off_hue_max. Strongly saturated *warm* pixels alone
+    are reported, not refused: a crayon scribble or a lamp glow can be what the story is about (director's call)."""
+    im = Image.open(png).convert("RGB")
+    im.thumbnail((480, 480))
+    hsv = np.asarray(im.convert("HSV")).astype(float)
+    h, s, v = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255, hsv[..., 2] / 255
+    lit = v > 0.18
+    n = max(int(lit.sum()), 1)
+    warm = (h <= 70) | (h >= 340)
+    off = float(((s > 0.30) & lit & ~warm).sum() / n)
+    strong = float(((s > 0.45) & lit).sum() / n)
+    return {"mean_saturation": round(float(s[lit].mean()) if lit.any() else 0.0, 4), "strong_warm": round(strong, 4),
+            "off_hue": round(off, 4), "ok": bool(off <= off_hue_max), "note": bool(strong > strong_note)}
+
+
+def palette_of_panels(panels_dir: Path, **kw) -> dict:
+    """Worst panel decides. Panel interiors only: the masthead and director strip may carry accent colour."""
+    rows = {f.name: palette(f, **kw) for f in sorted(Path(panels_dir).glob("P*.png"))}
+    if not rows:
+        return {"ok": True, "panels": {}, "off_hue": 0.0, "strong_warm": 0.0, "note": False, "empty": True}
+    return {"ok": all(r["ok"] for r in rows.values()), "off_hue": max(r["off_hue"] for r in rows.values()),
+            "strong_warm": max(r["strong_warm"] for r in rows.values()),
+            "note": any(r["note"] for r in rows.values()), "panels": rows}

@@ -1176,3 +1176,35 @@ def test_storyboard_ref_note_replaces_only_the_image1_clause(ep):
     assert "controls set geometry" not in line
     assert "loose props and their states follow PROP / EFFECT STATE" in line and "this storyboard controls staging" in line
     assert "is the ending lock and the next sequence's first frame" in line
+
+def test_palette_flags_colour_but_not_sepia_or_a_warm_crayon(tmp_path):
+    """SEQ_008 and SEQ_024 came back painted in colour: a blue visor or green wall is refused, a sepia sheet is not, and a
+    strongly saturated warm patch (a crayon scribble, a lamp glow) is only reported for the director."""
+    from ulac import endpoint
+    rng = np.random.default_rng(3)
+
+    def sheet(patch=None, frac=0.0):
+        a = np.full((360, 640, 3), (196, 182, 160), dtype=np.uint8)
+        a = np.clip(a.astype(int) + rng.integers(-12, 12, a.shape), 0, 255).astype(np.uint8)
+        if patch:
+            n = int(a.shape[0] * a.shape[1] * frac)
+            a.reshape(-1, 3)[:n] = patch
+        return a
+
+    def save(name, arr):
+        f = tmp_path / name
+        Image.fromarray(arr).save(f)
+        return f
+
+    sepia = endpoint.palette(save("sepia.png", sheet()))
+    assert sepia["ok"] and not sepia["note"]
+    crayon = endpoint.palette(save("crayon.png", sheet((255, 170, 30), 0.25)))
+    assert crayon["ok"] and crayon["note"]                                    # reported, not refused
+    blue = endpoint.palette(save("blue.png", sheet((30, 120, 220), 0.03)))
+    assert not blue["ok"] and blue["off_hue"] > 0.005
+    d = tmp_path / "panels"
+    d.mkdir()
+    save("panels/P01.png", sheet())
+    save("panels/P02.png", sheet((30, 120, 220), 0.03))
+    worst = endpoint.palette_of_panels(d)
+    assert not worst["ok"] and not worst["panels"]["P01.png"]["note"] and not worst["panels"]["P02.png"]["ok"]

@@ -327,6 +327,18 @@ class Episode:
             return self._qc_fail(st, kind, tid, rep, qc.failed(rep), who, f"{tid} failed QC {qc.failed(rep)}")
         ep = self.cfg["ENDPOINT"]
         vargs = dict(min_short_side=ep["min_short_side"], aspect=ep["aspect"], aspect_tol=ep["aspect_tol"])
+        if kind != "asset":
+            # a board is a grey/sepia pencil sketch: colour in a panel is a style failure found without spending credits
+            pal = endpoint.palette_of_panels(attempt / "panels")
+            (attempt / "palette.json").write_text(json.dumps(pal, indent=2))
+            accepted = any("palette" in r["finding"].lower() and r["decision"] == "accept"
+                           for r in gates.adjudications(self._work(kind, tid), rep["attempt"]))
+            if not pal["ok"] and not accepted:
+                rep["verdict"] = "FAIL"
+                rep["palette"] = pal
+                self._write(str(self.report_path(kind, tid).relative_to(self.root)), rep)
+                return self._qc_fail(st, kind, tid, rep, ["MONOCHROME_STYLE"], "automated:palette",
+                                     f"{tid}: panels carry colour (off-hue share {pal['off_hue']})")
         if kind == "asset":
             a = self.asset(tid)
             if a["kind"] == "dressed_master":
