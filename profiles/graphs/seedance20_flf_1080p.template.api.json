@@ -1,0 +1,59 @@
+{
+ "1": {
+  "_meta": {
+   "title": "First keyframe"
+  },
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "{{FIRST_FRAME}}"
+  }
+ },
+ "2": {
+  "_meta": {
+   "title": "Last keyframe"
+  },
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "{{LAST_FRAME}}"
+  }
+ },
+ "3": {
+  "_meta": {
+   "title": "Seedance 2.0 FLF"
+  },
+  "class_type": "ByteDance2FirstLastFrameNode",
+  "inputs": {
+   "first_frame": [
+    "1",
+    0
+   ],
+   "last_frame": [
+    "2",
+    0
+   ],
+   "model": "Seedance 2.0",
+   "model.duration": 5,
+   "model.generate_audio": false,
+   "model.prompt": "{{PROMPT}}",
+   "model.ratio": "16:9",
+   "model.resolution": "1080p",
+   "seed": 0,
+   "watermark": false
+  }
+ },
+ "4": {
+  "_meta": {
+   "title": "Save"
+  },
+  "class_type": "SaveVideo",
+  "inputs": {
+   "filename_prefix": "{{FILENAME_PREFIX}}",
+   "format": "auto",
+   "format.codec": "auto",
+   "video": [
+    "3",
+    0
+   ]
+  }
+ }
+}
