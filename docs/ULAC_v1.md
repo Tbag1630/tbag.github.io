@@ -1,108 +1,114 @@
 # ULAC v1: Universal Logical Animation Configuration
 
-This is the governing workflow. The `ulac/` package implements it. Each section number below refers to the ULAC v1 text.
+This is the governing workflow. The `ulac/` package implements the **ULAC v1 initialization word block**: its laws L1–L12, directory layout, `RUN_STATE` / `prompt.json` / QC-contract schemas, fail list, repair-log format, orchestrator loop, validators and adapters. It also implements the Seedance 2.0 Storyboard Skill (2-file version) for the board and video prompts.
 
 ```
-STORYBOARD GENERATION ENGINE: GPT Image 2.5 on Comfy Cloud   (decided 2026-10-11; was ChatGPT Image Creation)
-MASTER DIRECTOR / PLANNER / QC: ChatGPT        (recorded per decision via --by)
-SEEDANCE ENGINE: Seedance 2.0 720p Standard @ 15.00s max, 24 fps (decided 2026-10-11)
+ENGINE: ComfyUI (Image) + Seedance 2.0 (Video) @ 720p Standard 15.00s
+PLANNER / DIRECTOR / QC: Claude Code
+STORYBOARD: GPT Image 2.5 on Comfy Cloud      (decided 2026-10-11; block says ChatGPT Image Creation)
 HIGGSFIELD MCP: NOT AUTHORIZED                 (enforced by config check)
+FPS: 24 | MAX_DUR: 15.00 | TARGET: 14.20-15.00 (fps decided 2026-10-11; block says 25)
 ```
 
-> Transcribe with exact timestamps, identify the goal–effort–resistance–result chain, then pack consecutive semantic beats into visually readable Seedance 2.0 sequences as close to 15 seconds as meaning allows, with each ending frame physically locking into the next sequence's opening frame.
+> Transcribe with exact timestamps, identify the goal-effort-resistance-result chain, pack consecutive semantic beats into visually readable Seedance 2.0 sequences as close to 15 s as meaning allows, each ending frame physically locking into the next opening frame.
 
-## Run order: 1 → 2 → 3
+## Directory (init block)
+
+```
+PENV/{PENV}_ARCH_SOURCE.<ext> + .sha256         locked architecture, one per location
+PENV/{PENV}_DRESSED_MASTER.png + .sha256        generated after START, QC'd, then locked
+IDENTITY/identity_board.png (+ CHARACTERS/{ID}_grid.png, REFERENCES/cast_ref_NN.*)
+AUDIO/narration.wav + transcript_word.json
+ULAC/ulac.json + ledger.json + seat_map.json
+SEQUENCES/SEQ_001/prompt.json qc_contract.json state_before.json allowed_change.json state_after.json
+                  storyboard_plan.json storyboard/<slug>/prompt_storyboard.txt + prompt_video.txt
+                  storyboard.png qc_report.json END_LOCK.png END_LOCK.sha256 attempts/A##/ requests/A##.json
+RUN_STATE.json CHECKPOINT_LATEST.txt FAILURE_LOG.jsonl ASSET_MANIFEST.json EVENTS.jsonl VALIDATION.json
+```
+
+## Run order
 
 ```bash
-# 1  Pack: dramatic-boundary packing, never > 15.00 s, full coverage on integer frames
-python -m ulac pack transcript.txt --duration 312.4 --fps 24
-python -m ulac pack transcript.txt --legacy          # exact port of the Sequence Packer artifact
+# L1 precompute: word alignment -> semantic packing -> prompts, QC contracts, states -> RUN_STATE
+python -m ulac pack --words stt.json --duration 462.968 [--cuts cuts.json]       # inspect proposal / planner cuts
+python -m ulac instantiate --out EP05 --episode EP05 --penv PENV_A --audio narration.mp3 --words stt.json \
+   --arch PENV_A=arch_a.webp [--arch PENV_B=arch_b.webp] [--cast-ref group.webp] [--identity board.png] \
+   [--assets assets.json] --cuts cuts.json                                      # status PLANNED
+python -m ulac author EP05 authored.json      # prompt fields, X_t states, cues, seat map, storyboard plans
+python -m ulac START EP05                     # validators; BLOCKED until everything is authored and lawful
 
-# 2  Instantiate the pause-safe pack from the three authorities
-python -m ulac instantiate --out EP_05 --episode EP_05 --penv PENV_BEDROOM \
-   --audio narration.wav --transcript transcript.txt \
-   --identity identity_board.png --env-master PENV_BEDROOM_DRESSED.png [--prop-board props.png] \
-   [--words words.json --phrases protected.json] [--config ulac_config.json]
-python -m ulac author EP_05 authored.json            # director-authored fields + X_t states
-
-# 3  Validate, then relay one sequence at a time
-python -m ulac validate EP_05
-python -m ulac START EP_05
-python -m ulac submit EP_05 --board board.png --prompt prompt.txt \
-   --ref penv_dressed=EP_05/PENV/PENV_BEDROOM_DRESSED.png --ref identity_board=EP_05/IDENTITY/identity_board.png
-python -m ulac qc EP_05 --set 01=PASS --set 02=PASS ... --evidence "full sheet + crops" --by human:director
-python -m ulac NEXT EP_05 --rows 2 --cols 3          # PASS -> crop final panel -> END_LOCK + sha256 -> next READY
-python -m ulac repair EP_05 --rung 2 --failure ... --cause ... --changed ... --unchanged ... --expected ...
-python -m ulac STATUS|PAUSE|RESUME EP_05 ;  python -m ulac ABORT EP_05 --reason "..."
-python -m ulac adapt EP_05 SEQ_003 --target seedance|h3|generic
+# Loop (one active target): GENERATE -> QC -> REPAIR | EXTRACT -> GENERATE next
+python -m ulac storyboard EP05 SEQ_001        # skill files for the active sequence
+python -m ulac compile EP05 --ref dressed_master=... --ref identity_board=...   # graph + law checks, no spend
+#   submit the request graph on Comfy Cloud (MCP), download the output, then:
+python -m ulac submit EP05 --image out.png --prompt prompt.txt --ref ... --cloud-job <id> --cloud-output <name>
+python -m ulac qc EP05 --check 1=PASS ... --cue 1=PASS --evidence "..." --by claude-code
+python -m ulac NEXT EP05 --box x0,y0,x1,y1    # PASS: END_LOCK.png + .sha256, CLOSED, next pending
+python -m ulac cloudlock EP05 SEQ_001 --name <cloud file> --file <downloaded crop>   # cloud copy, pixel-checked
+python -m ulac repair EP05 --rung 2 --failure ... --cause ... --changed ... --unchanged ... --expected ...
+python -m ulac STATUS|PAUSE|RESUME EP05 ;  python -m ulac ABORT EP05 --reason "..."
+python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
 ```
 
 ## What the code enforces
 
-| ULAC section | Enforcement |
+| Law | Enforcement |
 |---|---|
-| §1 One active sequence | `SEQ_{n+1}` becomes READY only after `SEQ_n` is CLOSED and `ENDPOINT_SEQ_n.png` exists with its SHA-256 in `RUN_STATE.endpoint_hash_chain`. |
-| §2 Precompute | `START` runs every validator and stays BLOCKED until audio duration, packing, authored prompts, `X_t` states and config are all valid. Missing authored fields are `[TO AUTHOR]`, never demo text. |
-| §3 15 s packing | Target 14.20–15.00 s. Cuts go *before* a dramatic-boundary beat and never exceed 15.00 s. Silence is absorbed so sequences tile the whole audio on integer frames (`f = round(t·fps)`). Every sequence under target carries a written reason, and a beat longer than 15 s is an error. |
-| §4 Minimal references | `submit` requires exactly one environment authority. SEQ_001 must use the registered `PENV_X_DRESSED` (hash-checked); later sequences must use the previous END_LOCK (hash-checked); at most three references. Mixing architecture source, dressed master, endpoint, alternate view or old storyboard is rejected. |
-| §5 State math + endpoint chain | `X_t = {E,C,T,H,O,P,D,L}`. The chain check is `X_start_{i+1} == X_end_i` and `Δ_generated ⊆ Δ_allowed`, computed from dotted-path diffs. END_LOCK = final panel crop with gutters and borders trimmed, SHA-256 of the real file, written once, then recorded as the next sequence's `start_frame_ref`. `RESUME` re-hashes every endpoint. |
-| §6 Narration timing | Each protected phrase gets `GLOBAL_START`, `GLOBAL_END`, `LOCAL_START`, `LOCAL_END`, `TARGET_FRAME`, `EARLIEST_ANTICIPATION`, `LATEST_READABLE_RESULT` and `VISUAL_REQUIREMENT` from word timestamps. A phrase that straddles a cut is an error. |
-| §7 Binary QC | The 12 conditions are recorded per sequence in `SEQ_{ID}_QC.json`. PASS/FAIL needs evidence plus who decided. PENDING is never a pass, and condition 11 is also measured automatically (endpoint viability: size, 16:9, no residual border, not blank). |
-| §8 Repair ladder | Each repair records FAILURE, CAUSE, CHANGED_INSTRUCTION, UNCHANGED_AUTHORITIES and EXPECTED_CORRECTION. A prompt that already failed cannot be resubmitted. A repeated same cause stops the run (rung 5) for a director decision. |
-| §9 Anti-stall | `RUN_STATE.json`, `CHECKPOINT_LATEST.txt`, `FAILURE_LOG.jsonl`, `ASSET_MANIFEST.json`, `SEQ_{ID}_QC.json`, `ENDPOINT_{ID}.png` + `.sha256` are updated on every transition, alongside a hash-chained `EVENTS.jsonl`. |
-| §10 Relay + rate limits | START / NEXT / STATUS / PAUSE / RESUME / ABORT. `PAUSE` sets PAUSED_PLATFORM and preserves the active sequence, pending action and endpoint; no board is marked failed. |
+| L1 Precompute | `instantiate` requires narration audio and its word alignment. `START` runs every validator and stays BLOCKED until the prompts, `X_t` states, protected-cue requirements and seat map are authored and lawful. No image request can be compiled before `START`. |
+| L2 One active | Only the pending target accepts `compile`/`submit`. `SEQ_{n+1}` becomes pending only after `SEQ_n` is CLOSED with `END_LOCK.png` + `END_LOCK.sha256` on disk. |
+| L3 Minimal references | Exactly one environment-bearing image per request. The first sequence of a location uses REF1 = that location's dressed master and REF2 = identity board, both required. Later sequences use REF1 = `END_LOCK_{n-1}`, with REF2 = identity board optional. Every reference must hash-match a registered authority, a locked asset or the chain. Mixing architecture source, dressed master, endpoint or old board is rejected. |
+| L4 Endpoint | The final panel is cropped (grid or explicit box), borders are stripped, and the result is written once as `END_LOCK.png` + `.sha256`. Its file hash and decoded-pixel hash are both kept. The Comfy Cloud copy (`end_lock_crop_v1`) is accepted only if its pixels hash identically. `RESUME` re-hashes the chain and locked assets. |
+| L5 State | `X_t = {E,C,T,H,O,P,D,L}` holds `X_start_{i+1} == X_end_i` and `Δ_gen ⊆ Δ_allowed` on dotted-path diffs. The chain restarts only at a `LOCATION_CHANGE` cut. |
+| L6 Timing | Protected cues are computed from word timestamps: `global_start/end`, `local_start/end`, `target_frame = round(t_local·fps)`, `earliest_anticipation`, `latest_readable`, `visual_requirement`. A cue that straddles a cut is an error. Every cue is a binary QC item. |
+| L7 QC | `qc_report.json` holds the 12 fail codes plus one item per protected cue. PASS/FAIL needs evidence and a decider; PENDING is never a pass; cosmetic issues are logged and never fail. Check 11 is also measured (size, 16:9, no residual border, not blank). |
+| L8 Repair | The repair log uses lowercase keys `seq, failure, cause, changed_instruction, unchanged_authorities, expected_correction` (+ `rung`, `outcome`). A prompt already used for a target is refused at `compile` and `submit`. R0 is the cosmetic log. The second failure with the same cause stops the run (R5) for a director decision. Counters `primary_calls` / `edit_calls` (after R1–R2) / `regen_calls` (after R3–R4). |
+| L9 Pause-safe | `RUN_STATE.json`, `CHECKPOINT_LATEST.txt`, `FAILURE_LOG.jsonl`, `ASSET_MANIFEST.json`, the END_LOCK chain and a hash-chained `EVENTS.jsonl` are rewritten on every transition. `PAUSE` sets PAUSED_PLATFORM and keeps the pending action. |
+| L10 15 s packing | Planner cuts must name a dramatic boundary (`CHOICE_MADE`, `RESISTANCE_ENTERS`, `LOCATION_CHANGE`, …) and a reason. Cuts may not split a word. Sequences never exceed 15.00 s and cover the audio exactly on integer frames. A sequence under 14.20 s is allowed when meaning requires it, and is flagged. |
+| L11 SFX | The `sfx` field is linted against non-diegetic terms (music, score, drone, whoosh, …). |
+| L12 Identity | Occupant IDs in the seat map and `X.O` may not rely on colour (`BLUE_SHIRT` is rejected; `SHORT_CURLS` passes). |
 
-## Decisions needed (conflicts, not silently resolved)
+## Comfy Cloud graphs (`ulac/comfy.py`; all passed dry-run on 2026-10-11)
 
-1. **fps: RESOLVED, 24** (decided 2026-10-11; matches every engine's measured output).
-   - ULAC sets `fps: 25`.
-   - Seedance 2.0, Kling 3.0 and MiniMax-H3 all rendered **24 fps** in a measured test on 2026-10-11. The orchestration spec also locks 24.
-   - With 25, every `f = round(t·fps)` target lands about 4% off the frames the engine actually renders.
-   - Set `SEEDANCE.engine_native_fps: 24` in the config and `START` refuses until `fps` matches.
-2. **Seedance durations are whole seconds on Comfy Cloud** (4–15 s).
-   - A 14.77 s sequence renders as 15 s and is trimmed to its exact frames at assembly.
-   - The 13–15 s "ending-frame lock" hold covers the trimmed tail (`adapters.seedance_render_seconds`).
-3. **Seconds inside the video prompt.**
-   - ULAC's Seedance template includes "0-3s … 13-15s".
-   - The storyboard skill's validator forbids timestamps in `prompt_video.txt`.
-   - The ULAC adapter follows ULAC. Running the skill validator on that text will flag it.
-4. **Endpoint geometry.**
-   - Seedance reframes non-16:9 inputs (measured), so an END_LOCK that will also serve as a video first frame must be authored at exactly 16:9.
-   - Endpoint viability enforces 16:9 (±3%).
-5. **Board engine: RESOLVED, GPT Image 2.5 on Comfy Cloud** (decided 2026-10-11). Original note:
-   - Boards come from ChatGPT Image Creation outside this environment and are registered with `submit`.
-   - If you want boards generated here, the existing GPT Image workflow on Comfy Cloud can be bound as a board engine. That would be a new run configuration, not a silent swap.
+| Graph | Nodes | Estimate |
+|---|---|---|
+| `storyboard_sheet_v1`: REF1 environment, REF2 identity | GPT Image 2.5 at 3840×2160, high | ~35–38 cr |
+| character grid / identity board / dressed master | same node, registered references only | ~35–38 cr |
+| R2 inpaint of a failed panel | same node + in-graph `SolidMask`/`MaskComposite` | ~35–38 cr |
+| `end_lock_crop_v1` | `ImageCropV2`, no partner node | GPU only |
+| `seedance_r2v_720p`: @image1 board, @image2 identity | Seedance 2.0 R2V, 720p, 16:9, 4–15 s | ~45.6 cr/s |
 
-## Findings on the two artifact tools (why ULAC is re-implemented, not copied)
+Sheets are 3840×2160 because a 2048×1152 sheet (~18–20 cr) leaves the final panel under the 360 px minimum once the project card and director strip take their share. GPT Image has no negative-prompt input, so the orchestrator's never-draw list goes into `[STORYBOARD PURITY]`.
+
+## Decisions and conflicts (not silently resolved)
+
+1. **fps 24, not 25.** Every engine measured renders 24 fps, and `round(t·fps)` at 25 would be ~4% off. The config refuses a mismatch.
+2. **Which text drives the video.** The skill's `prompt_video.txt` (storyboard as @image1, no timestamps) and the init-block Seedance adapter (`Visual 0-3s …`, `Source … Hash …`) contradict each other on timestamps. Both are built. The recommendation is the skill file with Seedance R2V, keeping the adapter for first/last-frame runs.
+3. **Hash trace inside the prompt.** The init-block adapter appends `Source … Hash {prev}->{curr}`, which is implemented as written. Video models cannot use hashes and may render stray text. `--no-trace` keeps the trace in the JSON sidecars only; recommended.
+4. **@image1 / @image2.** The pasted skill text contains link artifacts (`[@image1](https://x.com/@image1)`); plain `@image1` is used. Comfy's Seedance template refers to references by order ("FIRST reference"), so the first video run verifies the tag is honoured.
+5. **Multiple locations.** The init block has one PENV per episode, but L10 cuts at location changes. Each location gets its own architecture source and dressed master. The first sequence after a `LOCATION_CHANGE` opens on that master instead of the previous END_LOCK.
+6. **Whole seconds.** Seedance 2.0 on Comfy Cloud renders 4–15 whole seconds, so render `ceil(duration)` and trim to exact frames at assembly. Sequences under 13.5 s scale the visual windows so the ending lock stays inside the clip.
+7. **No uploads from this container.** References reach Comfy Cloud as user uploads (content-addressed names), as outputs of earlier jobs, or as the cloud END_LOCK crop. Local copies are hash-checked in every case.
+
+## Findings on the artifact tools (why ULAC is re-implemented, not copied)
 
 **Sequence Packer**
+- The legacy port reproduces it exactly (`tests/test_ulac.py`).
+- On its own sample it produces sequences of 11.8–12.3 s and 8.7 s, none in the target window. Common words count as boundaries, matched as substrings ("but" fires on "button"), and a line longer than 15 s is packed alone.
 
-- The legacy port reproduces it exactly (see `tests/test_ulac.py`).
-- On its own sample it produces sequences of 11.8, 11.8, 10.6, 12.3 and 8.7 s, none inside the 14.20–15.00 s target. Its rule "cut at any keyword boundary after 8.5 s" fires early because common words ("but", "wants", "shadow") count as boundaries.
-- It matches keywords as substrings ("but" fires on "button").
-- A single line longer than 15 s is packed alone, breaking the 15.00 s maximum.
-- Its default locks and goals are demo text (letter, drawer, hallway).
-
-**Instantiator / Project Adapters**
-
-- It splits the audio into `ceil(duration/14.5)` **equal slices**, ignoring the transcript and dramatic boundaries.
-- Its frame "hashes" are **random strings**. The hash-chain check therefore always passes, and the phantom-occupancy and `Δ ⊆ Δ_allowed` checks are hard-coded to pass.
-- Its prompts contain fixed demo actions ("MIRA … TABLE_CENTER", "tungsten spill").
-- The H3 adapter is labelled for Higgsfield, which ULAC marks not authorized.
-- Its 12-check list differs from ULAC §7. This implementation uses the §7 list.
+**Instantiator / Project Adapters** (the `_1` re-upload is byte-identical to the first)
+- It splits audio into `ceil(duration/14.5)` equal slices.
+- Its "hashes" are random strings, and the hash-chain, phantom-occupancy and `Δ ⊆ Δ_allowed` checks are hard-coded to pass.
+- Its prompts carry demo content, and its H3 adapter is labelled for Higgsfield.
 
 ## Engine evidence (Comfy Cloud, 2026-10-11)
 
-Two previously failing shots were rendered from approved first/last keyframes with the same short prompt:
+Two previously failing shots were re-rendered from approved first/last keyframes with the same short prompt:
 
-- **Shot A:** a robot character whose visor and chest lights used to break.
-- **Shot B:** a child close-up whose gaze used to drift.
-
-| Engine | Shot A | Shot B | Cost / 5 s |
+| Engine | Robot shot | Child close-up | Cost / 5 s |
 |---|---|---|---|
-| Seedance 2.0 FLF 1080p | Clean: visor and chest lights stable | Clean: gaze held, clear lip motion | ~567 cr |
-| Kling 3.0 FLF 1080p | One frame loses the visor eyes | Clean | ~118 cr |
-| MiniMax H3 Max FLF 768p | Chest corner lights flare (known failure) | One asymmetric squint | ~121 cr |
-| MiniMax H3 local, 25 steps | Exaggerated head swing; visor reads as a mouth | One squint | GPU only |
+| Seedance 2.0 FLF 1080p | clean | clean | ~567 cr |
+| Kling 3.0 FLF 1080p | one frame loses the visor eyes | clean | ~118 cr |
+| MiniMax H3 Max FLF 768p | chest lights flare | one squint | ~121 cr |
+| MiniMax H3 local, 25 steps | head swing; visor reads as a mouth | one squint | GPU only |
 
-More sampling steps did not fix local H3, so the turbo setting was not the main cause of the earlier failures. **Seedance 2.0 at 720p, 15 s ≈ 684 credits per sequence** (Comfy Cloud estimate). All engines rendered 24 fps.
+All engines rendered 24 fps. Seedance 2.0 at 720p for 15 s is about 684 credits.

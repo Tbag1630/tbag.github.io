@@ -1,12 +1,13 @@
-"""Section 5 endpoint procedure: crop final panel -> strip borders/gutters/labels ->
-clean frame -> SHA-256 -> record -> supply the exact file to the next generation.
+"""L4 endpoint procedure: crop final panel -> strip borders/gutters -> clean frame ->
+END_LOCK.png + END_LOCK.sha256 -> supply the exact file to the next generation.
+Extraction is local (PIL), zero-cost.
 
-The hash is computed over the saved PNG file bytes, so "pixel-identical" is
-checked as byte-identical files plus a decoded-pixel comparison.
+Two hashes are kept: the file SHA-256 (the chain) and a decoded-pixel SHA-256, so the
+same frame re-saved by another system (e.g. an ImageCrop on Comfy Cloud) can be proven
+pixel-identical.
 """
 from __future__ import annotations
 
-import hashlib
 import subprocess
 from pathlib import Path
 
@@ -14,8 +15,7 @@ import numpy as np
 from PIL import Image
 
 
-def sha256_file(p: Path) -> str:
-    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+from .layout import pixel_sha256, sha256_file, write_sha  # noqa: F401  (re-exported)
 
 
 def _trim_uniform(arr: np.ndarray, tol: float = 6.0, max_frac: float = 0.25) -> tuple[int, int, int, int]:
@@ -52,8 +52,26 @@ def crop_final_panel(board: Path, rows: int, cols: int, out_png: Path, *, panel:
     clean = Image.fromarray(cell[t:b, l:rgt])
     out_png.parent.mkdir(parents=True, exist_ok=True)
     clean.save(out_png, format="PNG")
+    abs_box = [box[0] + l, box[1] + t, box[0] + rgt, box[1] + b]
     return {"board": str(board), "grid": [rows, cols], "panel_index": idx, "cell_box": box,
-            "trim": [l, t, rgt, b], "size": list(clean.size)}
+            "trim": [l, t, rgt, b], "abs_box": abs_box, "size": list(clean.size)}
+
+
+def crop_box(board: Path, box: list[int], out_png: Path, *, trim: bool = True) -> dict:
+    """Crop an explicit [x0, y0, x1, y1] panel box (the QC director reads it off the sheet),
+    then strip any uniform border left inside it."""
+    im = Image.open(board).convert("RGB")
+    x0, y0, x1, y1 = [int(v) for v in box]
+    W, H = im.size
+    if not (0 <= x0 < x1 <= W and 0 <= y0 < y1 <= H):
+        raise ValueError(f"box {box} outside the {W}x{H} board")
+    cell = np.asarray(im.crop((x0, y0, x1, y1)))
+    l, t, rgt, b = _trim_uniform(cell) if trim else (0, 0, x1 - x0, y1 - y0)
+    clean = Image.fromarray(cell[t:b, l:rgt])
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    clean.save(out_png, format="PNG")
+    return {"board": str(board), "box": [x0, y0, x1, y1], "trim": [l, t, rgt, b],
+            "abs_box": [x0 + l, y0 + t, x0 + rgt, y0 + b], "size": list(clean.size)}
 
 
 def last_video_frame(video: Path, out_png: Path) -> dict:
@@ -86,16 +104,14 @@ def viability(png: Path, *, min_short_side: int = 360, aspect: float | None = 16
     return res
 
 
-def save_endpoint(png: Path, endpoint_dir: Path, seq_id: str) -> dict:
-    """ENDPOINT_{ID}.png + .sha256 (write-once)."""
-    dst = endpoint_dir / f"ENDPOINT_{seq_id}.png"
+def save_end_lock(png: Path, seq_dir: Path) -> dict:
+    """SEQUENCES/SEQ_n/END_LOCK.png + END_LOCK.sha256, written once."""
+    dst = Path(seq_dir) / "END_LOCK.png"
     if dst.exists():
-        raise FileExistsError(f"{dst} exists: approved endpoints are never overwritten")
+        raise FileExistsError(f"{dst} exists: an END_LOCK is never overwritten")
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_bytes(Path(png).read_bytes())
-    digest = sha256_file(dst)
-    (endpoint_dir / f"ENDPOINT_{seq_id}.sha256").write_text(f"{digest}  {dst.name}\n")
-    return {"path": str(dst), "sha256": digest}
+    return {"path": str(dst), "sha256": write_sha(dst), "pixel_sha256": pixel_sha256(dst)}
 
 
 def verify_same_pixels(a: Path, b: Path) -> bool:

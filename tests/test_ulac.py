@@ -1,12 +1,13 @@
 import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
 import pytest
 from PIL import Image
 
-from ulac import adapters, endpoint, packer, qc, state, validators
-from ulac.instantiate import author, instantiate
+from ulac import adapters, endpoint, layout, packer, qc, state
+from ulac.instantiate import InstantiateError, author, instantiate
 from ulac.relay import Episode, RelayError
 
 FIX = Path(__file__).parent / "fixtures"
@@ -14,6 +15,21 @@ SAMPLE = (FIX / "packer_sample.txt").read_text()
 # Output of the original "Seedance 15s Sequence Packer" JavaScript (run in node) on its own sample.
 LEGACY_REFERENCE = [("SQ001", 0.0, 11.8), ("SQ002", 11.8, 23.6), ("SQ003", 23.6, 34.2),
                     ("SQ004", 34.2, 46.5), ("SQ005", 46.5, 55.2)]
+FPS = 24
+
+
+def sample_words():
+    """Word timings spread evenly inside each fixture line (ElevenLabs STT shape)."""
+    beats, _ = packer.parse_lines(SAMPLE)
+    out = []
+    for b in beats:
+        toks = b.text.split()
+        step = (b.end - b.start) / len(toks)
+        for k, t in enumerate(toks):
+            out.append({"text": t, "start": round(b.start + k * step, 3),
+                        "end": round(b.start + (k + 0.8) * step, 3), "type": "word"})
+            out.append({"text": " ", "start": 0, "end": 0, "type": "spacing"})
+    return {"text": "", "words": out}
 
 
 def test_legacy_port_matches_original_artifact():
@@ -25,24 +41,23 @@ def test_legacy_port_matches_original_artifact():
 
 def test_ulac_packing_law():
     beats, _ = packer.parse_lines(SAMPLE)
-    seqs, errs = packer.pack_ulac(beats, audio_duration=55.2, fps=25)
+    seqs, errs = packer.pack_ulac(beats, audio_duration=55.2, fps=FPS)
     assert not errs
-    frames = [(round(s.start * 25), round(s.end * 25)) for s in seqs]
-    assert frames[0][0] == 0 and frames[-1][1] == round(55.2 * 25)
+    frames = [(round(s.start * FPS), round(s.end * FPS)) for s in seqs]
+    assert frames[0][0] == 0 and frames[-1][1] == round(55.2 * FPS)
     assert all(a[1] == b[0] for a, b in zip(frames, frames[1:]))            # no gaps / overlaps
-    assert all(e - s <= 15 * 25 for s, e in frames)                         # never > 15.00 s
-    assert 14.2 <= seqs[0].duration <= 15.0                                 # first unit fills the window
-    short = [s for s in seqs[:-1] if s.duration < 14.2]
-    assert all(s.warnings for s in short)                                   # every shortfall is explained
+    assert all(e - s <= 15 * FPS for s, e in frames)                        # never > 15.00 s
+    assert 14.2 <= seqs[0].duration <= 15.0
+    assert all(s.warnings for s in seqs[:-1] if s.duration < 14.2)          # every shortfall is explained
 
 
 def test_oversize_beat_and_silent_tail():
     beats, _ = packer.parse_lines("[00:00:00.000 - 00:00:16.000] one very long line")
-    seqs, errs = packer.pack_ulac(beats, audio_duration=16, fps=25)
+    seqs, errs = packer.pack_ulac(beats, audio_duration=16, fps=FPS)
     assert errs and "split it" in errs[0]
     beats, _ = packer.parse_lines("[0:00 - 0:05] She wants it.\n[0:05 - 0:10] She decides.")
-    seqs, errs = packer.pack_ulac(beats, audio_duration=40, fps=25)
-    assert not errs and seqs[-1].cut_reason == "silent tail" and round(seqs[-1].end * 25) == 1000
+    seqs, errs = packer.pack_ulac(beats, audio_duration=40, fps=FPS)
+    assert not errs and seqs[-1].cut_reason == "silent tail" and round(seqs[-1].end * FPS) == 40 * FPS
 
 
 def test_boundary_matching_modes():
@@ -51,30 +66,71 @@ def test_boundary_matching_modes():
     assert packer.detect_boundary("He decided to go") == "choice"
 
 
-def test_protected_phrase_contract():
-    beats, _ = packer.parse_lines("[0:00 - 0:06] The room is quiet.\n[0:06 - 0:12] Then the chair came open.")
-    seqs, _ = packer.pack_ulac(beats, audio_duration=12, fps=25)
+def test_word_alignment_and_beats():
+    words = packer.load_words(sample_words())
+    assert words[0] == {"word": "She", "start": 0.0, "end": words[0]["end"]} and len(words) > 100
+    beats = packer.beats_from_words(words)
+    assert beats[0].text.endswith("listening. The house is silent.") is False   # sentence end splits
+    assert beats[0].text == "She stares at the closed door, listening."
+    assert all(b.end - b.start < 15 for b in beats)
+
+
+def test_pack_from_cuts_law():
+    words = packer.load_words(sample_words())
+    good = [{"t": 14.95, "boundary": "CHOICE_MADE", "reason": "she commits to hiding the letter"},
+            {"t": 27.15, "boundary": "RESISTANCE_ENTERS", "reason": "footsteps raise the stakes"},
+            {"t": 38.75, "boundary": "LOCATION_CHANGE", "reason": "cut to the street"},
+            {"t": 46.5, "boundary": "EFFORT_FAILS", "reason": "the street is empty"}]
+    seqs, errs = packer.pack_from_cuts(words, good, audio_duration=55.2, fps=FPS)
+    assert not errs
+    assert [s.id for s in seqs] == ["SEQ_001", "SEQ_002", "SEQ_003", "SEQ_004", "SEQ_005"]
+    assert sum(round(s.end * FPS) - round(s.start * FPS) for s in seqs) == round(55.2 * FPS)
+    assert seqs[0].cut_reason.startswith("CHOICE_MADE") and seqs[2].warnings     # 11.6 s: flagged, allowed
+    _, errs = packer.pack_from_cuts(words, good[:3], audio_duration=55.2, fps=FPS)  # 16.45 s tail
+    assert any("add a cut" in e for e in errs)
+    mid_word = next(w for w in words if w["end"] - w["start"] > 0.2)
+    bad = [{"t": (mid_word["start"] + mid_word["end"]) / 2, "boundary": "SENTENCE_END", "reason": ""}]
+    _, errs = packer.pack_from_cuts(words, bad, audio_duration=55.2, fps=FPS)
+    assert any("splits the word" in e for e in errs) and any("boundary must be" in e for e in errs) \
+        and any("reason required" in e for e in errs)
+
+
+def test_protected_cue_contract():
     words = [{"word": w, "start": 6 + i * 0.5, "end": 6.4 + i * 0.5}
              for i, w in enumerate("Then the chair came open.".split())]
-    out, errs = packer.protected_phrases(seqs, words, [{"phrase": "chair came open",
-                                                       "visual_requirement": "chair readable"}], 25)
-    assert not errs and out[0]["TARGET_FRAME"] == round((7.0 - seqs[0].start) * 25)  # "chair" = word 3
-    assert out[0]["EARLIEST_ANTICIPATION"] < out[0]["TARGET_FRAME"] < out[0]["LATEST_READABLE_RESULT"]
+    seqs = [{"seq_id": "SEQ_001", "global_start": 0.0, "global_end": 12.0}]
+    out, errs = packer.protected_cues(seqs, words, [{"phrase": "chair came open",
+                                                     "visual_requirement": "chair readable"}], FPS)
+    c = out[0]
+    assert not errs and c["target_frame"] == round(7.0 * FPS)                  # "chair" = word 3
+    assert set(c) >= {"global_start", "global_end", "local_start", "local_end", "target_frame",
+                      "earliest_anticipation", "latest_readable", "visual_requirement"}
+    assert c["earliest_anticipation"] < c["target_frame"] < c["latest_readable"]
+    seqs = [{"seq_id": "SEQ_001", "global_start": 0.0, "global_end": 7.2},
+            {"seq_id": "SEQ_002", "global_start": 7.2, "global_end": 12.0}]
+    _, errs = packer.protected_cues(seqs, words, [{"phrase": "chair came open"}], FPS)
+    assert any("straddles" in e for e in errs)
 
 
-def test_state_math():
+def test_state_math_location_cut_and_monochrome_ids():
     x0 = {k: {} for k in state.KEYS}
     x0["H"] = {"CHAIR_1": "left", "CHAIR_2": "right"}
     x1 = json.loads(json.dumps(x0))
     x1["H"]["CHAIR_2"] = "pulled_out"
-    ok = [{"sequence_id": "SEQ_001", "state_before": x0, "allowed_change": ["H.CHAIR_2"], "state_after": x1},
-          {"sequence_id": "SEQ_002", "state_before": x1, "allowed_change": [], "state_after": x1}]
+    ok = [{"seq_id": "SEQ_001", "penv_id": "A", "state_before": x0, "allowed_change": ["H.CHAIR_2"], "state_after": x1},
+          {"seq_id": "SEQ_002", "penv_id": "A", "state_before": x1, "allowed_change": [], "state_after": x1}]
     assert state.check_ledger(ok) == []
     bad = json.loads(json.dumps(ok))
     bad[0]["allowed_change"] = []
     bad[1]["state_before"]["H"]["CHAIR_1"] = "moved"
     errs = state.check_ledger(bad)
     assert any("Δ_generated" in e for e in errs) and any("X_start" in e for e in errs)
+    cut = json.loads(json.dumps(ok))
+    cut[1]["penv_id"] = "B"
+    cut[1]["state_before"] = cut[1]["state_after"] = {k: {"new": 1} for k in state.KEYS}
+    assert state.check_ledger(cut) == []                                       # new location, new chain
+    assert state.occupant_id_problems(["ELDERLY_GLASSES", "SHORT_CURLS"]) == []
+    assert state.occupant_id_problems(["BLUE_SHIRT"])
 
 
 def _png(path, w, h, seed):
@@ -95,97 +151,213 @@ def _board(path, seed, rows=2, cols=3, pw=640, ph=360, gutter=24):
     return path
 
 
-def _authored(ids):
+def _authored(ids, penvs=None):
     x = {k: {"v": 1} for k in state.KEYS}
+    x["O"] = {"SEAT_1": "SHORT_CURLS"}
     vis = {"0-3": "C1 sits up", "3-10": "she reaches", "10-13": "she pauses", "13-15": "she holds"}
-    out = {}
+    out = {"_seat_map": {"PENV_T": {"SEAT_1": "SHORT_CURLS"}, "PENV_U": {}}}
     for k, sid in enumerate(ids):
-        out[sid] = {"goal": "she wants the lamp on", "effort": "she reaches", "resistance": "the cord is short",
-                    "result": "the lamp clicks on", "camera": "locked-off medium shot", "sfx": "lamp click",
+        out[sid] = {"goal": "she wants the lamp on", "effort": "she reaches", "resistance_cost": "the cord is short",
+                    "result": "the lamp clicks on", "message_carried": "small win",
+                    "camera_progression": "static wide -> slow push to medium", "sfx": "lamp click, fabric",
                     "opening_lock": f"LOCK_{k}", "ending_lock": f"LOCK_{k + 1}", "visual_progression": vis,
                     "state_before": x, "state_after": x, "allowed_change": []}
+        if penvs and sid in penvs:
+            out[sid]["penv_id"] = penvs[sid]
     return out
 
 
 @pytest.fixture
 def ep(tmp_path):
-    env = _png(tmp_path / "env.png", 1280, 720, 1)
-    ident = _png(tmp_path / "id.png", 1024, 1024, 2)
-    tr = tmp_path / "t.txt"
-    tr.write_text(SAMPLE)
-    instantiate(out=tmp_path / "EP", episode_id="EP_T", penv_id="PENV_T", transcript=tr,
-                identity_board=ident, penv_dressed=env, audio_duration=55.2)
+    wav = tmp_path / "narration.wav"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono", "-t", "55.2",
+                    "-c:a", "pcm_s16le", str(wav)], check=True)
+    words = tmp_path / "stt.json"
+    words.write_text(json.dumps(sample_words()))
+    arch = _png(tmp_path / "arch.webp", 1280, 720, 1)
+    arch_u = _png(tmp_path / "arch_u.png", 1280, 720, 5)
+    cast = _png(tmp_path / "group.png", 1024, 1024, 2)
+    instantiate(out=tmp_path / "EP", episode_id="EP_T", penv_id="PENV_T", audio=wav, words=words,
+                arch_sources={"PENV_T": arch, "PENV_U": arch_u}, cast_refs=[cast],
+                assets_plan=[{"asset_id": "CHARACTER_GRID:C1", "kind": "character_grid"}])
     return Episode(tmp_path / "EP"), tmp_path
+
+
+def test_instantiate_layout(ep):
+    e, _ = ep
+    r = e.root
+    for p in ("PENV/PENV_T_ARCH_SOURCE.webp", "PENV/PENV_T_ARCH_SOURCE.sha256", "AUDIO/narration.wav",
+              "AUDIO/transcript_word.json", "ULAC/ulac.json", "ULAC/ledger.json", "ULAC/seat_map.json",
+              "SEQUENCES/SEQ_001/prompt.json", "SEQUENCES/SEQ_001/qc_contract.json",
+              "SEQUENCES/SEQ_001/state_before.json", "SEQUENCES/SEQ_001/allowed_change.json",
+              "SEQUENCES/SEQ_001/state_after.json", "RUN_STATE.json", "CHECKPOINT_LATEST.txt",
+              "FAILURE_LOG.jsonl", "ASSET_MANIFEST.json"):
+        assert (r / p).exists(), p
+    st = e.state
+    assert st["status"] == "PLANNED" and st["endpoint_chain"] == []
+    assert {"primary_calls", "edit_calls", "regen_calls"} <= set(st)
+    u = json.loads((r / "ULAC/ulac.json").read_text())
+    assert u["fps"] == 24 and u["reference_law"] == "ONE_ENV_AUTHORITY" and u["qc_mode"] == "BINARY"
+    rec = e.prompt("SEQ_001")
+    assert set(rec) >= {"seq_id", "source_timestamp", "duration", "transcript", "goal", "effort", "resistance_cost",
+                        "result", "message_carried", "visual_progression", "camera_progression", "sfx",
+                        "opening_lock", "ending_lock", "cut_reason"}
+    assert rec["source_timestamp"].startswith("00:00:00.000-")
+    assert [a["asset_id"] for a in e.manifest["assets"]] == [
+        "CHARACTER_GRID:C1", "IDENTITY_BOARD", "DRESSED_MASTER:PENV_T", "DRESSED_MASTER:PENV_U"]
+
+
+def _pass_all(e, n_cues=0):
+    st = e.state
+    kind, tid = e._target(st)
+    rep = json.loads(e.report_path(kind, tid).read_text())
+    for code in rep["checks"]:
+        e.set_qc(check=code, value="PASS", evidence="inspected full image + crops", by="claude-code")
+    for i in range(len(rep["cues"])):
+        e.set_qc(cue=i + 1, value="PASS", evidence="cue readable on its word", by="claude-code")
 
 
 def test_relay_end_to_end(ep):
     e, tmp = ep
     ids = e.seq_ids()
-    assert e.start()["status"] == "BLOCKED"                     # unauthored prompts/states block START
-    e.state | {}
-    st = e.state
-    st["status"] = "NOT_STARTED"
-    e._write("RUN_STATE.json", st)
-    author(e.root, _authored(ids))
-    assert e.start()["status"] == "READY"
+    assert e.start()["status"] == "BLOCKED"                        # L1: unauthored precompute blocks START
+    author(e.root, _authored(ids, {ids[2]: "PENV_U"} if len(ids) > 2 else None))
+    st = e.start()
+    assert st["status"] == "READY" and st["pending_action"] == "GENERATE_CHARACTER_GRID:C1"
+    man = e.manifest
+    cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
+    arch = str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"])
 
-    penv = e._read("ASSET_MANIFEST.json")["authorities"]["penv_dressed"]["path"]
-    ident = e._read("ASSET_MANIFEST.json")["authorities"]["identity_board"]["path"]
+    # assets: character grid -> identity board -> dressed master
+    with pytest.raises(RelayError, match="not a registered"):
+        e.submit(_png(tmp / "g0.png", 1024, 1024, 7), "grid v0", [("cast_reference", str(tmp / "g0.png"))])
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid v1", [("cast_reference", cast)])
+    _pass_all(e)
+    assert e.next()["pending_action"] == "GENERATE_IDENTITY_BOARD"
+    grid = str(e.root / e.asset("CHARACTER_GRID:C1")["path"])
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity v1", [("character_reference", grid)])
+    _pass_all(e)
+    assert e.next()["pending_action"] == "GENERATE_DRESSED_MASTER:PENV_T"
+    with pytest.raises(RelayError, match="only environment reference"):
+        e.submit(_png(tmp / "m0.png", 1280, 720, 10), "master v0", [("dressed_master", arch)])
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master v1", [("architecture_source", arch)])
+    _pass_all(e)
+    st = e.next()
+    assert st["pending_action"] == "GENERATE_SEQ_001" and st["active_asset"] is None
+    master = str(e.root / e.asset("DRESSED_MASTER:PENV_T")["path"])
+    ident = str(e.root / e.asset("IDENTITY_BOARD")["path"])
+    assert e.prompt("SEQ_001")["start_frame_ref"]["type"] == "DRESSED_MASTER"
+
+    # SEQ_001: REF1 dressed master + REF2 identity
     with pytest.raises(RelayError, match="exactly one environment"):
-        e.submit(_board(tmp / "b0.png", 9), "p", [("penv_dressed", penv), ("previous_endpoint", penv)])
-    e.submit(_board(tmp / "b1.png", 10), "prompt v1", [("penv_dressed", penv), ("identity_board", ident)])
+        e.submit(_board(tmp / "b0.png", 9), "p", [("dressed_master", master), ("previous_endpoint", master)])
+    with pytest.raises(RelayError, match="identity board is required"):
+        e.submit(_board(tmp / "b0.png", 9), "p", [("dressed_master", master)])
+    e.submit(_board(tmp / "b1.png", 10), "prompt v1", [("dressed_master", master), ("identity_board", ident)])
     with pytest.raises(RelayError, match="pending"):
         e.next(rows=2, cols=3)
-    for cid in qc.FAIL_CONDITIONS:
-        e.set_qc(cid, "PASS", "inspected full sheet + crops", "human:test")
+    _pass_all(e)
     st = e.next(rows=2, cols=3)
-    assert st["last_closed"] == ids[0] and st["status"] == "READY" and st["active"] == ids[1]
-    link = st["endpoint_hash_chain"][0]
-    assert endpoint.sha256_file(Path(link["path"])) == link["sha256"]
-    nxt = json.loads((e.seq_dir(ids[1]) / "prompt.json").read_text())
-    assert nxt["start_frame_ref"]["sha256"] == link["sha256"]
+    assert st["status"] == "CLOSED" and st["last_closed"] == ids[0] and st["active"] == ids[1]
+    link = st["endpoint_chain"][0]
+    assert Path(link["path"]) == e.seq_dir(ids[0]) / "END_LOCK.png"
+    assert layout.read_sha(Path(link["path"])) == link["sha256"] == layout.sha256_file(Path(link["path"]))
+    assert (e.seq_dir(ids[0]) / "storyboard.png").exists() and (e.seq_dir(ids[0]) / "qc_report.json").exists()
+    assert e.prompt(ids[1])["start_frame_ref"]["sha256"] == link["sha256"]
 
-    with pytest.raises(RelayError, match="END_LOCK"):
-        e.submit(_board(tmp / "b2.png", 11), "p2", [("previous_endpoint", penv)])
+    # SEQ_002: REF1 must be END_LOCK_001; QC fail -> repair -> no identical prompt
+    with pytest.raises(RelayError, match="REF1 must be previous_endpoint"):
+        e.submit(_board(tmp / "b2.png", 11), "p2", [("dressed_master", master)])
     e.submit(_board(tmp / "b3.png", 12), "seq2 v1", [("previous_endpoint", link["path"])])
-    for cid in qc.FAIL_CONDITIONS:
-        e.set_qc(cid, "FAIL" if cid == "05" else "PASS", "identity drift in P04", "human:test")
+    _pass_all(e)
+    e.set_qc(check=5, value="FAIL", evidence="identity drift in P04", by="claude-code")
     assert e.next(rows=2, cols=3)["status"] == "REPAIR"
-    rep = {"RUNG": 2, "FAILURE": "identity drift P04", "CAUSE": "identity board omitted",
-           "CHANGED_INSTRUCTION": "add identity board as REF2", "UNCHANGED_AUTHORITIES": "END_LOCK_SEQ_001",
-           "EXPECTED_CORRECTION": "P04 on model"}
+    rep = {"rung": 2, "failure": "PRINCIPAL_IDENTITY_CHANGE P04", "cause": "identity board omitted",
+           "changed_instruction": "add identity board as REF2; inpaint P04 only",
+           "unchanged_authorities": "END_LOCK_SEQ_001 hash", "expected_correction": "P04 on model"}
     assert e.repair(rep)["status"] == "READY"
-    with pytest.raises(RelayError, match="already failed"):
+    with pytest.raises(RelayError, match="already submitted"):
         e.submit(_board(tmp / "b4.png", 13), "seq2 v1", [("previous_endpoint", link["path"])])
-    e.submit(_board(tmp / "b5.png", 14), "seq2 v2 with identity", [("previous_endpoint", link["path"]),
-                                                                   ("identity_board", ident)])
+    st = e.submit(_board(tmp / "b5.png", 14), "seq2 v2 with identity",
+                  [("previous_endpoint", link["path"]), ("identity_board", ident)])
+    assert (st["primary_calls"], st["edit_calls"], st["regen_calls"]) == (5, 1, 0)
     assert e.pause()["status"] == "PAUSED_PLATFORM"
     assert e.resume()["status"] == "IN_QC"
+    # same cause twice -> R5 STOP (L8)
+    _pass_all(e)
+    e.set_qc(check=5, value="FAIL", evidence="drift again", by="claude-code")
+    e.next(rows=2, cols=3)
+    assert e.repair(rep | {"changed_instruction": "stronger identity wording"})["status"] == "STOPPED"
+    assert e.decide("retry", "try R3 with fewer panels", "director")["status"] == "REPAIR"
+    log = [json.loads(x) for x in (e.root / "FAILURE_LOG.jsonl").read_text().splitlines()]
+    repairs = [x for x in log if x["type"] == "repair"]
+    assert set(qc.REPAIR_FIELDS) <= set(repairs[0]) and repairs[-1]["outcome"] == "STOP"
     Path(link["path"]).write_bytes(b"tampered")
     with pytest.raises(RelayError, match="no longer matches"):
         e.resume()
     assert e.events.verify() == []
 
 
-def test_repeated_cause_stops(ep):
-    e, _ = ep
-    hist = [{"CAUSE": "identity board omitted", "RUNG": 2}, {"CAUSE": "Identity board omitted", "RUNG": 3}]
-    rep = {"RUNG": 3, "FAILURE": "f", "CAUSE": "identity board omitted", "CHANGED_INSTRUCTION": "c",
-           "UNCHANGED_AUTHORITIES": "u", "EXPECTED_CORRECTION": "x"}
-    assert any(err.startswith("STOP") for err in qc.validate_repair(rep, hist, "h"))
-    assert any("missing" in err for err in qc.validate_repair({"RUNG": 1}, [], "h"))
+def test_location_change_needs_its_own_master(ep):
+    e, tmp = ep
+    ids = e.seq_ids()
+    author(e.root, _authored(ids, {ids[1]: "PENV_U"}))
+    assert e.start()["status"] == "READY"
+    man = e.manifest
+    cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "grid", [("cast_reference", cast)])
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity",
+             [("character_reference", str(e.root / e.asset("CHARACTER_GRID:C1")["path"]))])
+    _pass_all(e)
+    e.next()
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master T",
+             [("architecture_source", str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"]))])
+    _pass_all(e)
+    e.next()
+    e.submit(_board(tmp / "b1.png", 10), "seq1", [("dressed_master", str(e.root / e.asset("DRESSED_MASTER:PENV_T")["path"])),
+                                                ("identity_board", str(e.root / e.asset("IDENTITY_BOARD")["path"]))])
+    _pass_all(e)
+    st = e.next(rows=2, cols=3)
+    assert st["status"] == "CLOSED" and st["pending_action"] == "GENERATE_DRESSED_MASTER:PENV_U"
+    e.submit(_png(tmp / "m2.png", 1280, 720, 12), "master U",
+             [("architecture_source", str(e.root / man["penvs"]["PENV_U"]["arch_source"]["path"]))])
+    _pass_all(e)
+    st = e.next()
+    assert st["pending_action"] == f"GENERATE_{ids[1]}"
+    assert e.prompt(ids[1])["start_frame_ref"]["type"] == "DRESSED_MASTER"
 
 
-def test_adapters_refuse_unauthored_and_have_no_demo_content(ep):
+def test_repair_rules():
+    rep = {"rung": 3, "failure": "f", "cause": "identity board omitted", "changed_instruction": "c",
+           "unchanged_authorities": "u", "expected_correction": "x"}
+    assert not qc.validate_repair(rep, [])
+    assert any(e.startswith("STOP") for e in qc.validate_repair(rep, [{"cause": "Identity board omitted."}]))
+    assert any("missing" in e for e in qc.validate_repair({"rung": 1}, []))
+    assert any("cosmetic" in e for e in qc.validate_repair(rep | {"rung": 0}, []))
+    assert qc.resolve("3") == qc.resolve("CHAIR_COUNT") == "CHAIR_COUNT_CHANGE"
+
+
+def test_adapters_follow_init_template(ep):
     e, _ = ep
-    rec = json.loads((e.seq_dir("SEQ_001") / "prompt.json").read_text())
+    rec = e.prompt("SEQ_001")
     with pytest.raises(adapters.AdapterError):
+        adapters.seedance_720p(rec, trace=False)
+    rec.update({k: v for k, v in _authored(["SEQ_001"])["SEQ_001"].items() if k in rec})
+    text = adapters.seedance_720p(rec, trace=False)
+    assert text.startswith("[720p Standard, one objective, one main action, clear separation] LOCK_0. Goal: ")
+    assert "Effort: she reaches with the cord is short. Result:" in text and "13-15s LOCK_1." in text
+    with pytest.raises(adapters.AdapterError, match="hash trace"):
         adapters.seedance_720p(rec)
-    rec.update(_authored(["SEQ_001"])["SEQ_001"])
-    text = adapters.seedance_720p(rec)
-    assert text.startswith("[720p Standard, one main action]") and "sha256" not in text
+    rec["start_frame_ref"] = {"sha256": "a" * 64}
+    traced = adapters.seedance_720p(rec, end_lock_sha="b" * 64)
+    assert traced.endswith(f"dur {rec['duration']:.2f} <=15.00s. Hash {'a' * 64}->{'b' * 64}.")
+    g = adapters.generic_json(rec, end_lock_sha="b" * 64)
+    assert list(g) == ["seq_id", "start_ref_hash", "end_hash", "duration", "camera", "visual", "sfx",
+                       "opening_lock", "ending_lock"]
     for banned in ("MIRA", "TABLE_CENTER", "letter", "drawer", "tungsten", "Higgsfield"):
-        assert banned not in text and banned not in json.dumps(adapters.h3_json(rec))
+        assert banned not in text and banned not in json.dumps(g)
     assert adapters.seedance_render_seconds(14.77) == 15 and adapters.seedance_render_seconds(8.6) == 9
 
 
@@ -195,3 +367,127 @@ def test_endpoint_crop_trims_gutters(tmp_path):
     meta = endpoint.crop_final_panel(b, 2, 3, out)
     assert Image.open(out).size == (640, 360) and meta["panel_index"] == 5
     assert all(c["ok"] for c in endpoint.viability(out))
+    out2 = tmp_path / "end2.png"
+    endpoint.crop_box(b, [meta["abs_box"][0] - 10, meta["abs_box"][1] - 10, meta["abs_box"][2] + 10,
+                          meta["abs_box"][3] + 10], out2)
+    assert layout.pixel_sha256(out2) == layout.pixel_sha256(out)
+
+
+def test_instantiate_refuses_bad_alignment(tmp_path):
+    wav = tmp_path / "n.wav"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono", "-t", "10",
+                    "-c:a", "pcm_s16le", str(wav)], check=True)
+    words = tmp_path / "w.json"
+    words.write_text(json.dumps({"words": [{"word": "late", "start": 11.0, "end": 11.5}]}))
+    with pytest.raises(InstantiateError, match="after the audio"):
+        instantiate(out=tmp_path / "EP", episode_id="E", penv_id="P", audio=wav, words=words,
+                    arch_sources={"P": _png(tmp_path / "a.png", 1280, 720, 1)})
+    assert not (tmp_path / "EP").exists()
+
+
+PLAN = {
+    "title": "The Lamp", "mood": "quiet", "genre": "family drama", "energy": "low", "priority": "hand on the cord",
+    "premise": "C1 tries to switch on a lamp before dark", "location": "small bedroom, bed left, window right",
+    "prop_effect_state": "lamp off, cord short", "must_read": "the cord stops her hand",
+    "characters": {"C1": "girl about 8, short curls, oversized cardigan, slow careful movement"},
+    "identity_ref": "C1", "emotional_arc": "calm -> strain -> small relief",
+    "style_lock": "soft 2D animation, warm low light", "effect_lock": "none",
+    "environment_lock": "same bedroom layout, no redesign", "spatial_lock": "P01-P04 share one layout; P04 is not a new establishing shot",
+    "grid": "4 panels, 2x2, simple coverage", "continuous": False, "same_lens": False, "master_panel": 1,
+    "panels": [
+        {"lens": "24mm wide", "beat": "Room master", "camera": "wide geography hold", "action": "C1 sits on bed",
+         "rhythm": "hold / long block / clean beat", "escalation": "L1 calm / flat", "state": "lamp off",
+         "style": "warm low light", "video_beat": "Wide hold on the bedroom; C1 sits on the bed edge, soft fabric rustle"},
+        {"lens": "35mm", "beat": "Reach", "camera": "slow push-in", "action": "C1 reaches for cord",
+         "rhythm": "build / medium block / clean beat", "escalation": "L2 tension / rise", "state": "cord taut",
+         "style": "warm low light", "video_beat": "Slow push as C1 stretches toward the lamp cord, bedsprings creak"},
+        {"lens": "50mm", "beat": "Cord short", "camera": "locked-off", "action": "cord stops hand",
+         "rhythm": "pause / short block / held beat", "escalation": "L3 rise / spike", "state": "cord short",
+         "style": "warm low light", "video_beat": "The cord stops her hand an inch short; she freezes, breath held"},
+        {"lens": "35mm", "beat": "Click", "camera": "locked-off", "action": "lamp clicks on",
+         "rhythm": "final hit / short block / clean beat", "escalation": "L2 tension / release", "state": "lamp on",
+         "style": "warm glow", "video_beat": "She shifts closer, the lamp clicks on and warm light fills the room"}],
+    "environment": "small bedroom, bed screen left, window screen right, lamp on the nightstand",
+    "emotional_guidance": "Valence: neutral to mildly positive; Arousal: low, brief rise at the cord, settling",
+    "visual_style": "soft 2D animation, warm practical light, gentle shading",
+}
+
+
+def test_storyboard_skill_files(ep):
+    from ulac import storyboard
+    e, _ = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    a["SEQ_001"]["storyboard"] = PLAN
+    author(e.root, a)
+    out = storyboard.build(e, "SEQ_001")
+    assert out["errors"] == [], out["errors"]
+    folder = Path(out["folder"])
+    assert folder.parent.name == "storyboard" and folder.name.startswith("seq_001_the_lamp")
+    sb = (folder / "prompt_storyboard.txt").read_text()
+    video = (folder / "prompt_video.txt").read_text()
+    assert sb.startswith("Create a 16:9 image.\n[PROJECT CARD]") and "Never draw: extra chairs" in sb
+    assert "dressed master PENV_T" in sb and "final panel P04 is the ending lock" in sb
+    assert video.startswith("Use @image1 as the authoritative") and "Use @image2 as the authoritative C1" in video
+    assert len(video) < 3000 and video.count("\nP0") == 4
+    assert storyboard.check(sb, video.replace("PANEL BEATS:", "MOOD: tense\nPANEL BEATS:") + "P05: 3s hold.\n")
+    bad = json.loads(json.dumps(PLAN))
+    bad["panels"][0]["rhythm"] = "fast scary moment"
+    bad["panels"][1]["video_beat"] = "hold for 2 seconds"
+    errs = storyboard.check_plan(bad)
+    assert any("rhythm" in x for x in errs) and any("time value" in x for x in errs)
+
+
+def test_compile_checks_before_spend(ep):
+    from ulac import storyboard
+    e, tmp = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    a["SEQ_001"]["storyboard"] = PLAN
+    author(e.root, a)
+    e.start()
+    man = e.manifest
+    cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
+    req = e.compile([("cast_reference", cast)], "character grid prompt v1")
+    cast_sha = man["authorities"]["cast_references"][0]["sha256"]
+    assert req["graph"]["1"]["inputs"]["image"] == f"{cast_sha}.png"          # content-addressed upload
+    assert req["graph"]["30"]["inputs"]["model.size"] == "3840x2160"
+    e.submit(_png(tmp / "g1.png", 1024, 1024, 8), "character grid prompt v1", [("cast_reference", cast)],
+             cloud={"prompt_id": "job-grid", "output": "grid_out_00001_.png"})
+    _pass_all(e)
+    e.next()
+    grid = str(e.root / e.asset("CHARACTER_GRID:C1")["path"])
+    assert e.cloud_name(grid) == "grid_out_00001_.png"
+    e.submit(_png(tmp / "id.png", 1536, 1024, 9), "identity", [("character_reference", grid)],
+             cloud={"output": "identity_00001_.png"})
+    _pass_all(e)
+    e.next()
+    arch = str(e.root / man["penvs"]["PENV_T"]["arch_source"]["path"])
+    e.submit(_png(tmp / "m1.png", 1280, 720, 11), "master", [("architecture_source", arch)],
+             cloud={"output": "master_00001_.png"})
+    _pass_all(e)
+    e.next()
+    master = str(e.root / e.asset("DRESSED_MASTER:PENV_T")["path"])
+    ident = str(e.root / e.asset("IDENTITY_BOARD")["path"])
+    with pytest.raises(RelayError, match="build the storyboard prompt first"):
+        e.compile([("dressed_master", master), ("identity_board", ident)])
+    storyboard.build(e, "SEQ_001")
+    req = e.compile([("dressed_master", master), ("identity_board", ident)])
+    g = req["graph"]
+    assert g["1"]["inputs"]["image"] == "master_00001_.png" and g["2"]["inputs"]["image"] == "identity_00001_.png"
+    assert g["30"]["inputs"]["prompt"].startswith("Create a 16:9 image.")
+    with pytest.raises(RelayError, match="exactly one environment"):
+        e.compile([("dressed_master", master), ("architecture_source", arch)])
+    e.submit(_board(tmp / "b1.png", 10), g["30"]["inputs"]["prompt"],
+             [("dressed_master", master), ("identity_board", ident)])
+    _pass_all(e)
+    e.next(rows=2, cols=3)
+    end_lock = e.state["endpoint_chain"][0]["path"]
+    with pytest.raises(RelayError, match="not on Comfy Cloud yet"):
+        e.cloud_name(end_lock)
+    copy = tmp / "cloud_copy.png"
+    Image.open(end_lock).save(copy, compress_level=1)                          # different bytes, same pixels
+    e.cloud_end_lock("SEQ_001", "SEQ_001_END_LOCK_00001_.png", copy)
+    assert e.cloud_name(end_lock) == "SEQ_001_END_LOCK_00001_.png"
+    with pytest.raises(RelayError, match="pixels"):
+        e.cloud_end_lock("SEQ_001", "x.png", _png(tmp / "other.png", 640, 360, 99))

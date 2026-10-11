@@ -1,0 +1,90 @@
+"""Comfy Cloud API graphs for the ULAC loop (submitted through the Comfy Cloud MCP).
+
+Node specs verified against the live catalog on 2026-10-11:
+OpenAIGPTImageNodeV2 (sizes up to 3840x2160, quality low..max, up to 16 reference images,
+optional MASK for inpainting with exactly one reference image), ByteDance2ReferenceNodeV2
+(Seedance 2.0, 720p, ratio 16:9, duration 4-15 s on 2.0), ImageCropV2, SolidMask,
+MaskComposite, LoadImage, SaveImage, SaveVideo.
+
+Cloud inputs are referenced by their Comfy Cloud filenames (uploads are named by content
+SHA-256; outputs are made loadable with use_previous_output).
+"""
+from __future__ import annotations
+
+GPT_MODEL = "gpt-image-2.5-flare"
+SHEET_SIZE = "3840x2160"     # 16:9; final panels stay >= 360 px on the short side
+
+
+def _load(name: str, title: str) -> dict:
+    return {"class_type": "LoadImage", "inputs": {"image": name}, "_meta": {"title": title}}
+
+
+def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: str = SHEET_SIZE,
+              quality: str = "high", model: str = GPT_MODEL, mask_box: tuple[int, int, int, int, int, int] | None = None) -> dict:
+    """refs: [(title, cloud_filename)] in reference order (image 1, image 2, ...).
+    mask_box=(W, H, x, y, w, h) builds an inpaint mask in-graph (white = replace); needs one ref."""
+    if len(refs) > 16:
+        raise ValueError("GPT Image takes at most 16 reference images")
+    g: dict = {}
+    inputs = {"prompt": prompt, "model": model, "model.size": size, "model.custom_width": 1024,
+              "model.custom_height": 1024, "model.background": "opaque", "model.quality": quality,
+              "n": 1, "seed": 0}
+    for k, (title, name) in enumerate(refs, start=1):
+        g[str(k)] = _load(name, title)
+        inputs[f"model.images.image_{k}"] = [str(k), 0]
+    if mask_box is not None:
+        if len(refs) != 1:
+            raise ValueError("an inpaint mask needs exactly one reference image")
+        W, H, x, y, w, h = mask_box
+        g["20"] = {"class_type": "SolidMask", "inputs": {"value": 0.0, "width": W, "height": H},
+                   "_meta": {"title": "mask canvas"}}
+        g["21"] = {"class_type": "SolidMask", "inputs": {"value": 1.0, "width": w, "height": h},
+                   "_meta": {"title": "failed panel"}}
+        g["22"] = {"class_type": "MaskComposite", "inputs": {"destination": ["20", 0], "source": ["21", 0],
+                                                              "x": x, "y": y, "operation": "add"},
+                   "_meta": {"title": "inpaint mask"}}
+        inputs["model.mask"] = ["22", 0]
+    g["30"] = {"class_type": "OpenAIGPTImageNodeV2", "inputs": inputs, "_meta": {"title": "GPT Image 2.5"}}
+    g["31"] = {"class_type": "SaveImage", "inputs": {"images": ["30", 0], "filename_prefix": prefix},
+               "_meta": {"title": "save"}}
+    return g
+
+
+def storyboard_sheet_v1(prompt: str, ref_env: str, ref_identity: str | None, *, prefix: str,
+                        quality: str = "high") -> dict:
+    """GENERATE (init block): ref1 = END_LOCK_{n-1} or DRESSED_MASTER, ref2 = identity board."""
+    refs = [("REF1 environment authority", ref_env)]
+    if ref_identity:
+        refs.append(("REF2 identity board", ref_identity))
+    return gpt_image(prompt, refs, prefix=prefix, quality=quality)
+
+
+def end_lock_crop_v1(board: str, abs_box: list[int], *, prefix: str) -> dict:
+    """The same END_LOCK crop on Comfy Cloud, so the next request can load it without an upload.
+    Its pixels must hash to the local END_LOCK's pixel_sha256."""
+    x0, y0, x1, y1 = abs_box
+    return {"1": _load(board, "approved storyboard"),
+            "2": {"class_type": "ImageCropV2", "inputs": {"image": ["1", 0], "crop_region": {
+                "x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}}, "_meta": {"title": "final panel"}},
+            "3": {"class_type": "SaveImage", "inputs": {"images": ["2", 0], "filename_prefix": prefix},
+                  "_meta": {"title": "END_LOCK"}}}
+
+
+def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, seconds: int, prefix: str,
+                      generate_audio: bool = True, model: str = "Seedance 2.0") -> dict:
+    """Video stage: @image1 storyboard sheet, @image2 identity board (skill handoff)."""
+    if not 4 <= seconds <= 15:
+        raise ValueError("Seedance 2.0 renders 4-15 whole seconds")
+    g = {"1": _load(storyboard, "@image1 storyboard")}
+    inputs = {"model": model, "model.prompt": prompt, "model.resolution": "720p", "model.ratio": "16:9",
+              "model.duration": seconds, "model.generate_audio": generate_audio, "model.auto_downscale": True,
+              "model.auto_upscale": False, "model.reference_images.image_1": ["1", 0], "seed": 0,
+              "watermark": False}
+    if identity:
+        g["2"] = _load(identity, "@image2 identity board")
+        inputs["model.reference_images.image_2"] = ["2", 0]
+    g["10"] = {"class_type": "ByteDance2ReferenceNodeV2", "inputs": inputs, "_meta": {"title": "Seedance 2.0 R2V"}}
+    g["11"] = {"class_type": "SaveVideo", "inputs": {"video": ["10", 0], "filename_prefix": prefix, "format": "auto",
+                                                     "format.codec": "auto", "codec": "auto"},
+               "_meta": {"title": "save"}}
+    return g

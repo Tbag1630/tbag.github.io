@@ -1,15 +1,24 @@
-"""ULAC CLI. Relay words: START, NEXT, STATUS, PAUSE, RESUME, ABORT.
+"""ULAC CLI (init block). Relay words: START, NEXT, STATUS, PAUSE, RESUME, ABORT.
 
-  python -m ulac pack transcript.txt --duration 55.2 [--legacy]
-  python -m ulac instantiate --out EP_05 --episode EP_05 --penv PENV_BEDROOM ...
-  python -m ulac author EP_05 authored.json
-  python -m ulac START EP_05
-  python -m ulac submit EP_05 --board board.png --prompt p.txt --ref penv_dressed=PENV/... --ref identity_board=...
-  python -m ulac qc EP_05 --set 01=PASS --evidence "..." --by "human:director"
-  python -m ulac NEXT EP_05 --rows 2 --cols 3      (or --video approved.mp4)
-  python -m ulac repair EP_05 --rung 2 --failure ... --cause ... --changed ... --unchanged ... --expected ...
-  python -m ulac STATUS|PAUSE|RESUME EP_05 ;  python -m ulac ABORT EP_05 --reason "..."
-  python -m ulac validate EP_05 ;  python -m ulac adapt EP_05 SEQ_001 --target seedance|h3|generic
+  python -m ulac pack --words transcript_word.json --duration 462.968 [--cuts cuts.json]
+  python -m ulac pack transcript.txt --legacy
+  python -m ulac instantiate --out EP05 --episode EP05 --penv PENV_X --audio narration.mp3 \\
+        --words stt.json --arch PENV_X=arch.webp [--arch PENV_Y=...] [--master PENV_X=dressed.png] \\
+        [--identity board.png] [--cast-ref group.webp] [--assets assets.json] [--cuts cuts.json]
+  python -m ulac author EP05 authored.json
+  python -m ulac START EP05
+  python -m ulac compile EP05 --ref dressed_master=EP05/PENV/... --ref identity_board=...   (no spend)
+  python -m ulac submit EP05 --image out.png --prompt prompt.txt --ref dressed_master=EP05/PENV/... \\
+        --ref identity_board=EP05/IDENTITY/identity_board.png [--cloud-job <prompt_id> --cloud-output <name>]
+  python -m ulac cloudlock EP05 SEQ_001 --name <cloud file> --file downloaded.png
+  python -m ulac qc EP05 --check 1=PASS --check CHAIR_COUNT_CHANGE=PASS --cue 1=PASS --evidence "..." --by claude-code
+  python -m ulac qc EP05 --cosmetic "rough line P03" --by claude-code
+  python -m ulac NEXT EP05 --box 2560,1210,3790,1900    (or --rows 2 --cols 3, or --video clip.mp4)
+  python -m ulac repair EP05 --rung 2 --failure ... --cause ... --changed ... --unchanged ... --expected ...
+  python -m ulac decide EP05 --action retry|abort --reason "..." --by director
+  python -m ulac STATUS|PAUSE|RESUME EP05 ;  python -m ulac ABORT EP05 --reason "..."
+  python -m ulac storyboard EP05 SEQ_001      (skill files: storyboard/<slug>/prompt_storyboard.txt + prompt_video.txt)
+  python -m ulac validate EP05 ;  python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
 """
 from __future__ import annotations
 
@@ -18,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import adapters, packer, validators
+from . import adapters, packer, storyboard, validators
 from .instantiate import InstantiateError, author, instantiate
 from .relay import Episode, RelayError
 
@@ -27,20 +36,34 @@ def _p(x) -> None:
     print(json.dumps(x, indent=2, ensure_ascii=False, default=str))
 
 
+def _kv(items: list[str]) -> dict[str, Path]:
+    out = {}
+    for it in items:
+        k, _, v = it.partition("=")
+        if not v:
+            raise ValueError(f"expected ID=path, got {it!r}")
+        out[k] = Path(v)
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="ulac", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("pack")
-    p.add_argument("transcript")
+    p.add_argument("transcript", nargs="?")
+    p.add_argument("--words")
+    p.add_argument("--cuts")
     p.add_argument("--duration", type=float)
-    p.add_argument("--fps", type=int, default=25)
+    p.add_argument("--fps", type=int, default=24)
     p.add_argument("--legacy", action="store_true", help="exact port of the Sequence Packer artifact")
     i = sub.add_parser("instantiate")
-    for a in ("out", "episode", "penv", "transcript", "identity", "env-master"):
+    for a in ("out", "episode", "penv", "audio", "words"):
         i.add_argument(f"--{a}", required=True)
-    for a in ("audio", "prop-board", "arch-source", "config", "words", "phrases"):
+    i.add_argument("--arch", action="append", default=[], help="PENV_ID=path (locked architecture source)")
+    i.add_argument("--master", action="append", default=[], help="PENV_ID=path (approved dressed master)")
+    i.add_argument("--cast-ref", action="append", default=[])
+    for a in ("identity", "prop-board", "cuts", "transcript", "assets", "config"):
         i.add_argument(f"--{a}")
-    i.add_argument("--duration", type=float)
     a = sub.add_parser("author")
     a.add_argument("ep")
     a.add_argument("file")
@@ -52,6 +75,7 @@ def main(argv=None) -> int:
     ab.add_argument("--reason", required=True)
     n = sub.add_parser("NEXT", aliases=["next"])
     n.add_argument("ep")
+    n.add_argument("--box", help="x0,y0,x1,y1 of the final panel on the sheet")
     n.add_argument("--rows", type=int)
     n.add_argument("--cols", type=int)
     n.add_argument("--header-frac", type=float, default=0.0)
@@ -59,51 +83,86 @@ def main(argv=None) -> int:
     n.add_argument("--video")
     sb = sub.add_parser("submit")
     sb.add_argument("ep")
-    sb.add_argument("--board", required=True)
+    sb.add_argument("--image", required=True)
     sb.add_argument("--prompt", required=True, help="file with the exact prompt sent")
     sb.add_argument("--ref", action="append", default=[], help="role=path")
+    sb.add_argument("--cloud-job", help="Comfy Cloud prompt_id that produced the image")
+    sb.add_argument("--cloud-output", help="Comfy Cloud filename of that output (use_previous_output)")
+    cp = sub.add_parser("compile", help="build the Comfy Cloud request for the pending target (no spend)")
+    cp.add_argument("ep")
+    cp.add_argument("--ref", action="append", default=[], help="role=local path")
+    cp.add_argument("--prompt", help="prompt file (default for sequences: the storyboard prompt)")
+    cp.add_argument("--quality", default="high")
+    cl = sub.add_parser("cloudlock", help="register the Comfy Cloud copy of an END_LOCK")
+    cl.add_argument("ep")
+    cl.add_argument("seq")
+    cl.add_argument("--name", required=True)
+    cl.add_argument("--file", required=True, help="the cloud copy, downloaded")
     q = sub.add_parser("qc")
     q.add_argument("ep")
-    q.add_argument("--set", action="append", required=True, help="NN=PASS|FAIL|PENDING")
-    q.add_argument("--evidence", required=True)
-    q.add_argument("--by", required=True, help="e.g. human:director or model:chatgpt")
+    q.add_argument("--check", action="append", default=[], help="N|CODE=PASS|FAIL|PENDING")
+    q.add_argument("--cue", action="append", default=[], help="N=PASS|FAIL|PENDING (1-based)")
+    q.add_argument("--cosmetic")
+    q.add_argument("--evidence", default="")
+    q.add_argument("--by", required=True)
     r = sub.add_parser("repair")
     r.add_argument("ep")
     r.add_argument("--rung", type=int, required=True)
     for f in ("failure", "cause", "changed", "unchanged", "expected"):
         r.add_argument(f"--{f}", required=True)
+    d = sub.add_parser("decide")
+    d.add_argument("ep")
+    d.add_argument("--action", choices=["retry", "abort"], required=True)
+    d.add_argument("--reason", required=True)
+    d.add_argument("--by", required=True)
+    sbp = sub.add_parser("storyboard", help="write the skill's two prompt files for a sequence")
+    sbp.add_argument("ep")
+    sbp.add_argument("seq")
     ad = sub.add_parser("adapt")
     ad.add_argument("ep")
     ad.add_argument("seq")
-    ad.add_argument("--target", choices=["seedance", "h3", "generic"], default="seedance")
+    ad.add_argument("--target", choices=["seedance", "generic", "h3"], default="seedance")
+    ad.add_argument("--no-trace", action="store_true", help="omit the Source/Hash trace sentence")
     args = ap.parse_args(argv)
 
     try:
         c = args.cmd.upper() if args.cmd.lower() in {"start", "status", "pause", "resume", "abort", "next"} else args.cmd
         if c == "pack":
-            beats, errs = packer.parse_lines(Path(args.transcript).read_text(),
-                                             matcher="substring" if args.legacy else "word")
-            if args.legacy:
-                seqs = packer.pack_legacy(beats)
-                perr = []
+            if args.words:
+                words = packer.load_words(json.loads(Path(args.words).read_text()))
+                dur = args.duration or words[-1]["end"]
+                if args.cuts:
+                    seqs, perr = packer.pack_from_cuts(words, json.loads(Path(args.cuts).read_text()),
+                                                       audio_duration=dur, fps=args.fps)
+                else:
+                    seqs, perr = packer.pack_ulac(packer.beats_from_words(words), audio_duration=dur, fps=args.fps)
+                errs = []
             else:
-                dur = args.duration or (beats[-1].end if beats else 0)
-                seqs, perr = packer.pack_ulac(beats, audio_duration=dur, fps=args.fps)
+                beats, errs = packer.parse_lines(Path(args.transcript).read_text(),
+                                                 matcher="substring" if args.legacy else "word")
+                if args.legacy:
+                    seqs, perr = packer.pack_legacy(beats), []
+                else:
+                    dur = args.duration or (beats[-1].end if beats else 0)
+                    seqs, perr = packer.pack_ulac(beats, audio_duration=dur, fps=args.fps)
             _p({"parse_errors": errs, "pack_errors": perr,
                 "sequences": [{"id": s.id, "start": packer.fmt_ts(s.start), "end": packer.fmt_ts(s.end),
                                "duration": round(s.duration, 3), "beats": [b.id for b in s.beats],
+                               "text": " ".join(b.text for b in s.beats),
                                "cut_reason": s.cut_reason, "warnings": s.warnings} for s in seqs]})
             return 1 if errs or perr else 0
         if c == "instantiate":
-            m = instantiate(out=Path(args.out), episode_id=args.episode, penv_id=args.penv,
-                            transcript=Path(args.transcript), identity_board=Path(args.identity),
-                            penv_dressed=Path(args.env_master), audio=Path(args.audio) if args.audio else None,
-                            audio_duration=args.duration, prop_board=Path(args.prop_board) if args.prop_board else None,
-                            arch_source=Path(args.arch_source) if args.arch_source else None,
-                            config_path=Path(args.config) if args.config else None,
-                            words=Path(args.words) if args.words else None,
-                            phrases=Path(args.phrases) if args.phrases else None)
-            _p({"sequences": m["sequences"], "packing_warnings": m["packing_warnings"]})
+            m = instantiate(out=Path(args.out), episode_id=args.episode, penv_id=args.penv, audio=Path(args.audio),
+                            words=Path(args.words), arch_sources=_kv(args.arch), dressed_masters=_kv(args.master),
+                            identity_board=Path(args.identity) if args.identity else None,
+                            cast_refs=[Path(x) for x in args.cast_ref],
+                            prop_board=Path(args.prop_board) if args.prop_board else None,
+                            cuts=Path(args.cuts) if args.cuts else None,
+                            transcript=Path(args.transcript) if args.transcript else None,
+                            assets_plan=json.loads(Path(args.assets).read_text()) if args.assets else None,
+                            config_path=Path(args.config) if args.config else None)
+            _p({"sequences": len(m["sequences"]), "assets": [(x["asset_id"], x["status"]) for x in m["assets"]],
+                "packing": m["packing"], "packing_warnings": m["packing_warnings"], "notes": m["notes"]})
             return 0
         if c == "author":
             _p({"authored": author(Path(args.ep), json.loads(Path(args.file).read_text()))})
@@ -112,7 +171,8 @@ def main(argv=None) -> int:
         if c == "START":
             st = ep.start()
         elif c == "STATUS":
-            st = ep.state
+            _p(ep.status())
+            return 0
         elif c == "PAUSE":
             st = ep.pause(platform=True)
         elif c == "RESUME":
@@ -120,36 +180,61 @@ def main(argv=None) -> int:
         elif c == "ABORT":
             st = ep.abort(args.reason)
         elif c == "NEXT":
-            st = ep.next(rows=args.rows, cols=args.cols, header_frac=args.header_frac,
+            box = [int(v) for v in args.box.split(",")] if args.box else None
+            st = ep.next(box=box, rows=args.rows, cols=args.cols, header_frac=args.header_frac,
                          strip_frac=args.strip_frac, video=Path(args.video) if args.video else None)
         elif c == "submit":
             refs = [tuple(x.split("=", 1)) for x in args.ref]
-            st = ep.submit(Path(args.board), Path(args.prompt).read_text(), refs)
+            st = ep.submit(Path(args.image), Path(args.prompt).read_text(), refs,
+                           cloud={"prompt_id": args.cloud_job, "output": args.cloud_output})
+        elif c == "compile":
+            refs = [tuple(x.split("=", 1)) for x in args.ref]
+            out = ep.compile(refs, Path(args.prompt).read_text() if args.prompt else None, quality=args.quality)
+            _p({k: out[k] for k in ("request", "target", "attempt", "prompt_sha256", "refs")})
+            return 0
+        elif c == "cloudlock":
+            st = ep.cloud_end_lock(args.seq, args.name, Path(args.file))
         elif c == "qc":
-            for item in args.set:
+            st = ep.state
+            if args.cosmetic:
+                st = ep.cosmetic(args.cosmetic, args.by)
+            for item in args.check:
                 cid, val = item.split("=", 1)
-                st = ep.set_qc(cid, val.upper(), args.evidence, args.by)
+                st = ep.set_qc(check=cid, value=val.upper(), evidence=args.evidence, by=args.by)
+            for item in args.cue:
+                idx, val = item.split("=", 1)
+                st = ep.set_qc(cue=int(idx), value=val.upper(), evidence=args.evidence, by=args.by)
         elif c == "repair":
-            st = ep.repair({"RUNG": args.rung, "FAILURE": args.failure, "CAUSE": args.cause,
-                            "CHANGED_INSTRUCTION": args.changed, "UNCHANGED_AUTHORITIES": args.unchanged,
-                            "EXPECTED_CORRECTION": args.expected})
+            st = ep.repair({"rung": args.rung, "failure": args.failure, "cause": args.cause,
+                            "changed_instruction": args.changed, "unchanged_authorities": args.unchanged,
+                            "expected_correction": args.expected})
+        elif c == "decide":
+            st = ep.decide(args.action, args.reason, args.by)
         elif c == "validate":
             rep = validators.run_all(ep)
             _p(rep)
             return 0 if rep["ok"] else 2
+        elif c == "storyboard":
+            out = storyboard.build(ep, args.seq)
+            _p(out)
+            return 0 if not out["errors"] else 2
         elif c == "adapt":
-            rec = json.loads((ep.seq_dir(args.seq) / "prompt.json").read_text())
-            out = {"seedance": adapters.seedance_720p, "h3": adapters.h3_json,
-                   "generic": adapters.generic_json}[args.target](rec)
-            print(out if isinstance(out, str) else json.dumps(out, indent=2, ensure_ascii=False))
+            rec = ep.prompt(args.seq)
+            link = next((x for x in ep.state["endpoint_chain"] if x["seq_id"] == args.seq), None)
+            sha = link["sha256"] if link else None
+            if args.target == "seedance":
+                print(adapters.seedance_720p(rec, end_lock_sha=sha, trace=not args.no_trace))
+            else:
+                print(json.dumps(adapters.generic_json(rec, end_lock_sha=sha), indent=2, ensure_ascii=False))
             return 0
         else:
             raise SystemExit(f"unknown command {args.cmd}")
-        _p({k: st.get(k) for k in ("episode_id", "status", "active", "last_closed", "pending_action",
-                                   "primary_calls", "generation_counts", "last_failure")}
-           | {"endpoint_chain": [(x["sequence_id"], x["sha256"][:16]) for x in st.get("endpoint_hash_chain", [])]})
+        _p({k: st.get(k) for k in ("episode_id", "status", "active", "active_asset", "last_closed", "pending_action",
+                                   "primary_calls", "edit_calls", "regen_calls", "last_failure")}
+           | {"endpoint_chain": [(x["seq_id"], x["sha256"][:16]) for x in st.get("endpoint_chain", [])]})
         return 0 if st.get("status") not in ("BLOCKED", "STOPPED") else 2
-    except (RelayError, InstantiateError, adapters.AdapterError, ValueError, FileExistsError) as e:
+    except (RelayError, InstantiateError, adapters.AdapterError, storyboard.StoryboardError, ValueError,
+            FileExistsError) as e:
         print(f"ULAC: {e}", file=sys.stderr)
         return 3
 

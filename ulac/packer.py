@@ -8,8 +8,11 @@ Two modes:
   never exceed 15.00 s, cover the whole audio with no gaps or overlaps, and put
   every boundary on an integer frame (f = round(t * fps)).
 
-Beats come from timestamped transcript lines ``[HH:MM:SS.mmm - HH:MM:SS.mmm] text``
-(word-level alignment can be converted to such lines).
+* ``pack_from_cuts`` - the planner's semantic cuts (L10), each tagged with a
+  dramatic-boundary type, checked against the same law on word-level timing.
+
+Beats come from word-level alignment (``beats_from_words``) or from timestamped
+transcript lines ``[HH:MM:SS.mmm - HH:MM:SS.mmm] text``.
 """
 from __future__ import annotations
 
@@ -221,51 +224,171 @@ def visual_buckets(seq: Sequence) -> dict:
     return {k: " ".join(v) for k, v in b.items()}
 
 
-def to_record(seq: Sequence, fps: int, next_id: str | None) -> dict:
-    """Sequence record with every authored field explicitly unauthored (no demo defaults)."""
+# L10 dramatic boundaries a planner cut must name.
+DRAMATIC_BOUNDARIES = (
+    "GOAL_ESTABLISHED", "GOAL_CHANGES", "EFFORT_BEGINS", "EFFORT_ESCALATES", "EFFORT_FAILS",
+    "EFFORT_SUCCEEDS", "RESISTANCE_ENTERS", "CHOICE_MADE", "REACTION_CHANGES_ACTION",
+    "LOCATION_CHANGE", "TIME_CHANGE", "SUBJECT_CHANGE", "POV_CHANGE", "CLEAN_VISUAL_HANDOFF",
+)
+_SENT_END = re.compile(r"[.!?\u2026][\"')\]]*$")
+_CLAUSE_END = re.compile(r"[,;:\u2014-][\"')\]]*$")
+
+
+def load_words(obj) -> list[dict]:
+    """Normalise word alignment to [{word, start, end}].
+    Accepts ElevenLabs STT ({words:[{text,start,end,type}]}), whisper-style segments
+    ({segments:[{words:[{word,start,end}]}]}) or the plain {words:[{word,start,end}]} / list form."""
+    if isinstance(obj, dict) and "segments" in obj and "words" not in obj:
+        raw = [w for seg in obj["segments"] for w in seg.get("words", [])]
+    else:
+        raw = obj.get("words", []) if isinstance(obj, dict) else obj
+    out = []
+    for w in raw:
+        if w.get("type", "word") != "word":
+            continue                         # spacing / audio_event entries
+        text = str(w.get("word", w.get("text", ""))).strip()
+        if not text:
+            continue
+        out.append({"word": text, "start": float(w["start"]), "end": float(w["end"])})
+    out.sort(key=lambda x: x["start"])
+    return out
+
+
+def beats_from_words(words: list[dict], *, pause_s: float = 0.6, max_beat_s: float = 8.0,
+                     prefix: str = "B", matcher: str = "word") -> list[Beat]:
+    """Group words into beats at sentence ends or pauses >= pause_s; split long beats at
+    clause punctuation. Beats are packing units, not cuts."""
+    beats, cur = [], []
+
+    def flush():
+        if cur:
+            text = " ".join(w["word"] for w in cur)
+            beats.append(Beat(f"{prefix}{len(beats) + 1:03d}", cur[0]["start"], cur[-1]["end"], text,
+                              detect_boundary(text, matcher=matcher)))
+            cur.clear()
+
+    for k, w in enumerate(words):
+        cur.append(w)
+        nxt = words[k + 1] if k + 1 < len(words) else None
+        gap = (nxt["start"] - w["end"]) if nxt else 0.0
+        span = w["end"] - cur[0]["start"]
+        if nxt is None or _SENT_END.search(w["word"]) or gap >= pause_s or \
+                (span >= max_beat_s and _CLAUSE_END.search(w["word"])):
+            flush()
+    flush()
+    return beats
+
+
+def pack_from_cuts(words: list[dict], cuts: list[dict], *, audio_duration: float, fps: int,
+                   max_s: float = 15.0, target_min: float = 14.2) -> tuple[list[Sequence], list[str]]:
+    """Planner cuts [{t, boundary, reason}] -> sequences. Law checks: every cut names an L10
+    boundary and a reason, lies between words (never inside one), no sequence exceeds max_s,
+    full coverage on integer frames. Sequences under target are allowed (meaning wins) and flagged."""
+    errors: list[str] = []
+    total_f = round(audio_duration * fps)
+    max_f = int(math.floor(max_s * fps + 1e-9))
+    cuts = sorted(cuts, key=lambda c: c["t"])
+    for c in cuts:
+        if c.get("boundary") not in DRAMATIC_BOUNDARIES:
+            errors.append(f"cut at {c['t']:.3f}s: boundary must be one of {DRAMATIC_BOUNDARIES}")
+        if not str(c.get("reason", "")).strip():
+            errors.append(f"cut at {c['t']:.3f}s: reason required (why this is the dramatic boundary)")
+        inside = [w for w in words if w["start"] + 1e-3 < c["t"] < w["end"] - 1e-3]
+        if inside:
+            errors.append(f"cut at {c['t']:.3f}s splits the word {inside[0]['word']!r} "
+                          f"({inside[0]['start']:.3f}-{inside[0]['end']:.3f})")
+        if not 0 < c["t"] < audio_duration:
+            errors.append(f"cut at {c['t']:.3f}s is outside the audio")
+    bounds = [0] + [round(c["t"] * fps) for c in cuts] + [total_f]
+    if len(set(bounds)) != len(bounds):
+        errors.append("two cuts land on the same frame")
+    seqs = []
+    for n, (a, b) in enumerate(zip(bounds, bounds[1:]), start=1):
+        if b - a > max_f:
+            errors.append(f"SEQ_{n:03d} is {(b - a) / fps:.3f}s > {max_s}s: add a cut")
+        inside = [w for w in words if a / fps - 1e-6 <= w["start"] < b / fps]
+        c = cuts[n - 1] if n - 1 < len(cuts) else None
+        warns = []
+        if c is not None and (b - a) / fps < target_min - 1e-9:
+            warns.append(f"{(b - a) / fps:.3f}s is below the {target_min}s target: "
+                         f"meaning chose this cut ({c.get('boundary')})")
+        if not inside:
+            warns.append("no narration in this sequence: director decides hold or trim")
+        reason = f"{c['boundary']}: {c['reason']}" if c else "end of narration"
+        seqs.append(Sequence(f"SEQ_{n:03d}", a / fps, b / fps,
+                             beats_from_words(inside, prefix=f"S{n:03d}B"), reason, warns))
+    return seqs, errors
+
+
+def visual_windows(duration: float) -> dict:
+    """L10 visual movement mapped onto a sequence: nominal 0-3 / 3-10 / 10-13 / 13-end;
+    sequences shorter than 13.5 s scale proportionally so the ending lock stays inside the clip."""
+    d = float(duration)
+    if d >= 13.5:
+        cuts = [0, 3, 10, 13, d]
+    else:
+        k = d / 15.0
+        cuts = [0, 3 * k, 10 * k, 13 * k, d]
+    keys = ("0-3", "3-10", "10-13", "13-15")
+    return {key: [round(cuts[i], 2), round(cuts[i + 1], 2)] for i, key in enumerate(keys)}
+
+
+def to_record(seq: Sequence, fps: int, next_id: str | None, penv_id: str) -> dict:
+    """prompt.json in the init-block schema; every authored field explicitly unauthored."""
     return {
-        "sequence_id": seq.id,
-        "global_start": round(seq.start, 3), "global_end": round(seq.end, 3),
-        "global_start_ts": fmt_ts(seq.start), "global_end_ts": fmt_ts(seq.end),
-        "start_frame": round(seq.start * fps), "end_frame": round(seq.end * fps),
-        "duration": round(seq.duration, 3), "fps": fps,
+        "seq_id": seq.id,
+        "source_timestamp": f"{fmt_ts(seq.start)}-{fmt_ts(seq.end)}",
+        "duration": round(seq.duration, 3),
         "transcript": " ".join(b.text for b in seq.beats),
-        "beats": [asdict(b) for b in seq.beats],
-        "cut_reason": seq.cut_reason, "warnings": seq.warnings,
-        "goal": TO_AUTHOR, "effort": TO_AUTHOR, "resistance": TO_AUTHOR, "result": TO_AUTHOR,
-        "visual_source_text": visual_buckets(seq),
+        "goal": TO_AUTHOR, "effort": TO_AUTHOR, "resistance_cost": TO_AUTHOR, "result": TO_AUTHOR,
+        "message_carried": TO_AUTHOR,
         "visual_progression": {"0-3": TO_AUTHOR, "3-10": TO_AUTHOR, "10-13": TO_AUTHOR, "13-15": TO_AUTHOR},
-        "camera": TO_AUTHOR, "sfx": TO_AUTHOR,
+        "camera_progression": TO_AUTHOR, "sfx": TO_AUTHOR,
         "opening_lock": TO_AUTHOR, "ending_lock": TO_AUTHOR,
-        "ending_lock_feeds": next_id or "EPISODE_END",
+        "cut_reason": seq.cut_reason,
+        # machine fields (not authored)
+        "penv_id": penv_id, "fps": fps,
+        "global_start": round(seq.start, 3), "global_end": round(seq.end, 3),
+        "start_frame": round(seq.start * fps), "end_frame": round(seq.end * fps),
+        "visual_windows": visual_windows(seq.duration),
+        "visual_source_text": visual_buckets(seq),
+        "beats": [asdict(b) for b in seq.beats], "warnings": seq.warnings,
+        "ending_lock_feeds": next_id or "EPISODE_END", "start_frame_ref": None,
     }
 
 
-def protected_phrases(seqs: list[Sequence], words: list[dict], phrases: list[dict], fps: int,
-                      anticipation_s: float = 0.75, readable_after_s: float = 0.5) -> tuple[list[dict], list[str]]:
-    """Section 6: timing contract for each protected phrase.
-    words: [{word,start,end}]; phrases: [{phrase, visual_requirement}]"""
+def _norm(t: str) -> str:
+    return re.sub(r"[^a-z0-9']", "", t.lower())
+
+
+def protected_cues(seqs: list[dict], words: list[dict], phrases: list[dict], fps: int,
+                   anticipation_s: float = 0.75, readable_after_s: float = 0.5) -> tuple[list[dict], list[str]]:
+    """L6 timing contract per protected phrase (init-block QC-contract keys).
+    seqs: [{seq_id, global_start, global_end}]; words: [{word,start,end}];
+    phrases: [{phrase, visual_requirement, after?}] ('after' picks the first hit after t seconds)."""
     out, errors = [], []
-    toks = [re.sub(r"[^a-z0-9']", "", w["word"].lower()) for w in words]
+    toks = [_norm(w["word"]) for w in words]
     for p in phrases:
-        target = [re.sub(r"[^a-z0-9']", "", t) for t in p["phrase"].lower().split()]
-        hit = next((k for k in range(len(toks) - len(target) + 1) if toks[k:k + len(target)] == target), None)
+        target = [_norm(t) for t in p["phrase"].split()]
+        after = float(p.get("after", -1))
+        hit = next((k for k in range(len(toks) - len(target) + 1)
+                    if toks[k:k + len(target)] == target and words[k]["start"] >= after), None)
         if hit is None:
             errors.append(f"protected phrase not found in alignment: {p['phrase']!r}")
             continue
         g0, g1 = words[hit]["start"], words[hit + len(target) - 1]["end"]
-        seq = next((s for s in seqs if s.start - 1e-6 <= g0 < s.end), None)
+        seq = next((s for s in seqs if s["global_start"] - 1e-6 <= g0 < s["global_end"]), None)
         if seq is None:
             errors.append(f"{p['phrase']!r} outside every sequence")
             continue
-        if g1 > seq.end + 1e-6:
-            errors.append(f"{p['phrase']!r} straddles the {seq.id} boundary: move the cut")
-        l0, l1 = g0 - seq.start, g1 - seq.start
-        out.append({"phrase": p["phrase"], "sequence_id": seq.id,
-                    "GLOBAL_START": round(g0, 3), "GLOBAL_END": round(g1, 3),
-                    "LOCAL_START": round(l0, 3), "LOCAL_END": round(l1, 3),
-                    "TARGET_FRAME": round(l0 * fps),
-                    "EARLIEST_ANTICIPATION": max(0, round((l0 - anticipation_s) * fps)),
-                    "LATEST_READABLE_RESULT": round((l1 + readable_after_s) * fps),
-                    "VISUAL_REQUIREMENT": p.get("visual_requirement", TO_AUTHOR)})
+        if g1 > seq["global_end"] + 1e-6:
+            errors.append(f"{p['phrase']!r} straddles the {seq['seq_id']} boundary: move the cut")
+        l0, l1 = g0 - seq["global_start"], g1 - seq["global_start"]
+        out.append({"phrase": p["phrase"], "seq_id": seq["seq_id"],
+                    "global_start": round(g0, 3), "global_end": round(g1, 3),
+                    "local_start": round(l0, 3), "local_end": round(l1, 3),
+                    "target_frame": round(l0 * fps),
+                    "earliest_anticipation": max(0, round((l0 - anticipation_s) * fps)),
+                    "latest_readable": round((l1 + readable_after_s) * fps),
+                    "visual_requirement": p.get("visual_requirement") or TO_AUTHOR})
     return out, errors
