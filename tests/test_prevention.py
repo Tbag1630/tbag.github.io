@@ -45,3 +45,31 @@ def test_draft_gate_and_retry_budget(tmp_path):
     assert prevention.retry_budget(lg, "r", "SH01/CL01", 3).status == "fail"
     assert prevention.cost_cap(None, 200).status == "not_run"
     assert prevention.cost_cap(118, 200).status == "pass"
+
+
+def test_partner_profiles_compile_and_enforce_contract():
+    import pytest
+    from orchestrator.adapters import partner_flf
+    from orchestrator.adapters.comfy_h3 import CompileError
+    from orchestrator.spec import REPO_ROOT
+    base = dict(run_id="R", shot_id="SH", clip_id="CL", seed=1, duration_s=5,
+                prompt="Locked-off camera. C1 waves, then holds. No music.", first_frame="a.png", last_frame="b.png")
+    for name in ("kling3_flf_1080p", "h3max_flf_768p", "seedance20_flf_1080p"):
+        prof = partner_flf.load_profile(REPO_ROOT / "profiles" / f"{name}.yaml")
+        req = partner_flf.compile_clip(prof, base, clip_max_seconds=15)
+        g = req["graph"]
+        assert g["1"]["inputs"]["image"] == "a.png" and g["2"]["inputs"]["image"] == "b.png"
+        assert "{{" not in str(g)
+        assert req["manifest"]["sampler"].startswith("provider-managed")
+        with pytest.raises(CompileError):
+            partner_flf.compile_clip(prof, dict(base, duration_s=5.5), clip_max_seconds=15)
+        with pytest.raises(CompileError):
+            partner_flf.compile_clip(prof, dict(base, last_frame=None), clip_max_seconds=15)
+        with pytest.raises(CompileError):
+            partner_flf.compile_clip(prof, dict(base, duration_s=16), clip_max_seconds=15)
+
+
+def test_draft_key_is_stable():
+    k1 = prevention.draft_key("SH/CL", "a.png", "b.png", "prompt ")
+    k2 = prevention.draft_key("SH/CL", "a.png", "b.png", "prompt")
+    assert k1 == k2 and "prompt" not in k1

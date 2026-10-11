@@ -1,0 +1,44 @@
+# Partner first/last-frame profile (pinned template; see notes).
+id: seedance20_flf_1080p_v1
+model_family: seedance_2_0
+node: ByteDance2FirstLastFrameNode
+graph_template_sha256: e10810217ac72903d7cc468d6e18cd885ab184ffb5e3ea3bb3add0845c9a3750
+bindings:
+  first_frame:
+  - '1'
+  - image
+  last_frame:
+  - '2'
+  - image
+  prompt:
+  - '3'
+  - model.prompt
+  duration_s:
+  - '3'
+  - model.duration
+  seed:
+  - '3'
+  - seed
+  filename_prefix:
+  - '4'
+  - filename_prefix
+duration_s:
+  min: 4
+  max: 15
+estimated_credits:
+  5s: 567
+resolution: 1080p
+model_id: Seedance 2.0 via ByteDance2FirstLastFrameNode
+backend: comfy_cloud_partner
+submission_route: mcp_handoff
+task: first_last_frame_to_video
+generate_audio: false
+seed_deterministic: false
+status: dry_run_validated
+graph_template: profiles/graphs/seedance20_flf_1080p.template.api.json
+notes:
+- 'Partner model: sampler/steps/guidance are provider-managed and not exposed.'
+- Duration is whole seconds; clip plans for this profile must cut on 24-frame boundaries.
+- Seed only triggers a re-run; results are not reproducible (node tooltip).
+- estimated_credits from Comfy Cloud estimate_credits on 2026-10-11; live prices may
+  differ.

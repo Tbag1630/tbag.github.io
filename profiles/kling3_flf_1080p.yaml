@@ -1,0 +1,44 @@
+# Partner first/last-frame profile (pinned template; see notes).
+id: kling3_flf_1080p_v1
+model_family: kling_v3
+node: KlingFirstLastFrameNode
+graph_template_sha256: ac70074a87a83905a7ca1cce9bc1a7ddf6958050fb6113c950314117f5ca2ca8
+bindings:
+  first_frame:
+  - '1'
+  - image
+  last_frame:
+  - '2'
+  - image
+  prompt:
+  - '3'
+  - prompt
+  duration_s:
+  - '3'
+  - duration
+  seed:
+  - '3'
+  - seed
+  filename_prefix:
+  - '4'
+  - filename_prefix
+duration_s:
+  min: 3
+  max: 15
+estimated_credits:
+  5s: 118
+resolution: 1080p
+model_id: kling-v3 (Kling 3.0) via KlingFirstLastFrameNode
+backend: comfy_cloud_partner
+submission_route: mcp_handoff
+task: first_last_frame_to_video
+generate_audio: false
+seed_deterministic: false
+status: dry_run_validated
+graph_template: profiles/graphs/kling3_flf_1080p.template.api.json
+notes:
+- 'Partner model: sampler/steps/guidance are provider-managed and not exposed.'
+- Duration is whole seconds; clip plans for this profile must cut on 24-frame boundaries.
+- Seed only triggers a re-run; results are not reproducible (node tooltip).
+- estimated_credits from Comfy Cloud estimate_credits on 2026-10-11; live prices may
+  differ.

@@ -11,8 +11,8 @@ from pathlib import Path
 
 import yaml
 
-from .. import media
-from ..adapters import comfy_h3
+from .. import media, prevention
+from ..adapters import comfy_h3, partner_flf
 from ..gates import Check, has_approval
 from ..util import sha256_file, sha256_obj, write_json_once
 from .common import Ctx, finish
@@ -37,21 +37,48 @@ def _storyboard_check(ctx: Ctx, clip: dict) -> Check:
                  detail="S05 approval event found" if ok else "no S05 approval event for this run")
 
 
+def prevention_checks(ctx: Ctx, clip: dict, est_credits: float | None) -> list[Check]:
+    """Checks that stop a paid job whose inputs already guarantee waste (see prevention.py)."""
+    ent = f"{clip['shot_id']}/{clip['clip_id']}"
+    checks = prevention.lint_prompt(clip["prompt"], speakers=clip.get("speakers") or [])
+    fl, ll = clip.get("first_frame_local"), clip.get("last_frame_local")
+    if fl and ll and Path(fl).exists() and Path(ll).exists():
+        checks += prevention.keyframe_pair(Path(fl), Path(ll), hold_shot=bool(clip.get("hold_shot")))
+        checks += [prevention.keyframe_approved(ctx.ledger, ctx.run.run_id, Path(p)) for p in (fl, ll)]
+    else:
+        checks.append(Check("keyframe_pair_distinct", "not_run", "uncertain",
+                            detail="set first_frame_local/last_frame_local (local copies) so keyframes can be checked"))
+    max_retries = int(ctx.spec.resolved["execution"]["concurrency"]["max_retries_per_stage"])
+    checks.append(prevention.retry_budget(ctx.ledger, ctx.run.run_id, ent, max_retries + 1))
+    cap = clip.get("credit_cap")
+    checks.append(prevention.cost_cap(est_credits, float(cap)) if cap is not None else
+                  Check("cost_within_cap", "pass", "measured", severity="info", required=False,
+                        detail=f"no per-clip cap set; estimate {est_credits}"))
+    if clip.get("require_draft"):
+        key = prevention.draft_key(ent, clip["first_frame"], clip["last_frame"], clip["prompt"])
+        checks.append(prevention.draft_approved(ctx.ledger, ctx.run.run_id, key))
+    return checks
+
+
 def compile_request(ctx: Ctx, clip_file: Path, profile_path: Path) -> dict:
     clip = yaml.safe_load(Path(clip_file).read_text())
     clip["run_id"] = ctx.run.run_id
-    profile = comfy_h3.load_profile(profile_path)
+    raw = yaml.safe_load(Path(profile_path).read_text())
+    partner = partner_flf.is_partner(raw)
+    profile = (partner_flf if partner else comfy_h3).load_profile(profile_path)
     max_s = float(ctx.spec.stage("S02_semantic_segmentation")["parameters"]["target_clip_max_seconds"])
     checks = [_storyboard_check(ctx, clip)]
     try:
-        req = comfy_h3.compile_clip(profile, clip, clip_max_seconds=max_s)
+        req = (partner_flf if partner else comfy_h3).compile_clip(profile, clip, clip_max_seconds=max_s)
     except comfy_h3.CompileError as e:
         checks.append(Check("graph_compiles_against_profile", "fail", "measured", detail=str(e)))
         return finish(ctx, STAGE, checks, entity_id=f"{clip.get('shot_id')}/{clip.get('clip_id')}",
                       next_action="fix the clip spec")
     checks.append(Check("graph_compiles_against_profile", "pass", "measured",
                         detail=f"profile {profile['id']}; graph sha256 {req['graph_sha256'][:12]}"))
-    checks += check_h3_prompt(clip["prompt"], speakers=clip.get("speakers"))
+    if not partner:
+        checks += check_h3_prompt(clip["prompt"], speakers=clip.get("speakers"))
+    checks += prevention_checks(ctx, clip, req["manifest"].get("estimated_credits"))
     required = ctx.spec.stage(STAGE)["per_shot_manifest"]
     absent = [k for k in required if k not in req["manifest"]]
     checks.append(Check("per_shot_manifest_complete", "fail" if absent else "pass", "measured",
@@ -94,6 +121,12 @@ def record_result(ctx: Ctx, request_file: Path, *, prompt_id: str, video: Path,
     checks.append(Check("output_decodes", "pass" if dec["ok"] else "fail", "measured",
                         detail="; ".join(dec["errors"][:3]) or "decoded to end"))
     frames = media.count_frames(video) if dec["ok"] else None
+    if man.get("width") is None and dec["ok"]:   # partner models: geometry is measured, not declared
+        vs = media.video_stream(media.probe(video)) or {}
+        man = {**man, "width": vs.get("width"), "height": vs.get("height"),
+               "frame_count_requested": man.get("frame_count"), "frame_count": frames,
+               "fps": float(media.fps_of(vs)) if media.fps_of(vs) else man.get("fps"),
+               "geometry_source": "measured from output"}
     gen = {**man, "prompt_id": prompt_id, "output_path": str(video), "output_sha256": sha256_file(video),
            "output_frames": frames, "job_status": (job_status or {}).get("result"),
            "request_file": str(request_file)}

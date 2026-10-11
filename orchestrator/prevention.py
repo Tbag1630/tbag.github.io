@@ -22,7 +22,7 @@ from pathlib import Path
 from . import media
 from .gates import Check
 from .ledger import Ledger
-from .util import sha256_file
+from .util import sha256_file, sha256_text
 
 PLACEHOLDER = re.compile(r"\[(Describe|For|Write|If|TODO)\b|PROMPT HERE|EDIT INSTRUCTION HERE|PASTE_|"
                          r"placeholder|overridden (per|at) run|\(first timed beat\)|^PROMPT$", re.I | re.M)
@@ -92,8 +92,13 @@ def lint_prompt(prompt: str, *, speakers: list[str] | None, camera_required: boo
     return checks
 
 
+def draft_key(entity: str, first_frame: str, last_frame: str, prompt: str) -> str:
+    """Stable key tying a draft approval to the exact keyframes and prompt it was judged on."""
+    return f"{entity}|{first_frame}|{last_frame}|{sha256_text(prompt.strip())}"
+
+
 def draft_approved(ledger: Ledger, run_id: str, shot_key: str) -> Check:
-    """shot_key = '<shot>/<clip>|<first sha>|<last sha>|<prompt sha>' recorded when the draft was approved."""
+    """shot_key from draft_key(); recorded as entity 'draft:<key>' when the draft was approved."""
     ok = any(e["decision"] == "approve" and e["entity_id"] == f"draft:{shot_key}"
              for e in ledger.find(run_id=run_id))
     return Check("draft_approved_before_final", "pass" if ok else "fail", "measured",
