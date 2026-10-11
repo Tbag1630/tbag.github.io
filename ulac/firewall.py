@@ -26,6 +26,8 @@ from pathlib import Path
 
 from orchestrator.util import utc_iso
 
+from . import video
+
 MAX_ATTEMPTS = 2
 CAUSES = ("prompt_ambiguity", "reference_conflict", "model_limitation", "continuity_defect", "tooling_defect")
 SEVERITIES = ("Blocking", "Nonblocking", "Uncertain")
@@ -200,34 +202,63 @@ def _historic(root: Path, tid: str, attempt: int) -> bool:
                for r in read_ledger(root))
 
 
-# ---- video budget (V): one paid pilot clip, a hard cap, reserved in the ledger before the job exists ----------------
+# ---- video budget (V): one paid pilot clip, a hard cap, reserved on the exact graph before the job exists -----------
+VIDEO_DIR = "VIDEO"
+LISTENING = ("speech_absent", "vocals_absent", "music_absent", "sync_ok", "no_irrelevant_events")
+_ACTORS = ("", "claude", "claude-code", "worker", "director", "agent")
+
+
+def _user(by: str) -> bool:
+    who = str(by).strip().lower()
+    return who not in _ACTORS and not who.startswith(("automated", "claude"))
+
+
 def video_pilot(root: Path) -> dict:
     """The user's video pilot (FIREWALL.json `video_pilot`). It is not `authorization.video`: dag.py reads that flag as a
     switch that opens every VIDEO node, and a pilot scope must not open the whole stage."""
     return dict(load_conf(root).get("video_pilot") or {})
 
 
-def video_state(root: Path) -> dict:
-    """Fold the ledger. A reservation counts at its estimate until billing replaces it, and it still counts after a crash
-    between reserve and submit: a job that may exist is never treated as free."""
+def _reservations(root: Path) -> dict[str, dict]:
     res: dict[str, dict] = {}
     for r in read_ledger(root):
-        if r.get("event") == "video_reserved":
-            res[r["rid"]] = {"rid": r["rid"], "seq": r["seq"], "estimate": r["estimate"],
-                             "graph_sha256": r["graph_sha256"], "state": "reserved", "job_id": None, "billed": None}
-        elif r.get("event") == "video_submitted" and r.get("rid") in res:
-            res[r["rid"]].update(state="submitted", job_id=r["job_id"])
-        elif r.get("event") == "video_billed" and r.get("rid") in res:
-            res[r["rid"]].update(state="billed", billed=float(r["credits"]))
-    committed = sum(x["billed"] if x["state"] == "billed" else x["estimate"] for x in res.values())
+        ev, rid = r.get("event"), r.get("rid")
+        if ev == "video_reserved":
+            res[rid] = {"rid": rid, "seq": r["seq"], "credits": r["credits"], "graph_sha256": r["graph_sha256"],
+                        "graph_file": r["graph_file"], "state": "reserved", "job_id": None, "billed": None, "qc": None}
+        elif rid in res and ev == "video_submitted":
+            res[rid].update(state="submitted", job_id=r["job_id"])
+        elif rid in res and ev == "video_billed":
+            res[rid].update(state="billed", billed=float(r["credits"]))
+        elif rid in res and ev == "video_qc":
+            res[rid]["qc"] = r["verdict"]
+    return res
+
+
+def video_state(root: Path) -> dict:
+    """Fold the ledger. A reservation counts at its quoted credits until billing replaces that figure, and it still counts
+    after a crash between reserve and submit: a job that may exist is never treated as free."""
+    res = _reservations(root)
+    committed = sum(x["billed"] if x["state"] == "billed" else x["credits"] for x in res.values())
     return {"reservations": list(res.values()), "attempts": len(res), "committed": round(committed, 2)}
+
+
+def video_quote(root: Path, *, seq: str, graph: dict, prompt: str, seconds: int, segment_seconds: float,
+                credits: float, source: str, dry_run: str) -> dict:
+    """Record the pre-submission estimate for one exact graph, with its preflight result. A quote is a record, not
+    permission: video_reserve re-runs the preflight and still needs the user's acceptance of the price."""
+    if not (isinstance(credits, (int, float)) and not isinstance(credits, bool) and math.isfinite(credits) and credits > 0):
+        raise FirewallError("a quote must be a positive credit figure")
+    problems = video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
+    return record(root, "video_quoted", seq=seq, graph_sha256=video.graph_sha256(graph),
+                  prompt_sha256=video.prompt_sha256(prompt), credits=round(float(credits), 2), source=source,
+                  dry_run=dry_run, problems=problems)
 
 
 def video_accept_price(root: Path, *, by: str, quote: str, graph_sha256: str, credits: float) -> dict:
     """Record the user's acceptance of an estimate that billing has not verified, for one exact graph. The rule of
-    approve_extra applies: the user's own words; a worker, a reviewer or an automated check cannot accept a price."""
-    who = by.strip().lower()
-    if who in ("", "claude", "claude-code", "worker", "director", "agent") or who.startswith(("automated", "claude")):
+    approve_extra applies: the user's own words, never a worker, reviewer or automated check."""
+    if not _user(by):
         raise FirewallError(f"price acceptance must come from the user, not {by!r}")
     if len(quote.strip()) < 8:
         raise FirewallError("quote the user's acceptance (their own words)")
@@ -240,10 +271,10 @@ def video_accept_price(root: Path, *, by: str, quote: str, graph_sha256: str, cr
     return acc
 
 
-def video_reserve(root: Path, *, seq: str, estimate: float, graph_sha256: str, prompt_sha256: str) -> dict:
-    """Reserve one paid video submission or refuse it. The caller submits only after this returns. A refusal writes
-    nothing. The platform's submit tool has no per-job cap, so this reservation is the enforcement: a job made without
-    it is outside the firewall."""
+def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: int, segment_seconds: float) -> dict:
+    """Reserve one paid video submission or refuse it. A refusal writes nothing. The caller submits only the stored graph
+    (video_payload), and only after this returns. The platform's submit tool has no per-job cap, so this reservation is
+    the enforcement: a job made without it is outside the firewall."""
     pilot = video_pilot(root)
     why = gate_tooling(root)
     if str(pilot.get("status", "")).upper() != "AUTHORIZED":
@@ -259,42 +290,98 @@ def video_reserve(root: Path, *, seq: str, estimate: float, graph_sha256: str, p
     limit = int(pilot.get("max_attempts", 1))
     if st["attempts"] >= limit:
         why.append(f"{st['attempts']} paid video attempt(s) already reserved; the pilot allows {limit}")
-    est_ok = (isinstance(estimate, (int, float)) and not isinstance(estimate, bool)
-              and math.isfinite(estimate) and estimate > 0)
-    if not est_ok:
-        why.append("the estimate must be a positive, finite credit figure")
-    elif capped and st["committed"] + estimate > cap:
-        why.append(f"{st['committed']} committed + {estimate} would exceed the {cap}-credit cap")
-    acc = pilot.get("price_acceptance") or {}
-    if not (est_ok and acc.get("graph_sha256") == graph_sha256 and abs(float(acc.get("credits", -1)) - estimate) <= 0.005):
-        why.append("the estimate is not verified by a billed job, and no user acceptance covers this exact graph")
+    why += video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
+    gsha = video.graph_sha256(graph)
+    quotes = [e for e in read_ledger(root) if e.get("event") == "video_quoted" and e.get("graph_sha256") == gsha]
+    credits = quotes[-1]["credits"] if quotes else None
+    if credits is None:
+        why.append("no pre-submission quote is recorded for this exact graph")
+    else:
+        if capped and st["committed"] + credits > cap:
+            why.append(f"{st['committed']} committed + {credits} would exceed the {cap}-credit cap")
+        acc = pilot.get("price_acceptance") or {}
+        if not (acc.get("graph_sha256") == gsha and abs(float(acc.get("credits", -1)) - credits) <= 0.005):
+            why.append("the estimate is not verified by a billed job, and no user acceptance covers this exact graph")
     if why:
         raise FirewallError("VIDEO FIREWALL refused the submission: " + "; ".join(why))
-    rid = f"V{st['attempts'] + 1:02d}-{graph_sha256[:12]}"
-    return record(root, "video_reserved", rid=rid, seq=seq, estimate=round(float(estimate), 2), cap_credits=cap,
-                  committed_before=st["committed"], graph_sha256=graph_sha256, prompt_sha256=prompt_sha256)
+    rid = f"V{st['attempts'] + 1:02d}-{gsha[:12]}"
+    path = Path(root) / VIDEO_DIR / f"{rid}.graph.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(json.dumps(graph, sort_keys=True, ensure_ascii=False, indent=1) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    return record(root, "video_reserved", rid=rid, seq=seq, credits=credits, cap_credits=cap,
+                  committed_before=st["committed"], graph_sha256=gsha, prompt_sha256=video.prompt_sha256(prompt),
+                  graph_file=str(path.relative_to(Path(root))))
 
 
-def video_submitted(root: Path, rid: str, job_id: str, graph_sha256: str) -> dict:
-    """Record the job id the platform returned for a reserved submission. It must be the reserved graph."""
-    cur = next((r for r in video_state(root)["reservations"] if r["rid"] == rid), None)
+def video_payload(root: Path, rid: str) -> dict:
+    """The stored graph of one reservation, checked against the reserved hash. It is the only graph a paid submission
+    may send."""
+    cur = _reservations(root).get(rid)
+    if cur is None:
+        raise FirewallError(f"{rid} has no reservation in the ledger")
+    graph = json.loads((Path(root) / cur["graph_file"]).read_text(encoding="utf-8"))
+    if video.graph_sha256(graph) != cur["graph_sha256"]:
+        raise FirewallError(f"{rid}: the stored graph no longer matches its reserved hash")
+    return graph
+
+
+def video_submitted(root: Path, rid: str, job_id: str, graph: dict) -> dict:
+    """Record the job id the platform returned for a reserved submission. The graph must be the reserved one, so a changed
+    graph cannot be recorded as the paid job."""
+    cur = _reservations(root).get(rid)
     if cur is None:
         raise FirewallError(f"{rid} has no reservation in the ledger: nothing may be submitted")
     if cur["state"] != "reserved":
         raise FirewallError(f"{rid} is already {cur['state']}: a reservation is submitted once")
     if not job_id:
         raise FirewallError(f"{rid}: no job id came back, so the reservation stays counted as spent")
-    if cur["graph_sha256"] != graph_sha256:
-        raise FirewallError(f"{rid}: the graph being submitted is not the reserved graph")
-    return record(root, "video_submitted", rid=rid, job_id=job_id, graph_sha256=graph_sha256)
+    if video.graph_sha256(graph) != cur["graph_sha256"]:
+        raise FirewallError(f"{rid}: the graph submitted is not the reserved graph")
+    return record(root, "video_submitted", rid=rid, job_id=job_id, graph_sha256=cur["graph_sha256"])
 
 
 def video_billed(root: Path, rid: str, credits: float, source: str) -> dict:
     """Record what billing charged for a submitted job, and the feed or invoice it came from."""
-    cur = next((r for r in video_state(root)["reservations"] if r["rid"] == rid), None)
+    cur = _reservations(root).get(rid)
     if cur is None or cur["state"] != "submitted":
         raise FirewallError(f"{rid} has no submitted job waiting for a billed amount")
     return record(root, "video_billed", rid=rid, job_id=cur["job_id"], credits=round(float(credits), 2), source=source)
+
+
+def video_qc_record(root: Path, rid: str, *, verdict: str, reviewer: str, output_path, seconds: int,
+                    listened: dict | None, notes: str) -> dict:
+    """Record the QC verdict on a paid output. The file is preserved, never deleted or replaced. A FAIL never leads to a
+    second paid attempt: video_reserve refuses once the single attempt is reserved. A PASS needs a human listening review of
+    every item in LISTENING. The automated screen is stored as evidence and can never pass a clip alone."""
+    if verdict not in ("PASS", "FAIL"):
+        raise FirewallError("verdict must be PASS or FAIL")
+    if not _user(reviewer):
+        raise FirewallError(f"QC must be reviewed by the user, not {reviewer!r}")
+    cur = _reservations(root).get(rid)
+    if cur is None or cur["state"] not in ("submitted", "billed"):
+        raise FirewallError(f"{rid} has no submitted output to review")
+    if cur["qc"]:
+        raise FirewallError(f"{rid} already has a QC verdict ({cur['qc']}): one review per output")
+    out = Path(output_path)
+    if not out.exists():
+        raise FirewallError(f"output file missing: {out}")
+    listened = dict(listened or {})
+    structural = video.output_problems(out, seconds=seconds)
+    if verdict == "PASS":
+        if structural:
+            raise FirewallError("PASS refused: " + "; ".join(structural))
+        missing = [k for k in LISTENING if listened.get(k) is not True]
+        if missing:
+            raise FirewallError(f"PASS needs a listening review; not confirmed: {missing}")
+        if len((notes or "").strip()) < 40:
+            raise FirewallError("PASS needs notes on what was heard (40 characters or more)")
+    return record(root, "video_qc", rid=rid, verdict=verdict, reviewer=reviewer, listened=listened,
+                  notes=(notes or "").strip(), output_path=str(out), output_sha256=video.file_sha256(out),
+                  structural=structural, screen=video.audio_screen(out),
+                  next_step="no automatic retry: one paid attempt per pilot" if verdict == "FAIL" else "")
 
 
 # ---- tooling gate (D) ----------------------------------------------------------------------------------------------

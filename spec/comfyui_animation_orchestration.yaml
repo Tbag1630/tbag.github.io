@@ -344,7 +344,9 @@ pipeline:
         include_emotional_guidance_with_valence_and_arousal: true
         include_visual_style: true
         include_audio_policy: true
-        default_audio_policy: "No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence."
+        native_audio: true
+        music_stage: "post-production only (clip stitching and final edit); the video model never generates or embeds music"
+        default_audio_policy: "Generate synchronized, embedded sound effects, physical foley, and natural environmental ambience only, matched to the visible action. No human voice, speech, dialogue, narration, voice-over, singing, vocal music, or musical score. Do not invent sound events that contradict the scene. No music of any kind, including background music and stingers; no vocalizations."
         no_format_subjects_mood_lines: true
         no_color_logic_section: true
       continuity:

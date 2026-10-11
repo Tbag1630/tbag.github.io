@@ -11,6 +11,8 @@ the BLAKE3 hash of their bytes; outputs are made loadable with use_previous_outp
 """
 from __future__ import annotations
 
+from . import video
+
 GPT_MODEL = "gpt-image-2.5-flare"
 PRESET_SIZES = ("auto", "1024x1024", "1024x1536", "1536x1024", "2048x2048", "2048x1152", "1152x2048", "3840x2160",
                 "2160x3840")
@@ -99,13 +101,17 @@ def end_lock_crop_v1(board: str, abs_box: list[int], *, prefix: str) -> dict:
 
 
 def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, seconds: int, prefix: str,
-                      generate_audio: bool = True, model: str = "Seedance 2.0") -> dict:
-    """Video stage: @image1 storyboard sheet, @image2 identity board (skill handoff)."""
+                      model: str = "Seedance 2.0") -> dict:
+    """Video stage: @image1 storyboard sheet, @image2 identity board (skill handoff). Native audio is always on: the clip
+    carries sound effects, foley and ambience, and the sound-only policy must already be in the prompt."""
     if not 4 <= seconds <= 15:
         raise ValueError("Seedance 2.0 renders 4-15 whole seconds")
+    problems = video.prompt_problems(prompt, authored=False)
+    if problems:
+        raise ValueError("video prompt refused: " + "; ".join(problems))
     g = {"1": _load(storyboard, "@image1 storyboard")}
     inputs = {"model": model, "model.prompt": prompt, "model.resolution": "720p", "model.ratio": "16:9",
-              "model.duration": seconds, "model.generate_audio": generate_audio, "model.auto_downscale": True,
+              "model.duration": seconds, "model.generate_audio": True, "model.auto_downscale": True,
               "model.auto_upscale": False, "model.reference_images.image_1": ["1", 0], "seed": 0,
               "watermark": False}
     if identity:

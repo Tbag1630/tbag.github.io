@@ -16,7 +16,7 @@ Plan (authored, SEQUENCES/SEQ_n/storyboard_plan.json):
  characters: {C1: anchors}, identity_ref: "C1" | null, emotional_arc, style_lock, effect_lock,
  environment_lock, spatial_lock | null, grid, continuous, same_lens, master_panel,
  panels: [{lens, beat, camera, action, rhythm, escalation, state, style, video_beat}],
- environment, emotional_guidance, visual_style, audio | null, master_rule | null}
+ environment, emotional_guidance, visual_style, audio: {sounds, room} | null, master_rule | null}
 (master_rule: in a chained sequence the geography can be carried by image 1 instead of a new master panel)
 """
 from __future__ import annotations
@@ -25,6 +25,7 @@ import re
 from pathlib import Path
 
 from . import layout
+from .video import audio_lines, prompt_problems
 
 BLUEPRINT = ("Use @image1 as the authoritative director-approved storyboard blueprint for the sequence. "
              "Treat every storyboard panel as a consecutive shot within a single cinematic sequence. "
@@ -37,7 +38,6 @@ BLUEPRINT = ("Use @image1 as the authoritative director-approved storyboard blue
 CONTINUOUS = ("The entire video must play as one continuous developing master shot with no visible cuts; each "
               "panel is a sampled phase of the same uninterrupted camera move, not a separate shot.")
 SAME_LENS = "Use one virtual lens / same-lens continuous camera move; scale changes come from physical camera movement only."
-NO_MUSIC = "AUDIO: No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence."
 PURITY = ("Panel images are visual-only low-detail monochrome light-gray rough sketches. Put panel numbers, beat "
           "names, and lens tags in the header strip outside each panel image. No color, labels, arrows, captions, "
           "subtitles, logos, watermarks, timing marks, diagrams, UI, ghost poses, duplicate bodies, or technical "
@@ -161,7 +161,7 @@ def video_text(plan: dict) -> str:
     lines += [f"ENVIRONMENT: {_c(plan['environment'])}.",
               f"EMOTIONAL GUIDANCE: {_c(plan['emotional_guidance'])}.",
               f"VISUAL STYLE: {_c(plan['visual_style'])}.",
-              f"AUDIO: {_c(plan['audio'])}." if plan.get("audio") else NO_MUSIC,
+              *audio_lines(plan.get("audio")),
               "PANEL BEATS:"]
     lines += [f"P{i:02d}: {_c(p['video_beat'])}." for i, p in enumerate(plan["panels"], start=1)]
     return "\n".join(lines) + "\n"
@@ -224,6 +224,7 @@ def check(sb: str, video: str, folder: Path | None = None) -> list[str]:
         errs.append("storyboard section order does not match the template")
     if not sb.startswith("Create a 16:9 image.") or "TITLE:" not in sb:
         errs.append("storyboard must open with 'Create a 16:9 image.' and a project card title")
+    errs += [f"prompt_video.txt: {p}" for p in prompt_problems(video, authored=False)]
     if re.search(r"^\[(For|Write)\b", video, re.M):
         errs.append("video prompt has unresolved bracketed instruction lines")
     if re.search(r"^(FORMAT|SUBJECTS|MOOD)\s*:", video, re.M):

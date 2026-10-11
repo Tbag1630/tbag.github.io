@@ -19,7 +19,12 @@ from ..util import sha256_file
 from .common import Ctx, finish
 
 S04, S09 = "S04_storyboard_prompt", "S09_clip_handoff"
-AUDIO_DEFAULT = "No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence."
+AUDIO_DEFAULT = (
+    "Generate synchronized, embedded sound effects, physical foley, and natural environmental "
+    "ambience only, matched to the visible action. No human voice, speech, dialogue, narration, "
+    "voice-over, singing, vocal music, or musical score. Do not invent sound events that contradict "
+    "the scene."
+)
 UNRESOLVED = re.compile(r"\[(Describe|For|Write|If|PROMPT|TODO)\b|PROMPT HERE|EDIT INSTRUCTION HERE|PASTE_|"
                         r"\(first timed beat\)|\(second timed beat\)|^PROMPT$", re.I | re.M)
 
