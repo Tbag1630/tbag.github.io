@@ -16,7 +16,8 @@ Plan (authored, SEQUENCES/SEQ_n/storyboard_plan.json):
  characters: {C1: anchors}, identity_ref: "C1" | null, emotional_arc, style_lock, effect_lock,
  environment_lock, spatial_lock | null, grid, continuous, same_lens, master_panel,
  panels: [{lens, beat, camera, action, rhythm, escalation, state, style, video_beat}],
- environment, emotional_guidance, visual_style, audio | null}
+ environment, emotional_guidance, visual_style, audio | null, master_rule | null}
+(master_rule: in a chained sequence the geography can be carried by image 1 instead of a new master panel)
 """
 from __future__ import annotations
 
@@ -109,6 +110,7 @@ def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> st
         "[STORYBOARD PURITY]",
         PURITY + (f" Never draw: {_c(negative)}." if negative else ""),
         "[MASTER SHOT RULE]",
+        _c(plan["master_rule"]) + "." if plan.get("master_rule") else
         f"Panel {plan['master_panel']:02d} shows full geography: character positions, entrances/exits, main prop, "
         "foreground/midground/background, and screen direction.",
         "[EMOTIONAL ARC]",
