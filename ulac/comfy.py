@@ -6,17 +6,41 @@ optional MASK for inpainting with exactly one reference image), ByteDance2Refere
 (Seedance 2.0, 720p, ratio 16:9, duration 4-15 s on 2.0), ImageCropV2, SolidMask,
 MaskComposite, LoadImage, SaveImage, SaveVideo.
 
-Cloud inputs are referenced by their Comfy Cloud filenames (uploads are named by content
-SHA-256; outputs are made loadable with use_previous_output).
+Cloud inputs are referenced by their Comfy Cloud filenames (uploads and outputs are named by
+the BLAKE3 hash of their bytes; outputs are made loadable with use_previous_output).
 """
 from __future__ import annotations
 
 GPT_MODEL = "gpt-image-2.5-flare"
+PRESET_SIZES = ("auto", "1024x1024", "1024x1536", "1536x1024", "2048x2048", "2048x1152", "1152x2048", "3840x2160",
+                "2160x3840")
 SHEET_SIZE = "3840x2160"     # 16:9; final panels stay >= 360 px on the short side
 
 
 def _load(name: str, title: str) -> dict:
     return {"class_type": "LoadImage", "inputs": {"image": name}, "_meta": {"title": title}}
+
+
+def crop_ref(board: str, box: list[int]) -> str:
+    """A reference that is a crop of an approved board output already on Comfy Cloud (an END_LOCK)."""
+    return "crop:" + board + "@" + ",".join(str(int(v)) for v in box)
+
+
+def _ref_nodes(g: dict, k: int, title: str, name: str, prefix: str) -> list:
+    """Add the nodes for reference k and return its [node_id, 0]. A crop: reference becomes LoadImage ->
+    ImageCropV2, and the crop is also saved (…_REF{k}_CROP) so its pixels can be compared with the local END_LOCK."""
+    if not name.startswith("crop:"):
+        g[str(k)] = _load(name, title)
+        return [str(k), 0]
+    board, box = name[5:].split("@")
+    x0, y0, x1, y1 = (int(v) for v in box.split(","))
+    g[str(40 + k)] = _load(board, title + " source board")
+    g[str(k)] = {"class_type": "ImageCropV2", "inputs": {"image": [str(40 + k), 0], "crop_region": {
+        "x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}}, "_meta": {"title": title + " (END_LOCK crop)"}}
+    g[str(50 + k)] = {"class_type": "SaveImage", "inputs": {"images": [str(k), 0],
+                                                          "filename_prefix": f"{prefix}_REF{k}_CROP"},
+                      "_meta": {"title": f"REF{k} crop for pixel check"}}
+    return [str(k), 0]
 
 
 def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: str = SHEET_SIZE,
@@ -26,12 +50,16 @@ def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: st
     if len(refs) > 16:
         raise ValueError("GPT Image takes at most 16 reference images")
     g: dict = {}
-    inputs = {"prompt": prompt, "model": model, "model.size": size, "model.custom_width": 1024,
-              "model.custom_height": 1024, "model.background": "opaque", "model.quality": quality,
+    inputs = {"prompt": prompt, "model": model, "model.size": size, "model.background": "opaque",
+              "model.quality": quality,
               "n": 1, "seed": 0}
+    if size not in PRESET_SIZES:                      # "WxH" -> the node's Custom size (multiples of 16, 480..3840)
+        w, h = (int(v) for v in size.lower().split("x"))
+        if w % 16 or h % 16 or not (480 <= w <= 3840 and 480 <= h <= 3840) or max(w, h) > 3 * min(w, h):
+            raise ValueError(f"custom size {size}: multiples of 16, 480..3840 per side, at most 3:1")
+        inputs.update({"model.size": "Custom", "model.custom_width": w, "model.custom_height": h})
     for k, (title, name) in enumerate(refs, start=1):
-        g[str(k)] = _load(name, title)
-        inputs[f"model.images.image_{k}"] = [str(k), 0]
+        inputs[f"model.images.image_{k}"] = _ref_nodes(g, k, title, name, prefix)
     if mask_box is not None:
         if len(refs) != 1:
             raise ValueError("an inpaint mask needs exactly one reference image")
@@ -51,12 +79,12 @@ def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: st
 
 
 def storyboard_sheet_v1(prompt: str, ref_env: str, ref_identity: str | None, *, prefix: str,
-                        quality: str = "high") -> dict:
+                        quality: str = "high", size: str = SHEET_SIZE) -> dict:
     """GENERATE (init block): ref1 = END_LOCK_{n-1} or DRESSED_MASTER, ref2 = identity board."""
     refs = [("REF1 environment authority", ref_env)]
     if ref_identity:
         refs.append(("REF2 identity board", ref_identity))
-    return gpt_image(prompt, refs, prefix=prefix, quality=quality)
+    return gpt_image(prompt, refs, prefix=prefix, quality=quality, size=size)
 
 
 def end_lock_crop_v1(board: str, abs_box: list[int], *, prefix: str) -> dict:

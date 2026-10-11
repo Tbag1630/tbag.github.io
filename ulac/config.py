@@ -22,7 +22,10 @@ DEFAULT = {
     "QC_MODE": "BINARY",
     "NEGATIVE": "extra chairs, extra diners, rotated table, new doorway, phantom seats",
     "FORBIDDEN_CHANGES": ["TABLE_ROTATE", "CHAIR_TELEPORT", "DINER_VANISH", "IDENTITY_SWAP"],
-    "ENDPOINT": {"min_short_side": 360, "aspect": 16 / 9, "aspect_tol": 0.03},
+    # the model draws panels at ~1.2:1 whatever the prompt or a wireframe says (probes A-C, 2026-10-11), so the
+    # END_LOCK is the central 16:9 band of the measured final panel and every panel is composed for that band
+    "ENDPOINT": {"min_short_side": 360, "aspect": 16 / 9, "aspect_tol": 0.03, "fit_band": True},
+    "SHEET_SIZE": "3840x2160",
     "REPAIR_LADDER_MAX": 5,
     "REPEATED_CAUSE_STOP": 2,       # L8 R5: stop at the 2nd failure with the same cause
 }

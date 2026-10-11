@@ -223,13 +223,16 @@ AUTHORED_KEYS = ("goal", "effort", "resistance_cost", "result", "message_carried
                  "camera_progression", "sfx", "opening_lock", "ending_lock")
 
 
-def author(ep_root: Path, authored: dict) -> list[str]:
+def author(ep_root: Path, authored: dict, *, plan_only: tuple[str, ...] = ()) -> list[str]:
     """Merge planner-authored fields into sequences that have no generations yet.
 
     authored = {"SEQ_001": {<prompt fields>, "penv_id"?, "protected_cues": [{phrase, visual_requirement,
     after?}], "allowed_changes": [...], "forbidden_changes": [...], "state_before": X,
     "allowed_change": [dotted paths], "state_after": X, "storyboard": {...}},
-    "_seat_map": {PENV: {SEAT: OCCUPANT_ID}}}"""
+    "_seat_map": {PENV: {SEAT: OCCUPANT_ID}}}
+
+    plan_only names sequences that already have generations: only their storyboard plan text is updated
+    (a recorded repair changes the instruction, never the authored contract)."""
     ep_root = Path(ep_root)
     st = json.loads((ep_root / "RUN_STATE.json").read_text())
     man = json.loads((ep_root / "ASSET_MANIFEST.json").read_text())
@@ -252,6 +255,14 @@ def author(ep_root: Path, authored: dict) -> list[str]:
         d = layout.seq_dir(ep_root, sid)
         if sid not in recs:
             raise InstantiateError(f"unknown sequence {sid}")
+        if sid in plan_only:
+            if sid not in done:
+                raise InstantiateError(f"{sid} has no generations: author it normally")
+            if "storyboard" not in fields:
+                raise InstantiateError(f"{sid}: plan_only needs a storyboard plan")
+            _j(layout.seq_dir(ep_root, sid) / "storyboard_plan.json", fields["storyboard"])
+            changed.append(f"{sid} (plan only)")
+            continue
         if sid in done:
             raise InstantiateError(f"{sid} already has generations: record a repair instead")
         rec = recs[sid]

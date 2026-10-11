@@ -58,7 +58,7 @@ python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
 | L1 Precompute | `instantiate` requires narration audio and its word alignment. `START` runs every validator and stays BLOCKED until the prompts, `X_t` states, protected-cue requirements and seat map are authored and lawful. No image request can be compiled before `START`. |
 | L2 One active | Only the pending target accepts `compile`/`submit`. `SEQ_{n+1}` becomes pending only after `SEQ_n` is CLOSED with `END_LOCK.png` + `END_LOCK.sha256` on disk. |
 | L3 Minimal references | Exactly one environment-bearing image per request. The first sequence of a location uses REF1 = that location's dressed master and REF2 = identity board, both required. Later sequences use REF1 = `END_LOCK_{n-1}`, with REF2 = identity board optional. Every reference must hash-match a registered authority, a locked asset or the chain. Mixing architecture source, dressed master, endpoint or old board is rejected. |
-| L4 Endpoint | The final panel is cropped (grid or explicit box), borders are stripped, and the result is written once as `END_LOCK.png` + `.sha256`. Its file hash and decoded-pixel hash are both kept. The Comfy Cloud copy (`end_lock_crop_v1`) is accepted only if its pixels hash identically. `RESUME` re-hashes the chain and locked assets. |
+| L4 Endpoint | The final panel is cropped (grid or explicit box), borders are stripped, and the result is written once as `END_LOCK.png` + `.sha256`. Its file hash and decoded-pixel hash are both kept. The image model draws panels near 1:1 whatever the prompt asks (three layout probes, one wireframe), so with `ENDPOINT.fit_band` the END_LOCK is the exact 16:9 band of the detected final panel (`endpoint.find_panels`; `next --band-bias` slides the band, boards are composed for it). `panels` writes every panel of an attempt to `attempts/A##/panels/` for panel-level QC. The next request crops the approved board in-graph (`crop:` reference, saved as `…_REF1_CROP`); that crop, or a standalone `end_lock_crop_v1`, is accepted only if its pixels hash identically to the local END_LOCK. `RESUME` re-hashes the chain and locked assets. |
 | L5 State | `X_t = {E,C,T,H,O,P,D,L}` holds `X_start_{i+1} == X_end_i` and `Δ_gen ⊆ Δ_allowed` on dotted-path diffs. The chain restarts only at a `LOCATION_CHANGE` cut. |
 | L6 Timing | Protected cues are computed from word timestamps: `global_start/end`, `local_start/end`, `target_frame = round(t_local·fps)`, `earliest_anticipation`, `latest_readable`, `visual_requirement`. A cue that straddles a cut is an error. Every cue is a binary QC item. |
 | L7 QC | `qc_report.json` holds the 12 fail codes plus one item per protected cue. PASS/FAIL needs evidence and a decider; PENDING is never a pass; cosmetic issues are logged and never fail. Check 11 is also measured (size, 16:9, no residual border, not blank). |
@@ -66,7 +66,7 @@ python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
 | L9 Pause-safe | `RUN_STATE.json`, `CHECKPOINT_LATEST.txt`, `FAILURE_LOG.jsonl`, `ASSET_MANIFEST.json`, the END_LOCK chain and a hash-chained `EVENTS.jsonl` are rewritten on every transition. `PAUSE` sets PAUSED_PLATFORM and keeps the pending action. |
 | L10 15 s packing | Planner cuts must name a dramatic boundary (`CHOICE_MADE`, `RESISTANCE_ENTERS`, `LOCATION_CHANGE`, …) and a reason. Cuts may not split a word. Sequences never exceed 15.00 s and cover the audio exactly on integer frames. A sequence under 14.20 s is allowed when meaning requires it, and is flagged. |
 | L11 SFX | The `sfx` field is linted against non-diegetic terms (music, score, drone, whoosh, …). |
-| L12 Identity | Occupant IDs in the seat map and `X.O` may not rely on colour (`BLUE_SHIRT` is rejected; `SHORT_CURLS` passes). |
+| L12 Identity | Occupant IDs in the seat map and `X.O` may not rely on colour (`BLUE_SHIRT` is rejected; `SHORT_CURLS` passes). A board prompt for a room with fixed seats must state `SEATING` (who sits where, no side changes, no other chair occupied) and `CHAIRS` (the master's chairs, unnamed ones empty); `storyboard.build` refuses otherwise. |
 
 ## Comfy Cloud graphs (`ulac/comfy.py`; all passed dry-run on 2026-10-11)
 
@@ -78,7 +78,7 @@ python -m ulac adapt EP05 SEQ_001 --target seedance|generic [--no-trace]
 | `end_lock_crop_v1` | `ImageCropV2`, no partner node | GPU only |
 | `seedance_r2v_720p`: @image1 board, @image2 identity | Seedance 2.0 R2V, 720p, 16:9, 4–15 s | ~45.6 cr/s |
 
-Sheets are 3840×2160 because a 2048×1152 sheet (~18–20 cr) leaves the final panel under the 360 px minimum once the project card and director strip take their share. GPT Image has no negative-prompt input, so the orchestrator's never-draw list goes into `[STORYBOARD PURITY]`.
+A repair that changes board instructions on a sequence that already has generations is applied with `author --plan-only SEQ_NNN` (storyboard plan text only; the authored contract stays frozen). Sheets are 3840×2160 because a 2048×1152 sheet (~18–20 cr) leaves the final panel under the 360 px minimum once the project card and director strip take their share. GPT Image has no negative-prompt input, so the orchestrator's never-draw list goes into `[STORYBOARD PURITY]`.
 
 ## Decisions and conflicts (not silently resolved)
 

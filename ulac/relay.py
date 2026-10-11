@@ -237,7 +237,8 @@ class Episode:
         return self._save(st, "reject", why, tid, reviewer=reviewer)
 
     def next(self, *, box: list[int] | None = None, rows: int | None = None, cols: int | None = None,
-             header_frac: float = 0.0, strip_frac: float = 0.0, video: Path | None = None) -> dict:
+             header_frac: float = 0.0, strip_frac: float = 0.0, video: Path | None = None,
+             band_bias: float = 0.0) -> dict:
         """IN_QC -> FAIL: REPAIR | PASS: lock asset, or EXTRACT END_LOCK, CLOSE, advance."""
         st = self._require("IN_QC")
         kind, tid, rep = self._report(st)
@@ -276,12 +277,21 @@ class Episode:
         if video is not None:
             meta = endpoint.last_video_frame(Path(video), cand)
         elif box:
-            meta = endpoint.crop_box(attempt / "board.png", box, cand)
+            fit = ep["aspect"] if ep.get("fit_band") else None
+            meta = endpoint.crop_box(attempt / "board.png", box, cand, fit_aspect=fit, bias=band_bias)
         elif rows and cols:
             meta = endpoint.crop_final_panel(attempt / "board.png", rows, cols, cand,
                                              header_frac=header_frac, strip_frac=strip_frac)
         else:
-            raise RelayError("PASS: give the final panel box (x0,y0,x1,y1) or the grid (rows, cols)")
+            try:
+                boxes = endpoint.find_panels(attempt / "board.png")
+            except ValueError as e:
+                raise RelayError(f"PASS: panel frames not detected ({e}); give the final panel box (x0,y0,x1,y1)")
+            x0, y0, x1, y1 = boxes[-1]
+            fit = ep["aspect"] if ep.get("fit_band") else None
+            meta = endpoint.crop_box(attempt / "board.png", [x0 + 4, y0 + 4, x1 - 4, y1 - 4], cand, trim=False,
+                                     fit_aspect=fit, bias=band_bias)
+            meta["detected_panels"] = boxes
         checks = endpoint.viability(cand, **vargs)
         (attempt / "endpoint_viability.json").write_text(json.dumps({"meta": meta, "checks": checks}, indent=2))
         if not all(c["ok"] for c in checks):
@@ -293,7 +303,8 @@ class Episode:
                                  f"{tid}: final panel cannot become the next start")
         saved = endpoint.save_end_lock(cand, self.seq_dir(tid))
         (self.seq_dir(tid) / "END_LOCK.meta.json").write_text(json.dumps(meta, indent=2))
-        st["endpoint_chain"].append({"seq_id": tid, **saved})
+        st["endpoint_chain"].append({"seq_id": tid, **saved, "board_cloud": st.get("current_cloud_output"),
+                                     "abs_box": meta.get("abs_box")})
         ids = self.seq_ids()
         k = ids.index(tid)
         st.update(last_closed=tid, active=ids[k + 1] if k + 1 < len(ids) else None, status="CLOSED")
@@ -393,10 +404,12 @@ class Episode:
                 return a["cloud"]
         for link in self.state["endpoint_chain"]:
             if link["sha256"] == sha:
-                if not link.get("cloud"):
-                    raise RelayError(f"END_LOCK {link['seq_id']} is not on Comfy Cloud yet: run end_lock_crop_v1 "
-                                     "and register it with cloudlock")
-                return link["cloud"]
+                if link.get("cloud"):
+                    return link["cloud"]
+                if link.get("board_cloud") and link.get("abs_box"):
+                    return comfy.crop_ref(link["board_cloud"], link["abs_box"])
+                raise RelayError(f"END_LOCK {link['seq_id']} is not on Comfy Cloud yet: run end_lock_crop_v1 "
+                                 "and register it with cloudlock")
         for entry in self._authority_entries():
             if entry["sha256"] == sha:
                 if not entry.get("cloud"):
@@ -449,7 +462,8 @@ class Episode:
         if kind == "seq":
             env = next(c for r, _, c in named if r in ENV_ROLES)
             ident = next((c for r, _, c in named if r == "identity_board"), None)
-            graph = comfy.storyboard_sheet_v1(prompt_text, env, ident, prefix=prefix, quality=quality)
+            graph = comfy.storyboard_sheet_v1(prompt_text, env, ident, prefix=prefix, quality=quality,
+                                              size=self.cfg.get("SHEET_SIZE", comfy.SHEET_SIZE))
         else:
             graph = comfy.gpt_image(prompt_text, [(r, c) for r, _, c in named], prefix=prefix, quality=quality)
         req = {"target": tid, "attempt": n, "prompt_sha256": ph, "prompt": prompt_text,

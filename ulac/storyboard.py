@@ -24,6 +24,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from . import layout
+
 BLUEPRINT = ("Use @image1 as the authoritative director-approved storyboard blueprint for the sequence. "
              "Treat every storyboard panel as a consecutive shot within a single cinematic sequence. "
              "Follow panel order exactly and do not invent alternative coverage. Do not render the storyboard "
@@ -79,6 +81,7 @@ def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> st
     P = plan["panels"]
     ident = plan.get("identity_ref")
     ref_priority = (f"image 1 ({env_ref}) controls set geometry and P01 opens on its exact layout; "
+                    "loose props and their states follow PROP / EFFECT STATE, not image 1; "
                     + (f"image 2 identity reference controls {ident} identity; " if ident else "")
                     + "this storyboard controls staging, motion, geography, continuity; "
                     f"final panel P{len(P):02d} is the ending lock and the next sequence's first frame")
@@ -120,6 +123,11 @@ def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> st
         f"EFFECT LOCK: {_c(plan['effect_lock'])}",
         f"ENVIRONMENT LOCK: {_c(plan['environment_lock'])}",
     ]
+    if plan.get("seating") or plan.get("chairs"):
+        at = next(i for i, ln in enumerate(lines) if ln.startswith("LOCATION: ")) + 1
+        extra = ([f"SEATING: {_c(plan['seating'])}"] if plan.get("seating") else []) + \
+                ([f"CHAIRS: {_c(plan['chairs'])}"] if plan.get("chairs") else [])
+        lines[at:at] = extra
     if plan.get("spatial_lock"):
         lines += ["[SPATIAL CONTINUITY LOCK]", _c(plan["spatial_lock"])]
     lines += [
@@ -259,6 +267,10 @@ def build(ep, sid: str, *, write: bool = True) -> dict:
         raise StoryboardError(f"{sid}: no storyboard_plan.json (author 'storyboard' for this sequence)")
     plan = json.loads(pp.read_text())
     errs = check_plan(plan)
+    seats = json.loads(layout.ulac_file(ep.root, "seat_map.json").read_text())["penvs"].get(rec["penv_id"]) or {}
+    if seats and not (plan.get("seating") and plan.get("chairs")):
+        errs.append(f"{rec['penv_id']} has fixed seats {sorted(seats)}: the plan must state SEATING and CHAIRS "
+                    "(L12: a storyboard that does not say who sits where invents occupants)")
     if errs:
         raise StoryboardError(f"{sid}: {errs}")
     ref = rec.get("start_frame_ref") or {}

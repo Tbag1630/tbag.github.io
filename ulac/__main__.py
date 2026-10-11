@@ -27,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import adapters, packer, storyboard, validators
+from . import adapters, endpoint, packer, storyboard, validators
 from .instantiate import InstantiateError, author, instantiate
 from .relay import Episode, RelayError
 
@@ -67,6 +67,8 @@ def main(argv=None) -> int:
     a = sub.add_parser("author")
     a.add_argument("ep")
     a.add_argument("file")
+    a.add_argument("--plan-only", action="append", default=[],
+                   help="sequence that already has generations: update its storyboard plan text only")
     for word in ("START", "STATUS", "PAUSE", "RESUME", "validate"):
         s = sub.add_parser(word, aliases=[word.lower()] if word.isupper() else [])
         s.add_argument("ep")
@@ -76,6 +78,8 @@ def main(argv=None) -> int:
     n = sub.add_parser("NEXT", aliases=["next"])
     n.add_argument("ep")
     n.add_argument("--box", help="x0,y0,x1,y1 of the final panel on the sheet")
+    n.add_argument("--band-bias", type=float, default=0.0,
+                   help="slide the central 16:9 band: -1 top edge .. +1 bottom edge of the final panel")
     n.add_argument("--rows", type=int)
     n.add_argument("--cols", type=int)
     n.add_argument("--header-frac", type=float, default=0.0)
@@ -120,6 +124,8 @@ def main(argv=None) -> int:
     d.add_argument("--action", choices=["retry", "abort"], required=True)
     d.add_argument("--reason", required=True)
     d.add_argument("--by", required=True)
+    pn = sub.add_parser("panels", help="crop every panel of the current attempt's board for panel-level QC")
+    pn.add_argument("ep")
     sbp = sub.add_parser("storyboard", help="write the skill's two prompt files for a sequence")
     sbp.add_argument("ep")
     sbp.add_argument("seq")
@@ -170,7 +176,7 @@ def main(argv=None) -> int:
                 "packing": m["packing"], "packing_warnings": m["packing_warnings"], "notes": m["notes"]})
             return 0
         if c == "author":
-            _p({"authored": author(Path(args.ep), json.loads(Path(args.file).read_text()))})
+            _p({"authored": author(Path(args.ep), json.loads(Path(args.file).read_text()), plan_only=tuple(args.plan_only))})
             return 0
         ep = Episode(Path(args.ep))
         if c == "START":
@@ -187,7 +193,8 @@ def main(argv=None) -> int:
         elif c == "NEXT":
             box = [int(v) for v in args.box.split(",")] if args.box else None
             st = ep.next(box=box, rows=args.rows, cols=args.cols, header_frac=args.header_frac,
-                         strip_frac=args.strip_frac, video=Path(args.video) if args.video else None)
+                         strip_frac=args.strip_frac, video=Path(args.video) if args.video else None,
+                         band_bias=args.band_bias)
         elif c == "submit":
             refs = [tuple(x.split("=", 1)) for x in args.ref]
             st = ep.submit(Path(args.image), Path(args.prompt).read_text(), refs,
@@ -223,6 +230,11 @@ def main(argv=None) -> int:
             rep = validators.run_all(ep)
             _p(rep)
             return 0 if rep["ok"] else 2
+        elif c == "panels":
+            st = ep.state
+            att = Path(args.ep) / st["current_attempt"]
+            _p(endpoint.panel_crops(att / "board.png", att / "panels"))
+            return 0
         elif c == "storyboard":
             out = storyboard.build(ep, args.seq)
             _p(out)

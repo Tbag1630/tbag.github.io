@@ -408,6 +408,7 @@ PLAN = {
          "rhythm": "final hit / short block / clean beat", "escalation": "L2 tension / release", "state": "lamp on",
          "style": "warm glow", "video_beat": "She shifts closer, the lamp clicks on and warm light fills the room"}],
     "environment": "small bedroom, bed screen left, window screen right, lamp on the nightstand",
+    "seating": "C1 sits on the bed edge; nobody else is in the room", "chairs": "there are no chairs in this room",
     "emotional_guidance": "Valence: neutral to mildly positive; Arousal: low, brief rise at the cord, settling",
     "visual_style": "soft 2D animation, warm practical light, gentle shading",
 }
@@ -502,3 +503,74 @@ def test_cloud_upload_name_is_blake3(tmp_path):
     f.write_bytes(b"abc")
     # BLAKE3("abc") test vector
     assert layout.cloud_upload_name(f) == "6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85.mp3"
+
+def test_storyboard_requires_seating_where_seats_are_fixed(ep):
+    """L12: a board prompt for a room with fixed seats must say who sits where and what the chairs are."""
+    from ulac import storyboard
+    e, _ = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    bare = json.loads(json.dumps(PLAN))
+    del bare["seating"], bare["chairs"]
+    a["SEQ_001"]["storyboard"] = bare
+    author(e.root, a)
+    with pytest.raises(storyboard.StoryboardError, match="SEATING and CHAIRS"):
+        storyboard.build(e, "SEQ_001")
+    author(e.root, {"SEQ_001": {"storyboard": PLAN}})
+    out = storyboard.build(e, "SEQ_001")
+    assert out["errors"] == []
+    lines = (Path(out["folder"]) / "prompt_storyboard.txt").read_text().splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("LOCATION: "))
+    assert lines[i + 1].startswith("SEATING: C1 sits") and lines[i + 2].startswith("CHAIRS: there are no chairs")
+
+
+def test_author_plan_only_after_generation(ep):
+    """A recorded repair may change the board instruction, never the authored contract."""
+    from ulac.instantiate import InstantiateError
+    e, _ = ep
+    ids = e.seq_ids()
+    a = _authored(ids)
+    a["SEQ_001"]["storyboard"] = PLAN
+    author(e.root, a)
+    st = e.state
+    st["generation_counts"]["SEQ_001"] = 1
+    e._write("RUN_STATE.json", st)
+    plan = json.loads(json.dumps(PLAN))
+    plan["priority"] = "changed after a repair"
+    with pytest.raises(InstantiateError, match="already has generations"):
+        author(e.root, {"SEQ_001": {"storyboard": plan}})
+    assert author(e.root, {"SEQ_001": {"storyboard": plan}}, plan_only=("SEQ_001",)) == ["SEQ_001 (plan only)"]
+    assert json.loads((e.seq_dir("SEQ_001") / "storyboard_plan.json").read_text())["priority"] == "changed after a repair"
+    with pytest.raises(InstantiateError, match="no generations"):
+        author(e.root, {"SEQ_002": {"storyboard": plan}}, plan_only=("SEQ_002",))
+
+
+def test_end_lock_band(tmp_path):
+    """The model draws ~1.2:1 panels: END_LOCK is the central 16:9 band of the measured panel."""
+    import numpy as np
+    from PIL import Image
+    from ulac import endpoint
+    A = 16 / 9
+
+    def check(box, got):
+        w, h = got[2] - got[0], got[3] - got[1]
+        assert abs(w / h - A) < 0.01                                        # exact to a pixel
+        assert box[0] <= got[0] and got[2] <= box[2] and box[1] <= got[1] and got[3] <= box[3]
+    tall, wide = [0, 0, 1200, 1000], [0, 0, 2000, 500]
+    mid = endpoint.band_box(tall, A)
+    check(tall, mid)
+    assert mid[0] == 0 and mid[2] == 1200 and abs((mid[1] - 0) - (1000 - mid[3])) <= 1      # centred, full width
+    top, bottom = endpoint.band_box(tall, A, -1.0), endpoint.band_box(tall, A, 1.0)
+    assert top[1] == 0 and bottom[3] == 1000
+    check(tall, top), check(tall, bottom)
+    w = endpoint.band_box(wide, A)
+    check(wide, w)
+    assert w[1] == 0 and w[3] == 500 and abs(w[0] - (2000 - w[2])) <= 1                    # too wide: full height
+    arr = np.full((1000, 1400, 3), 245, np.uint8)
+    arr[100:900, 100:1000] = np.random.default_rng(1).integers(40, 200, (800, 900, 3), dtype=np.uint8)
+    board = tmp_path / "b.png"
+    Image.fromarray(arr).save(board)
+    m = endpoint.crop_box(board, [60, 60, 1040, 940], tmp_path / "e.png", fit_aspect=A)
+    assert m["panel_box"] == [100, 100, 1000, 900]                            # uniform margin trimmed first
+    check(m["panel_box"], m["band"]["box"])
+    assert Image.open(tmp_path / "e.png").size == tuple(m["size"])
