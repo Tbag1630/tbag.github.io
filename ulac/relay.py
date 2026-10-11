@@ -135,6 +135,21 @@ class Episode:
         rec["start_frame_ref"] = ref
         self._write(str((self.seq_dir(sid) / "prompt.json").relative_to(self.root)), rec)
 
+    def _next_open(self, after: str | None = None, st: dict | None = None) -> str | None:
+        """The next sequence still open and startable: the first after `after` in script order, else the first anywhere
+        (locations are independent chains, so the end of the script is not the end of the work)."""
+        ids, closed = self.seq_ids(), {x["seq_id"] for x in (st or self.state)["endpoint_chain"]}
+        def startable(k: int) -> bool:
+            return k == 0 or ids[k - 1] in closed or self.prompt(ids[k - 1])["penv_id"] != self.prompt(ids[k])["penv_id"]
+        order = list(range(len(ids)))
+        if after in ids:
+            cut = ids.index(after) + 1
+            order = order[cut:] + order[:cut]
+        for k in order:
+            if ids[k] not in closed and startable(k):
+                return ids[k]
+        return None
+
     def _advance(self, st: dict) -> dict:
         """Choose the next pending action: start-due assets, then the active sequence's
         environment master if missing, then the active sequence itself."""
@@ -367,8 +382,7 @@ class Episode:
         st["endpoint_chain"].append({"seq_id": tid, **saved, "board_cloud": st.get("current_cloud_output"),
                                      "abs_box": meta.get("abs_box")})
         ids = self.seq_ids()
-        k = ids.index(tid)
-        st.update(last_closed=tid, active=ids[k + 1] if k + 1 < len(ids) else None, status="CLOSED")
+        st.update(last_closed=tid, active=self._next_open(tid, st), status="CLOSED")
         self._advance(st)
         if st["status"] != "COMPLETE":
             st["status"] = "CLOSED"

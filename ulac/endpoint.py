@@ -103,31 +103,46 @@ def _trim_paper(g: np.ndarray, box: list[int], tol: float = 1.5, max_frac: float
 def _header_cut(g: np.ndarray, box: list[int], scan_frac: float = 0.20, dark: float = 110.0,
                 min_dark: int = 6, min_jump: float = 8.0) -> int:
     """Rows to drop from the top of a frame box that still holds the sheet's header strip ("P04 / 35mm / Picture").
-    The strip is a light, flat band with one short line of dark glyphs; the panel image starts at the strongest
-    row-mean step below that line. The long-edge test misses this step when the image's top rows are pale in
-    places (a bright doorway), so the frame then runs up to the strip's own top edge. Returns 0 when the box
-    holds no glyph line or the step below it is weak (nothing is cut that cannot be shown to be a header)."""
+    The strip is a flat band with one short line of glyphs, either a light band with dark text or a mid-grey band
+    with light text; the panel image starts at the strongest row-mean step below that line. The long-edge test
+    misses this step when the image's top rows are pale in places (a bright doorway), so the frame then runs up to
+    the strip's own top edge. Returns 0 when the box holds no glyph line or the step below it is weak (nothing is cut
+    that cannot be shown to be a header)."""
     x0, y0, x1, y1 = box
     w, h = x1 - x0, y1 - y0
     xs = slice(x0 + w // 12, x1 - w // 12)
     sc = int(h * scan_frac)
     band = g[y0:y0 + sc + 80, xs]
-    cnt = (band[:sc] < dark).sum(axis=1)
-    rows = [r for r in range(4, sc) if cnt[r] >= min_dark]          # rows 0-3 are the frame line itself
-    if not rows or rows[0] > int(h * 0.12):
-        return 0
-    a = b = rows[0]
-    for r in rows[1:]:
-        if r - b <= 8:
-            b = r
-        else:
-            break
-    if not 10 <= b - a <= 64:                                       # one line of text, not image content
-        return 0
     rm = band.mean(axis=1)
-    above = rm[4:a]
-    if len(above) < 3 or above.min() < 190 or above.max() - above.min() > 12:
-        return 0                                                    # above the glyphs it is not flat paper
+    tone = float(np.median(np.median(band[6:min(24, sc)], axis=1)))        # row medians: sparse glyphs do not move it
+    if tone >= 190:                                                  # light strip, dark glyphs
+        cnt = (band[:sc] < dark).sum(axis=1)
+    elif 115 <= tone <= 170:                                         # grey strip, light glyphs
+        cnt = (band[:sc] > tone + 55).sum(axis=1)
+    else:
+        return 0                                                     # a night wall or a bright picture: not a strip
+    rows = [r for r in range(4, sc) if min_dark <= cnt[r] <= 0.35 * band.shape[1]]   # text-sparse rows only
+    clusters: list[list[int]] = []
+    for r in rows:
+        if clusters and r - clusters[-1][-1] <= 8:
+            clusters[-1][-1] = r
+        else:
+            clusters.append([r, r])
+    # the first dark cluster is a thin frame line when the box starts in the gutter; the glyph line is the first
+    # cluster that is text-high (10-64 rows) and starts near the top
+    glyph = next(((a, b) for a, b in clusters if 10 <= b - a <= 64), None)
+    if glyph is None or glyph[0] > int(h * 0.12):
+        return 0
+    a, b = glyph
+    above = rm[max(4, a - 14):a - 1]                                # the strip's interior just above the glyphs
+    if len(above) < 3:
+        return 0
+    if tone >= 190:
+        pale = above[above >= 190]
+        if len(pale) < 0.85 * len(above) or pale.max() - pale.min() > 12:
+            return 0          # above the glyphs it is not flat paper (a thin frame line or gutter edge may sit in it)
+    elif above.max() - above.min() > 14:
+        return 0
     lo, hi = b + 4, min(len(rm) - 5, b + 72)
     if hi <= lo:
         return 0

@@ -1068,3 +1068,51 @@ def test_flat_dark_wall_is_picture_not_margin():
     pale[60:740, 60:1340] = rng.integers(40, 200, (680, 1280)).astype(np.float32)
     got = endpoint._trim_paper(pale, [0, 0, 1400, 800])
     assert got[0] >= 50 and got[1] >= 50 and got[2] <= 1350 and got[3] <= 750
+
+
+def test_header_cut_when_the_box_starts_in_the_gutter_above_the_strip():
+    """SEQ_012 A01: row 2's box started 36 px above the header strip's own top border (gutter, then a dark frame line,
+    then the strip), so the 'flat paper above the glyphs' test saw the border and refused: P03/P04 came out 1.54:1."""
+    from ulac import endpoint
+    rng = np.random.default_rng(13)
+    g = rng.integers(100, 200, (700, 800)).astype(np.float32)
+    g[0:30] = 250                                                              # gutter
+    g[30:34] = 60                                                              # the strip's top border line
+    g[34:100] = 232                                                            # header strip
+    for xx in range(60, 380, 14):
+        g[52:72, xx:xx + 6] = 40                                               # glyph line
+    cut = endpoint._header_cut(g, [0, 0, 800, 700])
+    assert 96 <= cut <= 104
+
+
+def test_header_cut_handles_a_grey_strip_with_light_text_and_ignores_a_starry_night():
+    """SEQ_037 A01: the panel headers were mid-grey bands with light text; the strip finder only knew light bands."""
+    from ulac import endpoint
+    rng = np.random.default_rng(17)
+    g = rng.integers(150, 215, (700, 800)).astype(np.float32)
+    g[0:4] = 40
+    g[4:72] = 131                                                              # grey strip
+    for xx in range(60, 380, 14):
+        g[22:48, xx:xx + 7] = 235                                              # light glyph line
+    cut = endpoint._header_cut(g, [0, 0, 800, 700])
+    assert 68 <= cut <= 76, cut
+    night = rng.integers(55, 75, (700, 800)).astype(np.float32)                # night wall, window of stars at the top
+    for _ in range(300):
+        night[int(rng.integers(0, 120)), int(rng.integers(40, 300))] = 240
+    assert endpoint._header_cut(night, [0, 0, 800, 700]) == 0                  # nothing is cut that is not a strip
+
+
+def test_closing_the_last_sequence_does_not_complete_the_run_while_another_chain_is_open(ep):
+    """EP05: SEQ_037 (the last sequence of the hall chain) closed while the bedroom chain was still open; the relay
+    went COMPLETE/VIDEO_STAGE because it assumed one linear order."""
+    e, tmp = ep
+    ids = e.seq_ids()
+    author(e.root, _authored(ids, {ids[2]: "PENV_U"} if len(ids) > 2 else None))
+    firewall.save_conf(e.root, {"gates_enabled": False, "authorization": {"sequence_boards": True}})
+    e.start()
+    assert e._next_open(ids[-1]) == ids[0]                                 # wraps to the first open startable sequence
+    st = e.state
+    st["endpoint_chain"] = [{"seq_id": s, "path": "x", "sha256": "x", "pixel_sha256": "x"} for s in ids[2:]]
+    e._write("RUN_STATE.json", st)
+    assert e._next_open(ids[-1]) == ids[0]                                 # chain 1 (ids[0:2]) is still open
+    assert e._next_open("nonexistent") == ids[0]
