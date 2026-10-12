@@ -15,7 +15,7 @@ The reviewer opened the frames named below. The audio calls come from spectra on
 
 The mutes are in `project/EP05/PROD/ACCEPTED.json` `audio_mutes`. The edit keys mutes by take, so they apply to every segment of those takes.
 
-Joins: each clip's first and last used frames match the take frames named in its splice block. The SEQ_036 → 037 join (V50 f360 → V59 f8) is not seamless (7.2 mean pixel difference), so the 8-frame dissolve stays. The SEQ_027 joins V58 f191 → V30 f197 → V60 f1 are shared-frame matches (dhash 1 and 0 bits), so they play as seamless cuts.
+Joins: each clip's first and last used frames match the take frames named in its splice block. The SEQ_036 → 037 join (V50 f360 → V59 f8) differs by 7.2 mean pixel, and the reviewer asked for a dissolve there. The renderer's dhash rated it a match, so v5 plays it as a straight cut. The lead checked it and kept the cut (frames opened: `scratchpad/j36/pair.jpg`, `diff.jpg`). The shift is sub-pixel (phase correlation -0.08, -0.23 px), the affine fit is identity (scale 1.001), and the residual is re-rendered fine detail, not a reframe. The SEQ_027 joins V58 f191 → V30 f197 → V60 f1 are shared-frame matches (dhash 1 and 0 bits), so they play as seamless cuts.
 
 Harmless: the sheet edge takes on knit texture at A10 f80-84; the pyjama pattern comes from the pin frames; MACA's palm is dark gunmetal at 037 f80-140.
 

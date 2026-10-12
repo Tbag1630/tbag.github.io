@@ -17,7 +17,7 @@ The user chose "Wrap up now" after the Comfy workspace ran out of credits (HTTP 
   - The two scene changes dip to black.
   - Still stretches get slow push-ins (11 of them).
 - The delivered copy has no timecode or labels (`--review-labels` is QC only).
-- Watch page: https://claude.ai/artifact/R2khFfpPVR7vZDB4xPpXYa (private). It streams 79 six-second fMP4 segments (H.264 High 1920x1080, AAC 160k, 213 MiB) with chapters, and offers a full-film MP4 download that joins the segments. The joined file decodes cleanly (11,376 frames, 474.02 s). Headless playback could not be tested here, because the sandbox's Chromium build has no H.264 support in MSE. The page logic and playlist were checked.
+- Watch page: https://claude.ai/artifact/R2khFfpPVR7vZDB4xPpXYa (private). It streams 79 six-second fMP4 segments (H.264 High 1920x1080, AAC 160k, 213 MiB) with chapters, and offers an MP4 download that joins the segments. That download is the streaming rendition: CRF 18 capped at 3.6 Mb/s, 213 MiB. It is not the master. The master (CRF 16, about 9.5 Mb/s, 560 MB) and the mix WAV live only in `project/EP05/EDIT/v5_final/`. That folder is gitignored, and the container is reclaimed when the session ends. The joined file decodes cleanly (11,376 frames, 474.02 s). Headless playback could not be tested here, because the sandbox's Chromium build has no H.264 support in MSE. The page logic and playlist were checked.
 
 ## The user's notes
 
@@ -53,10 +53,29 @@ Restarting needs credits in the Comfy workspace (only the user can top up). V63-
 
 The firewall's committed total (quoted prices, including live reservations) is 34,982.62 of the 39,500 cap. That leaves 4,517.38.
 
-R6 video clips at quoted prices:
+R6 actual credits come from the Comfy billing feed (`credits_used`, Comfy's display estimate, not an invoice):
 
-| Clips | Credits |
-|---|---|
-| Accepted: V55, V56, V57, V58, V59, V60 | 1,688.8 |
-| Rejected: V61, V62 | 821.6 |
-| Reserved, not submitted: V67 | 365.1 |
+| Item | Quoted | Actual |
+|---|---|---|
+| V55 A10 | 182.6 | 184.39 |
+| V56 D2 | 182.6 | 184.39 |
+| V57 D3 | 182.6 | 184.39 |
+| V58 D4_A | 365.1 | 366.87 |
+| V59 037_HAND | 456.4 | 458.12 |
+| V60 D4_B | 319.5 | 321.25 |
+| **Accepted video** | **1,688.8** | **1,699.41** |
+| V61 A2 (rejected) | 319.5 | 321.25 |
+| V62 031 (rejected) | 502.1 | 503.74 |
+| R6 keyframe images, 18 jobs (K_DRAW_US to K_R6_A8_WIDE a2) | 55.3 each reserved | 309.09 |
+| **R6 total** | | **2,833.49** |
+
+- V63-V66 and K_R6_030_MID failed on 402 and were not billed.
+- V67 (365.1) is reserved and was never submitted.
+- Video actuals run about 1% above the 45.64 credits/s quote, so the firewall's committed figure slightly understates video spend. Images bill about a third of their reservation.
+- The workspace's invoice-backed spend for 2026-08-12 to 2026-10-12 is $337.84 across all models (get_usage_report).
+
+## Audio notes for the listening pass
+
+- The two mutes (V58 at record 327.4-332.7 s, V59 at 453.0-457.9 s; add 5.04 s for master time) take the FX bed to digital silence. Just before them it sits at about -50 dB.
+- Narration and music carry both windows, so the full mix holds -15.5 dB RMS there, the same as around them. The quietest 0.5 s inside is -32 dB in the V58 window and -38 dB in the V59 window. There is no dead air, but room tone drops out under the narration pauses.
+- The title reel's own audio is flagged for a possible steady tone (unchanged since v3).
