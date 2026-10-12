@@ -236,17 +236,20 @@ def load_splices(ep: Path) -> dict:
     for seq, x in acc.get("splices", {}).items():
         sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
     mutes = {k: [tuple(x) for x in v] for k, v in acc.get("audio_mutes", {}).items()}
-    return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes, "tail_fade": acc.get("tail_fade")}
+    return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes, "tail_fade": acc.get("tail_fade"),
+            "picture": acc.get("picture", {})}
 
 
 def plan(ep: Path, variant: str | None = None) -> dict:
     seqs = load_ep(ep)
     joins, splices, tail_first, mutes = dict(JOINS_EP05), {}, set(TAIL_FIRST_EP05), dict(AUDIO_MUTES_EP05)
     tail_fade = TAIL_FADE
+    finish_opts: dict = {}
     if variant:
         acc = load_splices(ep)
         if acc.get("tail_fade") is not None:   # 0 when an end reel continues from the last frame (no dip to black)
             tail_fade = float(acc["tail_fade"])
+        finish_opts = acc.get("picture", {})
         splices = acc["splices"]
         joins.update(acc["joins"])
         mutes.update(acc["audio_mutes"])          # policy spans found in the repair clips' own audio
@@ -256,7 +259,7 @@ def plan(ep: Path, variant: str | None = None) -> dict:
     edl = {"episode": ep.name, "variant": variant, "fps": FPS, "narration_frames": f(seqs[-1]["end"]),
            "picture_frames": total, "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()},
            "head_fade": HEAD_FADE, "tail_fade": tail_fade, "audio_mutes": mutes, "splices": splices,
-           "rows": rows}
+           "picture": finish_opts, "rows": rows}
     out, _ = _paths(ep, variant)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(edl, indent=1))
@@ -371,6 +374,169 @@ def render_picture(ep: Path, edl: dict, out: Path) -> Path:
     return pic
 
 
+def flat_items(edl: dict) -> list[dict]:
+    """Every segment in record order: take, source in/out, record in, its row and position in the row."""
+    out, rec = [], 0
+    for k, r in enumerate(edl["rows"]):
+        for j, (take, a, b) in enumerate(r["segments"]):
+            out.append({"take": take, "a": a, "b": b, "rec": rec, "k": k, "j": j, "seq": r["seq"],
+                        "last_in_row": j == len(r["segments"]) - 1})
+            rec += b - a
+    return out
+
+
+def _dhash_frame(path: Path, idx: int):
+    import cv2
+    import numpy as np
+    cap = cv2.VideoCapture(str(path))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, idx))
+    ok, fr = cap.read()
+    if not ok:
+        return None
+    g = cv2.resize(cv2.cvtColor(fr, cv2.COLOR_BGR2GRAY), (9, 8), interpolation=cv2.INTER_AREA).astype(np.int16)
+    return (g[:, 1:] > g[:, :-1]).flatten(), fr.reshape(-1, 3).mean(axis=0)
+
+
+def join_plan(ep: Path, edl: dict, items: list[dict]) -> list[dict]:
+    """For each join between consecutive items: 'dip' (scene change, from the EDL transitions), 'match' (both sides show
+    the same pinned frame: a shared-keyframe splice, left as a seamless cut) or 'xfade' (every other join)."""
+    vid = lambda take: ep / "VIDEO" / f"{take}.output.mp4"
+    xf = int(edl["picture"].get("xfade_frames", 8))
+    joins = []
+    for A, B in zip(items, items[1:]):
+        tr = edl["transitions"].get(A["seq"]) if A["last_in_row"] else None
+        if tr and tr[0] == "dip":
+            joins.append({"kind": "dip", "seconds": tr[1]})
+            continue
+        if tr and tr[0] == "dissolve":
+            joins.append({"kind": "xfade", "frames": max(xf, f(tr[1]) // 2 * 2)})
+            continue
+        ha, hb = _dhash_frame(vid(A["take"]), A["b"] - 1), _dhash_frame(vid(B["take"]), B["a"])
+        # a shared pinned frame: same structure AND same colour (flat or dark frames alone are not a match)
+        same = (ha is not None and hb is not None and int((ha[0] != hb[0]).sum()) <= 4
+                and float(abs(ha[1] - hb[1]).max()) < 10)
+        joins.append({"kind": "match"} if same else {"kind": "xfade", "frames": xf})
+    return joins
+
+
+def motion_profile(path: Path, a: int, b: int) -> list[float]:
+    """Mean absolute grey-level change between consecutive frames (160x90), source frames a..b."""
+    import cv2
+    import numpy as np
+    cap = cv2.VideoCapture(str(path))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, a)
+    prev, out = None, []
+    for _ in range(a, b):
+        ok, fr = cap.read()
+        if not ok:
+            break
+        g = cv2.resize(cv2.cvtColor(fr, cv2.COLOR_BGR2GRAY), (160, 90), interpolation=cv2.INTER_AREA).astype(np.float32)
+        out.append(float(np.abs(g - prev).mean()) if prev is not None else 0.0)
+        prev = g
+    return out
+
+
+def longest_still(motion: list[float], thresh: float) -> int:
+    best = run = 0
+    for m in motion[1:]:
+        run = run + 1 if m < thresh else 0
+        best = max(best, run)
+    return best
+
+
+def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
+    """Every join between different takes becomes a short cross-dissolve centred on the original cut, so the record
+    timing (the narration lock) is unchanged; scene changes keep their dips; shared-keyframe splices stay seamless.
+    Segments with a long still stretch get a slow deterministic push-in over their whole length (never on a side that
+    meets a shared keyframe). Missing handles are covered by holding the clip's first or last frame."""
+    import json as _json
+    vid = lambda take: ep / "VIDEO" / f"{take}.output.mp4"
+    tmp = out / "segments_xf"
+    tmp.mkdir(parents=True, exist_ok=True)
+    total = edl["picture_frames"]
+    opts = edl["picture"]
+    items = flat_items(edl)
+    joins = join_plan(ep, edl, items)
+    zoom = float(opts.get("push_in", 0.04))
+    thresh, min_still = float(opts.get("still_threshold", 0.6)), int(opts.get("still_frames", 36))
+    for i, it in enumerate(items):
+        m = motion_profile(vid(it["take"]), it["a"], it["b"])
+        it["still"] = longest_still(m, thresh)
+        touching_match = (i > 0 and joins[i - 1]["kind"] == "match") or (i < len(joins) and joins[i]["kind"] == "match")
+        it["zoom"] = zoom if it["still"] >= min_still and not touching_match else 0.0
+        it["h_in"] = joins[i - 1]["frames"] // 2 if i > 0 and joins[i - 1]["kind"] == "xfade" else 0
+        it["h_out"] = joins[i]["frames"] // 2 if i < len(joins) and joins[i]["kind"] == "xfade" else 0
+        if it["b"] - it["a"] < it["h_in"] + it["h_out"] + 1:
+            raise RuntimeError(f"{it['seq']} {it['take']}: segment too short for its dissolves")
+    nframes = {}
+
+    def length(take):
+        if take not in nframes:
+            nframes[take] = frames_of(vid(take))
+        return nframes[take]
+
+    def src_chain(it, lo, hi):
+        """Filters giving source frames lo..hi of the item's take (clamped with held frames), with the item's push-in
+        evaluated on the source frame index so body and dissolve pieces agree."""
+        n = length(it["take"])
+        pre, post = max(0, -lo), max(0, hi - n)
+        lo_c, hi_c = max(0, lo), min(n, hi)
+        vf = [f"trim=start_frame={lo_c}:end_frame={hi_c}", "setpts=PTS-STARTPTS"]
+        if pre:
+            vf.append(f"tpad=start_mode=clone:start={pre}")
+        if post:
+            vf.append(f"tpad=stop_mode=clone:stop={post}")
+        if it["zoom"]:
+            span = max(1, it["b"] - it["a"])
+            z = f"(1+{it['zoom']}*(({lo}+n)-{it['a']})/{span})"
+            vf += [f"scale=w='trunc(2560*{z}/2)*2':h='trunc(1440*{z}/2)*2':eval=frame:flags=lanczos",
+                   "crop=2560:1440:(iw-2560)/2:(ih-1440)/2", "scale=1280:720:flags=lanczos"]
+        return vf
+
+    enc = ["-an", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p", "-r", str(FPS)]
+    files, report = [], []
+    for i, it in enumerate(items):
+        lo, hi = it["a"] + it["h_in"], it["b"] - it["h_out"]
+        vf = src_chain(it, lo, hi)
+        n = hi - lo
+        if i == 0:
+            vf.append(f"fade=t=in:st=0:d={HEAD_FADE}")
+        if i > 0 and joins[i - 1]["kind"] == "dip":
+            vf.append(f"fade=t=in:st=0:d={joins[i - 1]['seconds']}")
+        if i < len(joins) and joins[i]["kind"] == "dip":
+            d = joins[i]["seconds"]
+            vf.append(f"fade=t=out:st={(n / FPS) - d:.4f}:d={d}")
+        tf = edl.get("tail_fade", TAIL_FADE)
+        if i == len(items) - 1 and tf > 0:
+            vf.append(f"fade=t=out:st={(n / FPS) - tf:.4f}:d={tf}")
+        dst = tmp / f"{i:03d}_body_{it['seq']}.mp4"
+        _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(it["take"])), "-vf", ",".join(vf), "-frames:v", str(n)]
+             + enc + [str(dst)])
+        files.append(dst)
+        if i < len(joins) and joins[i]["kind"] == "xfade":
+            B = items[i + 1]
+            h = joins[i]["frames"] // 2
+            fa = ",".join(src_chain(it, it["b"] - h, it["b"] + h))
+            fb = ",".join(src_chain(B, B["a"] - h, B["a"] + h))
+            g = f"[0:v]{fa}[a];[1:v]{fb}[b];[a][b]xfade=transition=fade:duration={2 * h / FPS}:offset=0[v]"
+            dst = tmp / f"{i:03d}_xf_{it['seq']}_{B['seq']}.mp4"
+            _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(it["take"])), "-i", str(vid(B["take"])),
+                  "-filter_complex", g, "-map", "[v]", "-frames:v", str(2 * h)] + enc + [str(dst)])
+            files.append(dst)
+        report.append({"seq": it["seq"], "take": it["take"], "src": [it["a"], it["b"]], "rec_in": it["rec"],
+                       "still_frames": it["still"], "push_in": it["zoom"],
+                       "join_out": joins[i] if i < len(joins) else None})
+    lst = tmp / "concat.txt"
+    lst.write_text("".join(f"file '{p.name}'\n" for p in files))
+    pic = out / f"{edl['episode']}_picture.mp4"
+    _run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(pic)])
+    (out / "joins.json").write_text(_json.dumps(report, indent=1))
+    got = frames_of(pic)
+    if got != total:
+        raise RuntimeError(f"picture has {got} frames, EDL says {total}")
+    return pic
+
+
 def scene_of(seq: str) -> str:
     n = int(seq.split("_")[1])
     return next((name for a, b, name in SCENES_EP05 if a <= n <= b), "other")
@@ -461,6 +627,28 @@ def build_fx(ep: Path, edl: dict):
             o = int(round(rec / FPS * SR))
             bed[o:o + len(seg)] += seg[:total - o]
             rec += b - a
+    if edl.get("picture", {}).get("xfade_frames"):
+        # every join the picture dissolves gets the same equal-power crossfade (dips keep their picture fades)
+        items = flat_items(edl)
+        for i, jn in enumerate(LAST_FX.get("joins") or join_plan(ep, edl, items)):
+            if jn["kind"] != "xfade":
+                continue
+            A, B = items[i], items[i + 1]
+            n = int(round(jn["frames"] / 2 / FPS * SR))
+            cut = int(round(B["rec"] / FPS * SR))
+
+            def window(take, centre):
+                x = src(take)
+                lo, hi = centre - n, centre + n
+                w = x[max(0, lo):min(len(x), hi)]
+                return np.vstack([np.zeros((max(0, -lo), 2), np.float32), w,
+                                  np.zeros((max(0, hi - len(x)), 2), np.float32)])[:2 * n]
+            wa = window(A["take"], int(round(A["b"] / FPS * SR)))
+            wb = window(B["take"], int(round(B["a"] / FPS * SR)))
+            w = np.linspace(0, np.pi / 2, 2 * n)[:, None]
+            lo = max(0, cut - n)
+            bed[lo:cut + n] = (wa * np.cos(w) + wb * np.sin(w))[lo - (cut - n):][:len(bed[lo:cut + n])]
+        return bed
     # dissolve: replace the hard edit with an equal-power crossfade over the dissolve window
     for k, r in enumerate(rows[:-1]):
         tr = edl["transitions"].get(r["seq"])
@@ -541,7 +729,8 @@ def render(ep: Path, audio_only: bool = False, variant: str | None = None) -> di
     edl_path, out = _paths(ep, variant)
     edl = json.loads(edl_path.read_text())
     out.mkdir(parents=True, exist_ok=True)
-    pic = out / f"{edl['episode']}_picture.mp4" if audio_only else render_picture(ep, edl, out)
+    rp = render_picture_xf if edl.get("picture", {}).get("xfade_frames") else render_picture
+    pic = out / f"{edl['episode']}_picture.mp4" if audio_only else rp(ep, edl, out)
     if frames_of(pic) != edl["picture_frames"]:
         raise RuntimeError(f"{pic} does not match the EDL; run render without --audio-only")
     audio = render_audio(ep, edl, out)

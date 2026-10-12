@@ -535,16 +535,16 @@ def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float =
     last seconds to black (the film's last picture)."""
     if abs(info["width"] / info["height"] - 16 / 9) > 0.005:
         raise FinishError(f"{src}: {info['width']}x{info['height']} is not 16:9; the reel is not conformed by cropping or padding")
-    vf = "scale=1280:720:flags=lanczos,fps=24,setsar=1,format=yuv420p"
+    hold = f"tpad=stop_mode=clone:stop={hold_frames}," if hold_frames else ""   # held frames, counted at 24 fps
+    vf = "fps=24," + hold + "scale=1280:720:flags=lanczos,setsar=1,format=yuv420p"
     if push_in > 0:
         # the series rig's camera dolly, done deterministically so generated lettering never has to move: a linear zoom
-        # from 1.0 to 1+push_in, computed at 4K so each zoom step is a third of an output pixel (no stair-step jitter)
-        n = max(2, int(info["frames"]))
+        # from 1.0 to 1+push_in, computed at 4K so each zoom step is a third of an output pixel (no stair-step jitter);
+        # it runs through any held frames too, so a hold never reads as a freeze
+        n = max(2, round(info["frames"] / (info["fps"] or FPS) * FPS) + hold_frames)
         z = f"(1+{push_in}*n/{n - 1})"
-        vf = (f"scale=w='trunc(3840*{z}/2)*2':h='trunc(2160*{z}/2)*2':eval=frame:flags=lanczos,"
-              f"crop=3840:2160:(iw-3840)/2:(ih-2160)/2,scale=1280:720:flags=lanczos,fps=24,setsar=1,format=yuv420p")
-    if hold_frames:
-        vf += f",tpad=stop_mode=clone:stop={hold_frames}"
+        vf = ("fps=24," + hold + f"scale=w='trunc(3840*{z}/2)*2':h='trunc(2160*{z}/2)*2':eval=frame:flags=lanczos,"
+              f"crop=3840:2160:(iw-3840)/2:(ih-2160)/2,scale=1280:720:flags=lanczos,setsar=1,format=yuv420p")
     if fade_out_s > 0:
         total_s = round(info["frames"] / (info["fps"] or FPS) * FPS) / FPS + hold_frames / FPS   # video length, not the audio's
         vf += f",fade=t=out:st={max(0.0, total_s - fade_out_s):.4f}:d={fade_out_s}"
@@ -821,7 +821,7 @@ def _log(msg: str) -> None:
 
 def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: str | None = None, title: str | None = None,
            end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False,
-           end_fade_s: float = 0.0, title_push: float = 0.0, title_fade_s: float = 0.0) -> dict:
+           end_fade_s: float = 0.0, title_push: float = 0.0, title_fade_s: float = 0.0, end_push: float = 0.0) -> dict:
     ep = Path(ep).resolve()                                 # protected folders are absolute; compare like with like
     root = ep.parent.parent
     ep_name = ep.name
@@ -919,7 +919,7 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         hf = hold_f if dom == "end" else 0
         reg(f"reel_{dom}", src, **{k: info[k] for k in ("width", "height", "fps", "frames", "has_audio")})
         ff = end_fade_s if dom == "end" else title_fade_s       # the title dips to black into the body's fade-in
-        pu = title_push if dom == "title" else 0.0
+        pu = title_push if dom == "title" else end_push
         conformed = needs_conform(info) or hf > 0 or ff > 0 or pu > 0
         use = info
         if conformed:
@@ -1248,6 +1248,8 @@ def main(argv=None) -> int:
                     help="fade the end reel's last seconds (picture and sound) to black: the film's final fade")
     ap.add_argument("--title-fade", type=float, default=0.0, metavar="SECONDS",
                     help="fade the title reel's last seconds (picture and sound) to black before the body fades in")
+    ap.add_argument("--end-push", type=float, default=0.0, metavar="FRACTION",
+                    help="deterministic slow push-in across the end reel and its hold, so the hold never freezes")
     ap.add_argument("--title-push", type=float, default=0.0, metavar="FRACTION",
                     help="deterministic camera push-in across the title reel, e.g. 0.06 zooms 1.00 -> 1.06 (the rig's dolly)")
     ap.add_argument("--no-review", action="store_true", help="skip the review proxy and the contact sheet")
@@ -1255,7 +1257,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work,
-                     a.end_fade, a.title_push, a.title_fade)
+                     a.end_fade, a.title_push, a.title_fade, a.end_push)
     except ProtectedPathError as e:
         print(f"FINISH REFUSED: {e}", file=sys.stderr)
         return 2
