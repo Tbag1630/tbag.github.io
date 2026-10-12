@@ -33,7 +33,8 @@ PROMPT = _prompt()
 
 
 def _graph(prompt=PROMPT, seconds=14):
-    return comfy.seedance_r2v_720p(prompt, STORY, IDENT, seconds=seconds, prefix="ULAC/EP05/SEQ_001_VIDEO_pilot")
+    return comfy.seedance_r2v_720p(prompt, STORY, IDENT, seconds=seconds, prefix="ULAC/EP05/SEQ_001_VIDEO_pilot",
+                                   environment="e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0.png")
 
 
 def _wav(path, samples, rate=16000):

@@ -1,5 +1,7 @@
 # EP05 hall continuity audit (zero spend)
 
+> **Correction (2026-10-12 recovery):** the "free trims" below (D2, D4, D6, D7, D8) are not free. Every slot is locked to the narration, so cutting 2-5 s needs that much substitute footage. They are kept and flagged, tails are trimmed first where the surplus allows, and SEQ_032 is repaired from same-sequence alternate footage. The recovery audit also found new defects, among them a duplicate Maria and boy in SEQ_006 and a MACA teleport in SEQ_023 (fixed). See `docs/EP05_DEFECT_LEDGER.md` and `docs/EP05_RECOVERY_REPORT.md`.
+
 Scope: the 15 hall clips (SEQ_001-007, SEQ_030-037) checked against the canonical hall state and the approved storyboards. No paid generation was run for this audit.
 
 Evidence (frames at 0 %, 33 %, 66 % and 100 % of each selected take):

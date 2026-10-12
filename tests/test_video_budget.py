@@ -19,7 +19,8 @@ PROMPT = "\n".join(["Use @image1 as the authoritative director-approved storyboa
                     "EMOTIONAL GUIDANCE: Valence: cozy, calm; Arousal: low.",
                     "VISUAL STYLE: warm hand-painted storybook animation.",
                     *video.audio_lines(CUES), "PANEL BEATS:", "P01: High wide hold; soft chair scrapes."]) + "\n"
-GRAPH = comfy.seedance_r2v_720p(PROMPT, STORY, IDENT, seconds=14, prefix="ULAC/EP05/SEQ_001_VIDEO_pilot")
+ENV = "e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0.png"
+GRAPH = comfy.seedance_r2v_720p(PROMPT, STORY, IDENT, seconds=14, prefix="ULAC/EP05/SEQ_001_VIDEO_pilot", environment=ENV)
 needs_ffmpeg = pytest.mark.skipif(not (shutil.which("ffmpeg") and shutil.which("ffprobe")), reason="ffmpeg not installed")
 
 
@@ -89,7 +90,7 @@ def test_price_needs_the_user_for_this_exact_graph(tmp_path):
         _reserve(tmp_path)
     with pytest.raises(firewall.FirewallError, match="must come from the user"):
         _accept(tmp_path, by="claude")
-    other = comfy.seedance_r2v_720p(PROMPT, STORY, IDENT, seconds=14, prefix="ULAC/EP05/OTHER")
+    other = comfy.seedance_r2v_720p(PROMPT, STORY, IDENT, seconds=14, prefix="ULAC/EP05/OTHER", environment=ENV)
     _accept(tmp_path, graph=other)
     with pytest.raises(firewall.FirewallError, match="not verified by a billed job"):
         _reserve(tmp_path)

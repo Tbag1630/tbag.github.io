@@ -138,6 +138,23 @@ def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float)
                  ("model.reference_images.image_2", "@image2 identity board"))
         if "model.reference_images.image_1" not in inp:
             out.append("the storyboard reference (image_1) is not wired")
+        slots = sorted(int(k.rsplit("_", 1)[1]) for k in inp if k.startswith("model.reference_images.image_"))
+        if slots != list(range(1, len(slots) + 1)):
+            out.append(f"reference slots must run image_1..image_{len(slots)} without gaps, got {slots}")
+        # EP05 lost its hall look because the environment master never reached the video stage (CLAUDE.md, Protocol A)
+        titles = [graph.get(str(inp[k][0]), {}).get("_meta", {}).get("title", "") for k in inp
+                  if k.startswith("model.reference_images.image_")]
+        if not any("environment master" in t for t in titles):
+            out.append("the environment master reference is not wired: a missing environment master blocks paid work")
+    for key, src_id in ((k, v[0]) for k, v in inp.items() if isinstance(v, list) and v and
+                        (k in ("first_frame", "last_frame") or k.startswith("model.reference_images.image_"))):
+        if key == "model.reference_images.image_1":
+            continue                                         # the storyboard's own slot: staging authority only
+        src = graph.get(str(src_id), {})
+        label = f"{src.get('inputs', {}).get('image', '')} {src.get('_meta', {}).get('title', '')}".lower()
+        if any(m in label for m in SKETCH_MARKERS):
+            out.append(f"{key} is fed by a storyboard or END_LOCK sketch ({label.strip()}); sketches are planning "
+                       "authority only and never a frame or appearance reference")
     for key, title in wired:
         if key in inp:
             src = graph.get(str(inp[key][0]), {})
@@ -146,6 +163,47 @@ def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float)
     saves = [n for n in graph.values() if n.get("class_type") == "SaveVideo"]
     if len(saves) != 1 or saves[0].get("inputs", {}).get("video") != [sid, 0]:
         out.append("exactly one SaveVideo must take the Seedance output")
+    return out
+
+
+SKETCH_MARKERS = ("end_lock", "endlock", "storyboard", "sketch", "pencil")
+
+
+def dhash(path, size: int = 8) -> int:
+    """64-bit difference hash: survives resizing and recompression, so a re-saved END_LOCK is still recognised."""
+    from PIL import Image
+    im = Image.open(path).convert("L").resize((size + 1, size), Image.LANCZOS)
+    px = list(im.get_flattened_data()) if hasattr(im, "get_flattened_data") else list(im.getdata())
+    bits = 0
+    for r in range(size):
+        for c in range(size):
+            bits = (bits << 1) | (px[r * (size + 1) + c] > px[r * (size + 1) + c + 1])
+    return bits
+
+
+def sketch_registry(ep_root) -> dict:
+    """Exact and perceptual hashes of every storyboard sheet and END_LOCK in an episode (planning images only)."""
+    ep_root = Path(ep_root)
+    files = sorted(ep_root.glob("SEQUENCES/*/END_LOCK.png")) + sorted(ep_root.glob("SEQUENCES/*/storyboard.png"))
+    return {"sha256": {file_sha256(p): str(p) for p in files}, "dhash": [(dhash(p), str(p)) for p in files]}
+
+
+def frame_source_problems(path, registry: dict, max_bits: int = 6) -> list[str]:
+    """Refuse a local image as a start/end frame or appearance reference when it is a storyboard or END_LOCK sketch:
+    by name, by exact hash, or by a perceptual-hash match within max_bits of 64."""
+    path = Path(path)
+    out = []
+    if any(m in path.name.lower() for m in SKETCH_MARKERS):
+        out.append(f"{path.name}: the name marks a storyboard or END_LOCK sketch")
+    sha = file_sha256(path)
+    if sha in registry["sha256"]:
+        out.append(f"{path.name} is byte-identical to {registry['sha256'][sha]}")
+    else:
+        h = dhash(path)
+        near = [(bin(h ^ x).count("1"), src) for x, src in registry["dhash"]]
+        hit = min(near, default=(99, ""))
+        if hit[0] <= max_bits:
+            out.append(f"{path.name} matches the sketch {hit[1]} ({hit[0]} of 64 bits differ)")
     return out
 
 

@@ -90,7 +90,8 @@ def test_flf_render_must_cover_the_segment():
 def test_r2v_path_still_passes_preflight():
     g = comfy.seedance_r2v_720p(PROMPT, "58d03608af9b9acd46ffb0bb31a94e75d66b87c7a06221e1b7cc14ea68107c44.png",
                                 "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png",
-                                seconds=14, prefix="ULAC/EP05/REGRESSION")
+                                seconds=14, prefix="ULAC/EP05/REGRESSION",
+                                environment="e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0.png")
     assert video.preflight(g, PROMPT, seconds=14, segment_seconds=SEG) == []
 
 

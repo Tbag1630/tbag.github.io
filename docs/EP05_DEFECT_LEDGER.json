@@ -1,0 +1,628 @@
+[
+ {
+  "id": "L01",
+  "seq": "SEQ_001-007, SEQ_030-037",
+  "take": "all 15 hall takes",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MATERIAL (production-wide deviation)",
+  "expected": "PENV_HALL_DRESSED_MASTER: warm cream walls, terracotta floor, floral cloth with paper runner, red doors, coloured chairs, blue-tiled counter",
+  "observed": "Grey institutional hall: plain wood tables, brown chairs, white door, grey or teal counter. Consistent from clip to clip within each act.",
+  "evidence": "evidence: 0 of 42 stored video graphs (VIDEO/*.graph.json) carry an environment reference; docs/EP05_recovery/joins_J1.jpg, J6.jpg; docs/EP05_hall_audit/master.jpg",
+  "root_cause": "PENV_HALL_DRESSED_MASTER never reached the video stage. Graphs had @image1 storyboard, @image2 identity, @image3 opening frame only, so the model invented the room from one ENVIRONMENT text line and chaining propagated it.",
+  "fix": "Paid only: re-render every hall clip with the master wired (about 8,700 credits). Not authorized.",
+  "status": "ACCEPTED AS PRODUCTION-WIDE DEVIATION (unresolved)"
+ },
+ {
+  "id": "L02",
+  "seq": "SEQ_008-029",
+  "take": "bedroom takes",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MINOR (production-wide)",
+  "expected": "",
+  "observed": "Bedroom dressing changes between camera setups. V10-V14: plain dark walls. V15-V17: moon window, patterned wallpaper, rainbow rug. V18-V19: star curtains, blue door. V20-V31: plain grey-blue wall with a wood door. V24 head: white painted bed. V32 end: spindle bed, rocket poster, star decals.",
+  "evidence": "docs/EP05_recovery/joins_J2.jpg to J5.jpg; EDIT/analysis/V15..V32 sheet_2fps.jpg",
+  "root_cause": "Same as L01: no environment master at the video stage.",
+  "fix": "Paid only, as part of a bedroom re-render. Not worth it alone.",
+  "status": "ACCEPTED (unresolved)"
+ },
+ {
+  "id": "L03",
+  "seq": "SEQ_003",
+  "take": "V05-bc46c7731c5d",
+  "source_span_s": [
+   6.0,
+   10.042
+  ],
+  "master_span": [
+   "00:32.67-00:36.71"
+  ],
+  "severity": "MATERIAL",
+  "expected": "long table, boy at L3 on Maria's right as in SEQ_002",
+  "observed": "From the wide at 6 s: separate small tables, a sink counter at right, many extra children, and the boy on Maria's screen-left (in SEQ_002 he sits screen-right behind her at the long table).",
+  "evidence": "EDIT/analysis/V05-bc46c7731c5d/sheet_2fps.jpg (6.0-9.5 s); docs/EP05_recovery/joins_J1.jpg row 2",
+  "root_cause": "Chain drift from a missing environment reference; the wide was invented and SEQ_004/005 opened on it.",
+  "fix": "No zero-cost fix: the audio-locked slot needs 9.29 s and only 5 s precede the wide. Kept because it matches SEQ_004, so the defect stays one continuous block instead of two breaks. Paid: one FLF render for SEQ_003-005 between real frames.",
+  "status": "UNRESOLVED (kept, flagged)"
+ },
+ {
+  "id": "L04",
+  "seq": "SEQ_004",
+  "take": "V06-3f58e4dd348a",
+  "source_span_s": [
+   0.0,
+   15.042
+  ],
+  "master_span": [
+   "00:36.71-00:51.75"
+  ],
+  "severity": "MATERIAL",
+  "expected": "long table near end; boy L3 beside Maria, braids girl R2, jersey boy R3 across; 4 children",
+  "observed": "Whole clip: small separate table, sink counter, boy on Maria's screen-left, braids girl and jersey boy absent, 8+ extra children and an adult in the background. The action (boy leans in, points the green crayon at the robot, Maria turns) does match the narration.",
+  "evidence": "docs/EP05_recovery/v06_grid.jpg; EDIT/analysis/V06-3f58e4dd348a/sheet_2fps.jpg; docs/EP05_hall_audit/board_004.jpg",
+  "root_cause": "Same as L01/L03.",
+  "fix": "Zero-cost flop and crop tested and rejected. A horizontal flop would put the boy on the board's side, but it mirrors Maria's side ponytail (identity board: her left), mirrors the \"AOT\" shirt lettering, moves the window wall, still shows the wrong room and missing children, and forces SEQ_003 and SEQ_005 to be flopped too. Paid: FLF repair (684.6 credits) with the environment master baked into both keyframes.",
+  "status": "UNRESOLVED (kept, flagged)"
+ },
+ {
+  "id": "L05",
+  "seq": "SEQ_005",
+  "take": "V07-6aaee2ed215d",
+  "source_span_s": [
+   0.0,
+   2.4
+  ],
+  "master_span": [
+   "00:51.75-00:54.15"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Opening continues the SEQ_004 small-table wide; from 3 s the long paper-covered table returns and the overhead at 9-12.5 s shows the canonical long table with chairs both sides.",
+  "evidence": "EDIT/analysis/V07-6aaee2ed215d/sheet_2fps.jpg",
+  "root_cause": "Chained from L04.",
+  "fix": "Kept: it is continuous with L04. The audit's earlier \"start at 2 s\" trim was not possible without 1.9 s of substitute coverage.",
+  "status": "UNRESOLVED (rides with L04)"
+ },
+ {
+  "id": "L06",
+  "seq": "SEQ_006",
+  "take": "V08-076797ef641b",
+  "source_span_s": [
+   6.5,
+   7.3
+  ],
+  "master_span": [
+   "01:11.08-01:11.88"
+  ],
+  "severity": "MATERIAL",
+  "expected": "one instance of each named character",
+  "observed": "Maria (pink, scrunchie) and the boy (green) are in the foreground while two look-alikes sit at the table: a headband girl in a grey dress and a blond boy in olive. Both are duplicated in one frame.",
+  "evidence": "docs/EP05_recovery/v08_duplicates.jpg (frames 6.9 s and 9.9 s)",
+  "root_cause": "The crane-up resolved to a 4-child table without placing Maria and the boy in it.",
+  "fix": "Paid repair only. No same-sequence alternate exists, and the move is one continuous shot with no internal cut.",
+  "status": "UNRESOLVED"
+ },
+ {
+  "id": "L07",
+  "seq": "SEQ_006-007",
+  "take": "V08-076797ef641b",
+  "source_span_s": [
+   7.5,
+   10.042
+  ],
+  "master_span": [
+   "01:12.08-01:14.62"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "In the long-table wides Maria reads as a grey-dressed girl and the boy as an olive-shirted boy (costume colour drift). The braids girl wears her hair down.",
+  "evidence": "docs/EP05_recovery/v08_duplicates.jpg; EDIT/analysis/V09-cfc563cb4317/sheet_2fps.jpg 0-4 s and 12-13.5 s",
+  "root_cause": "Wide shots lose costume colour without identity anchors at that scale.",
+  "fix": "Paid repair only.",
+  "status": "UNRESOLVED"
+ },
+ {
+  "id": "L07b",
+  "seq": "SEQ_007",
+  "take": "V09-cfc563cb4317",
+  "source_span_s": [
+   0.0,
+   4.2
+  ],
+  "master_span": [
+   "01:14.62-01:18.83"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Same costume drift as L07 (opening and closing wides of SEQ_007).",
+  "evidence": "docs/EP05_recovery/joins_J1.jpg row 4",
+  "root_cause": "As L07.",
+  "fix": "Paid repair only.",
+  "status": "UNRESOLVED"
+ },
+ {
+  "id": "L08",
+  "seq": "SEQ_001 and act-1 wides",
+  "take": "V01-fa24309c5dd0",
+  "source_span_s": [
+   0.0,
+   3.0
+  ],
+  "master_span": [
+   "00:00.00-00:02.54"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "8+ children at the long table instead of the canonical 4 (audit D5).",
+  "evidence": "EDIT/analysis/V01-fa24309c5dd0/sheet_2fps.jpg",
+  "root_cause": "Occupancy not anchored.",
+  "fix": "Accept: the beat and identities still read.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L09",
+  "seq": "SEQ_002 -> SEQ_003",
+  "take": "V05-bc46c7731c5d",
+  "source_span_s": [
+   0.79,
+   1.0
+  ],
+  "master_span": [
+   "00:27.46-00:27.67"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Same insert framing, but the robot drawing appears already half drawn: a jump cut.",
+  "evidence": "docs/EP05_recovery/joins_J1.jpg row 1",
+  "root_cause": "Separate generations of the same insert.",
+  "fix": "8-frame (0.33 s) dissolve that reads as time passing while she draws, narratively motivated (\"And she drew me\").",
+  "status": "FIXED"
+ },
+ {
+  "id": "L10",
+  "seq": "SEQ_012 -> SEQ_013",
+  "take": "V15-e7c532275e8a",
+  "source_span_s": [
+   0.0,
+   0.3
+  ],
+  "master_span": [
+   "02:28.17-02:28.47"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "MACA jumps from leaning to upright at a chained join.",
+  "evidence": "docs/EP05_recovery/master_cuts_2.jpg (3555/3556)",
+  "root_cause": "R2V opening is approximate, not pinned.",
+  "fix": "Accept.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L11",
+  "seq": "SEQ_013 -> SEQ_014",
+  "take": "V16-8290543df17b",
+  "source_span_s": [
+   0.292,
+   0.6
+  ],
+  "master_span": [
+   "02:39.00-02:39.31"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Same framing, Maria jumps from propped up to lying down.",
+  "evidence": "docs/EP05_recovery/master_cuts_2.jpg (3815/3816)",
+  "root_cause": "R2V opening is approximate.",
+  "fix": "Straight cut kept and flagged. A softening dissolve was rejected because it would hide a continuity error.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L12",
+  "seq": "SEQ_014 -> SEQ_015",
+  "take": "V17-60ca61e0bac1",
+  "source_span_s": [
+   0.0,
+   1.167
+  ],
+  "master_span": [
+   "02:50.75-02:50.75"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "V17 opens with Maria lying; V16 ends with her propped up.",
+  "evidence": "docs/EP05_recovery/master_cuts_2.jpg (4097/4098)",
+  "root_cause": "R2V opening is approximate.",
+  "fix": "Head trim to 1.167 s, where her pose matches V16's last frame.",
+  "status": "FIXED"
+ },
+ {
+  "id": "L13",
+  "seq": "SEQ_021",
+  "take": "V23-5633ad143f50",
+  "source_span_s": [
+   4.0,
+   7.4
+  ],
+  "master_span": [
+   "04:12.50-04:15.90"
+  ],
+  "severity": "UNCERTAIN",
+  "expected": "",
+  "observed": "Insert of Chico asleep on a different round rug by a star chest, while he lies on the bed before and after.",
+  "evidence": "EDIT/analysis/V23-5633ad143f50/sheet_2fps.jpg",
+  "root_cause": "Model cutaway.",
+  "fix": "Reads as an illustrative cutaway for \"He has been volunteering every night since\". Keep; human call.",
+  "status": "FLAGGED"
+ },
+ {
+  "id": "L14",
+  "seq": "SEQ_022",
+  "take": "V24-03998dec95a6",
+  "source_span_s": [
+   0.0,
+   1.542
+  ],
+  "master_span": [
+   "04:23.42-04:24.67"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Opening insert has a white painted bed and brighter light than the established wide.",
+  "evidence": "EDIT/analysis/V24-03998dec95a6/sheet_2fps.jpg",
+  "root_cause": "Dressing drift.",
+  "fix": "Kept (1.25 s used) because it carries the \"scratched his ear with her foot\" beat.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L15",
+  "seq": "SEQ_023",
+  "take": "V26-d9351a00709c",
+  "source_span_s": [
+   0.0,
+   0.875
+  ],
+  "master_span": [
+   "not in master"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Frames 0-20 are a separate shot with MACA in front of the bed; at frame 21 it cuts to MACA behind the bed, where SEQ_022 ends. A teleport across two cuts.",
+  "evidence": "docs/EP05_recovery/cut_checks.jpg row 4; v26_head.jpg",
+  "root_cause": "Model inserted a second angle.",
+  "fix": "Head locked at frame 21 (0.875 s). The join to SEQ_022 is now continuous; the surplus moved to neighbouring heads and tails.",
+  "status": "FIXED"
+ },
+ {
+  "id": "L16",
+  "seq": "SEQ_029",
+  "take": "V32-a554b3a4d301",
+  "source_span_s": [
+   6.5,
+   11.708
+  ],
+  "master_span": [
+   "05:59.33-06:04.54"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Closing bedroom wide: different bed and wall decor; Chico curled on the floor rug, not on Maria's feet.",
+  "evidence": "EDIT/analysis/V32-a554b3a4d301/sheet_2fps.jpg",
+  "root_cause": "Dressing drift.",
+  "fix": "Accept.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L17",
+  "seq": "SEQ_030",
+  "take": "V34-5342a41bc959",
+  "source_span_s": [
+   9.583,
+   15.042
+  ],
+  "master_span": [
+   "06:14.12-06:19.58"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "After the internal cut the drawing is a different design (a glow-scribbled upright robot instead of the horizontal pink robot), on a round wooden table.",
+  "evidence": "EDIT/analysis/V34-5342a41bc959/sheet_2fps.jpg",
+  "root_cause": "The drawing prop is not anchored: its design varies across V03, V05, V07, V08, V34, V35 and V36/V38.",
+  "fix": "Accept as prop drift.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L18",
+  "seq": "SEQ_032",
+  "take": "V36-0e99e41911a2",
+  "source_span_s": [
+   4.708,
+   8.5
+  ],
+  "master_span": [
+   "06:35.33-06:35.33"
+  ],
+  "severity": "BLOCKING",
+  "expected": "",
+  "observed": "A second Maria (pink, ponytail, holding paper) walks ahead of Maria down the table.",
+  "evidence": "docs/EP05_recovery/v36_walk.jpg",
+  "root_cause": "Duplication during the walk.",
+  "fix": "Composite from the same-sequence alternate V37: V36 0-4.708, then V37 4.667-6.292 and 8.417-10.208 (single Maria; V37's own duplicate at 6.4-8.2 s and its three Chicos after 10.25 s are excluded), then V36 11.042-15.042.",
+  "status": "FIXED"
+ },
+ {
+  "id": "L19",
+  "seq": "SEQ_032",
+  "take": "V36-0e99e41911a2",
+  "source_span_s": [
+   9.583,
+   11.042
+  ],
+  "master_span": [
+   "06:38.75-06:38.75"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Cuts back to the opening table shot, with Maria seated again after walking away.",
+  "evidence": "EDIT/analysis/V36-0e99e41911a2/sheet_2fps.jpg 9.5-10.5 s",
+  "root_cause": "Model cut-back.",
+  "fix": "Removed by the composite (L18).",
+  "status": "FIXED"
+ },
+ {
+  "id": "L20",
+  "seq": "SEQ_032 composite",
+  "take": "V37-a56cd4f9aadc",
+  "source_span_s": [
+   6.25,
+   8.45
+  ],
+  "master_span": [
+   "06:36.92-06:36.96",
+   "06:36.96-06:36.99"
+  ],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Inside the composite: a forward jump cut along the walk axis (V37 6.29 s to 8.42 s); the boy's foreground paper differs between takes at the match cut (green dinosaur vs blue sketch).",
+  "evidence": "docs/EP05_recovery/cut_checks.jpg rows 1-3; master_cuts_5.jpg",
+  "root_cause": "Two takes of the same beat.",
+  "fix": "Accept: the alternative was the duplicate.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L21",
+  "seq": "SEQ_035",
+  "take": "V40-1a6760c68f9e",
+  "source_span_s": [
+   10.875,
+   14.042
+  ],
+  "master_span": [
+   "07:10.71-07:13.17"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Closing wide: small square tables, kitchen counter with pots, MACA and Maria standing (board P04: one long table).",
+  "evidence": "EDIT/analysis/V40-1a6760c68f9e/sheet_2fps.jpg 11-13.5 s; docs/EP05_hall_audit/board_035.jpg",
+  "root_cause": "As L01, plus chain drift.",
+  "fix": "No coverage to replace it; surplus pushed to this tail reduced it from 3.2 s to 2.5 s. Paid repair listed.",
+  "status": "UNRESOLVED (reduced)"
+ },
+ {
+  "id": "L22",
+  "seq": "SEQ_036",
+  "take": "V41-35d7bed2f778",
+  "source_span_s": [
+   10.875,
+   15.042
+  ],
+  "master_span": [
+   "07:24.04-07:28.12"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "Cuts back to the same small-table wide with MACA standing, although she was kneeling at the long table of drawings at 1.5-6.5 s.",
+  "evidence": "EDIT/analysis/V41-35d7bed2f778/sheet_2fps.jpg",
+  "root_cause": "Model cut-back plus layout drift.",
+  "fix": "No coverage; 4.08 s remains. Paid repair listed.",
+  "status": "UNRESOLVED"
+ },
+ {
+  "id": "L23",
+  "seq": "SEQ_037",
+  "take": "V42-d673f2cfebf1",
+  "source_span_s": [
+   10.542,
+   14.792
+  ],
+  "master_span": [
+   "07:38.67-07:42.92"
+  ],
+  "severity": "MATERIAL",
+  "expected": "",
+  "observed": "The episode's closing image is the small-table wide with MACA standing (board: long table, MACA kneeling, the same layout).",
+  "evidence": "EDIT/analysis/V42-d673f2cfebf1/sheet_2fps.jpg",
+  "root_cause": "As L22.",
+  "fix": "No coverage; 4.25 s remains, under a 1.5 s fade-out. Paid repair listed.",
+  "status": "UNRESOLVED"
+ },
+ {
+  "id": "L24",
+  "seq": "SEQ_018 (audio)",
+  "take": "V20-4b05b652cb51",
+  "source_span_s": [
+   11.2,
+   14.05
+  ],
+  "master_span": [
+   "03:42.91-03:45.75"
+  ],
+  "severity": "MATERIAL (policy)",
+  "expected": "",
+  "observed": "Stepped sustained harmonic tones changing pitch in steps: likely music.",
+  "evidence": "docs/EP05_recovery/spectrogram_zoom_1.jpg (SEQ_018)",
+  "root_cause": "The generator added music despite the sound-only prompt.",
+  "fix": "Muted in the effects bed with 50 ms ramps. Needs a human listen to confirm.",
+  "status": "MITIGATED (UNCERTAIN until listened)"
+ },
+ {
+  "id": "L25",
+  "seq": "SEQ_023 (audio)",
+  "take": "V26-d9351a00709c",
+  "source_span_s": [
+   2.95,
+   12.05
+  ],
+  "master_span": [
+   "04:39.24-04:48.33"
+  ],
+  "severity": "MATERIAL (policy)",
+  "expected": "",
+  "observed": "Sustained harmonic stack with stepped chord changes: likely music.",
+  "evidence": "docs/EP05_recovery/spectrogram_zoom_1.jpg (SEQ_023)",
+  "root_cause": "As L24.",
+  "fix": "Muted in the bed.",
+  "status": "MITIGATED (UNCERTAIN until listened)"
+ },
+ {
+  "id": "L26",
+  "seq": "SEQ_025 (audio)",
+  "take": "V28-e9c5010fc5af",
+  "source_span_s": [
+   5.95,
+   14.05
+  ],
+  "master_span": [
+   "05:05.32-05:13.42"
+  ],
+  "severity": "MATERIAL (policy)",
+  "expected": "",
+  "observed": "Stepped melodic tones: likely music.",
+  "evidence": "docs/EP05_recovery/spectrogram_zoom_2.jpg (SEQ_025)",
+  "root_cause": "As L24.",
+  "fix": "Muted in the bed.",
+  "status": "MITIGATED (UNCERTAIN until listened)"
+ },
+ {
+  "id": "L27",
+  "seq": "SEQ_026 (audio)",
+  "take": "V29-f22ccbb1beb2",
+  "source_span_s": [
+   9.9,
+   13.05
+  ],
+  "master_span": [
+   "05:23.32-05:25.00"
+  ],
+  "severity": "MATERIAL (policy)",
+  "expected": "",
+  "observed": "Pulsed voiced bursts with formant-like structure: possible giggling or vocalization.",
+  "evidence": "docs/EP05_recovery/spectrogram_zoom_2.jpg (SEQ_026)",
+  "root_cause": "The generator added a vocalization.",
+  "fix": "Tail trimmed to 11.583 s by the solver; the remainder is muted in the bed.",
+  "status": "MITIGATED (UNCERTAIN until listened)"
+ },
+ {
+  "id": "L28",
+  "seq": "SEQ_034 (audio)",
+  "take": "V39-a67a4b9420bb",
+  "source_span_s": [
+   0.35,
+   1.45
+  ],
+  "master_span": [
+   "06:51.14-06:52.24"
+  ],
+  "severity": "MATERIAL (policy)",
+  "expected": "",
+  "observed": "Voiced bursts near 650 Hz, possibly a generated \"hoo-hoo ha-ha\" competing with the narration line.",
+  "evidence": "docs/EP05_recovery/spectrogram_zoom_2.jpg (SEQ_034)",
+  "root_cause": "As L27.",
+  "fix": "Muted in the bed (0.35-1.45 s and 3.5-3.95 s).",
+  "status": "MITIGATED (UNCERTAIN until listened)"
+ },
+ {
+  "id": "L29",
+  "seq": "all clips (audio)",
+  "take": "",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "ACCEPTABLE VARIATION",
+  "expected": "",
+  "observed": "The \"steady tone, possible music or whine\" flags on 29 clips are broadband room hum (energy at 200-300 Hz, no stable pitch).",
+  "evidence": "EDIT/analysis spectra; clip_loudness table in docs/EP05_RECOVERY_REPORT.md",
+  "root_cause": "Ambience.",
+  "fix": "None needed; high-passed in the mix.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L30",
+  "seq": "all clips (audio)",
+  "take": "",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "Clip audio levels span -59.9 LUFS (V13) to -20.2 LUFS (V29), with peaks up to -5 dBTP.",
+  "evidence": "docs/EP05_RECOVERY_REPORT.md section 8",
+  "root_cause": "Uncontrolled generator levels.",
+  "fix": "Per-clip level matching: -24 dBFS RMS target, peaks capped at -4 dBFS, at most +18 dB, then ducking and a -6 dBFS soft ceiling.",
+  "status": "FIXED"
+ },
+ {
+  "id": "L31",
+  "seq": "previous audit",
+  "take": "",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MATERIAL (process)",
+  "expected": "",
+  "observed": "docs/EP05_CONTINUITY_AUDIT.md listed D2, D4, D6, D7 and D8 as \"free trims\". They are not free: every slot is locked to the narration, and cutting 2-5 s needs that much substitute footage.",
+  "evidence": "Arithmetic in docs/EP05_RECOVERY_REPORT.md section 5",
+  "root_cause": "The audit treated clips as freely shortenable.",
+  "fix": "Corrected: the defects are kept and flagged, tails are trimmed first where the surplus allows, and only same-sequence material was used as a substitute (SEQ_032).",
+  "status": "CORRECTED"
+ },
+ {
+  "id": "L32",
+  "seq": "SEQ_003 END_LOCK",
+  "take": "",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MINOR",
+  "expected": "",
+  "observed": "The END_LOCK carries leaked header text from the next panels (\"P03 ... 35mm / Lean back\", \"P04 ... 35mm / Admire\").",
+  "evidence": "EDIT/analysis/end_locks_sheet.jpg",
+  "root_cause": "Panel crop.",
+  "fix": "Planning image only; the new sketch guard prevents any END_LOCK from becoming a frame.",
+  "status": "ACCEPTED"
+ },
+ {
+  "id": "L33",
+  "seq": "V02 (rejected)",
+  "take": "V02-a0dec5bdea15",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MATERIAL (process, historic)",
+  "expected": "",
+  "observed": "V02's last frame is perceptually identical to the SEQ_002 pencil END_LOCK (0 of 64 dHash bits differ): the sketch was used as the last frame and the clip turned into it.",
+  "evidence": "tests/test_recovery.py::test_every_ep05_end_lock_is_refused_and_rendered_frames_pass",
+  "root_cause": "A pencil END_LOCK was wired as last_frame.",
+  "fix": "New guard video.frame_source_problems (exact and perceptual hash registry of every END_LOCK and storyboard), plus a preflight name and title rule.",
+  "status": "PREVENTED"
+ },
+ {
+  "id": "L34",
+  "seq": "firewall",
+  "take": "",
+  "source_span_s": null,
+  "master_span": [],
+  "severity": "MATERIAL (process)",
+  "expected": "",
+  "observed": "FIREWALL.json still had authorization.sequence_boards = true under the zero-generation mandate; the MCP submit_workflow tool is not gated by the firewall.",
+  "evidence": "project/EP05/CREDIT_LEDGER.jsonl (boards_frozen, video_frozen)",
+  "root_cause": "Image authorization was never revoked.",
+  "fix": "Boards frozen (backed up, ledgered). MCP submission remains a discipline control, and that is reported.",
+  "status": "FIXED / REPORTED"
+ }
+]

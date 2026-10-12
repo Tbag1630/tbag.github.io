@@ -1,0 +1,448 @@
+"""Audio-locked conform: EDL solver, picture/FX render, narration mix, master QC. Zero spend, local ffmpeg only.
+
+  python3 -m ulac.edit plan   project/EP05     # solve the EDL from prompt.json slots + selected takes; writes EDIT/edl.json
+  python3 -m ulac.edit render project/EP05     # picture, FX bed, mix, stems and master into EDIT/master/
+  python3 -m ulac.edit mix    project/EP05     # audio only (FX bed, mix, stems), re-muxed onto the existing picture
+  python3 -m ulac.edit qc     project/EP05     # measure the master; writes EDIT/master/qc.json
+
+The narration is the master clock. Each sequence owns the slot [global_start, global_end] from its prompt.json. Clips
+run 0.04-0.96 s longer than their slot, so every cut needs a decision about where the surplus goes:
+
+- A chained join (CH) is one where clip i+1 opens on clip i's last frame. It plays i to its last frame and i+1 from its
+  first, so the picture is continuous. The surplus then moves the cut off the narration boundary by a fraction of a
+  second, as an L-cut or J-cut.
+- A hard cut (HARD), a room change (SCENE) or a same-angle jump (JUMP) absorbs surplus for free, by trimming the head
+  or tail there.
+
+Runs of clips joined by CH are solved together. The head trim is chosen to minimise the largest cut offset inside the
+run, and the tail takes the rest. Nothing here talks to a provider. Media paths are read; originals are never written.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+FPS = 24
+FREE = {"HARD", "SCENE", "JUMP"}
+
+# Join from each sequence to the next, judged from the last frame of clip i against frame 0 of clip i+1
+# (docs/EP05_DEFECT_LEDGER.md, join sheets J1-J6). CH = the next clip opens on this clip's last frame.
+JOINS_EP05 = {
+    "SEQ_001": "CH", "SEQ_002": "JUMP", "SEQ_003": "CH", "SEQ_004": "CH", "SEQ_005": "HARD", "SEQ_006": "CH",
+    "SEQ_007": "SCENE", "SEQ_008": "CH", "SEQ_009": "HARD", "SEQ_010": "CH", "SEQ_011": "CH", "SEQ_012": "CH",
+    "SEQ_013": "JUMP", "SEQ_014": "JUMP", "SEQ_015": "CH", "SEQ_016": "CH", "SEQ_017": "CH", "SEQ_018": "CH",
+    "SEQ_019": "HARD", "SEQ_020": "CH", "SEQ_021": "HARD", "SEQ_022": "CH", "SEQ_023": "CH", "SEQ_024": "CH",
+    "SEQ_025": "CH", "SEQ_026": "HARD", "SEQ_027": "CH", "SEQ_028": "CH", "SEQ_029": "SCENE", "SEQ_030": "CH",
+    "SEQ_031": "CH", "SEQ_032": "CH", "SEQ_033": "CH", "SEQ_034": "HARD", "SEQ_035": "HARD", "SEQ_036": "HARD",
+}
+
+# Head locks (seconds): material before this point is never used.
+# SEQ_023 V26 frames 0-20 (0-0.83 s) are a separate shot with MACA in front of the bed. It cuts to MACA behind the bed, where SEQ_022
+# ends. Starting at the internal cut removes the teleport, and the join becomes chained.
+HEAD_LOCK_EP05 = {"SEQ_023": 0.875}
+
+# Runs whose surplus goes to the tail, because the tail holds a known defect (the small-table wide in SEQ_035-037).
+TAIL_FIRST_EP05 = {"SEQ_035", "SEQ_036", "SEQ_037"}
+
+# Composite (same-sequence alternates only). SEQ_032 V36 shows a second Maria walking at 4.71-8.5 s and cuts back to its
+# opening table shot at 9.58-11.04 s. V37, the rejected alternate, has a single Maria at 4.65-6.30 s and 8.42-10.20 s.
+# Its three Chicos only appear after its cut at 10.25 s, and those frames are not used.
+COMPOSITE_EP05 = {
+    "SEQ_032": [("V36-0e99e41911a2", 0.0, 4.708), ("V37-a56cd4f9aadc", 4.65, 6.30),
+                ("V37-a56cd4f9aadc", 8.42, 10.20), ("V36-0e99e41911a2", 11.042, 15.042)],
+}
+
+# Transitions. A dissolve is centred on the cut and uses the trimmed handles on both sides.
+TRANSITIONS_EP05 = {
+    "SEQ_002": ("dissolve", 0.333, "time passes while she draws: the robot appears on the page"),
+    "SEQ_007": ("dip", 0.5, "afternoon hall to bedtime: 'The question came out at bedtime'"),
+    "SEQ_029": ("dip", 0.5, "night to morning: 'In the morning'"),
+}
+HEAD_FADE, TAIL_FADE = 0.5, 1.5
+
+# FX bed policy: generated audio may carry SFX, foley and ambience only. These spans, in source seconds per take,
+# show stepped melodic tones (likely music) or voiced bursts in their spectrograms. They are muted in the bed and
+# flagged for a human listen. Spectrograms: EDIT/analysis/audio_policy/.
+AUDIO_MUTES_EP05 = {
+    "V20-4b05b652cb51": [(11.2, 14.05, "stepped melodic tones, likely music")],
+    "V26-d9351a00709c": [(2.95, 12.05, "stepped harmonic chord changes, likely music")],
+    "V28-e9c5010fc5af": [(5.95, 14.05, "stepped melodic tones, likely music")],
+    "V29-f22ccbb1beb2": [(9.9, 13.05, "pulsed voiced bursts, possible vocalization")],
+    "V39-a67a4b9420bb": [(0.35, 1.45, "voiced burst, possible vocalization"), (3.5, 3.95, "voiced burst")],
+}
+
+
+def f(sec: float) -> int:
+    return int(round(sec * FPS))
+
+
+def frames_of(path: Path) -> int:
+    out = subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries",
+                          "stream=nb_read_frames", "-of", "csv=p=0", str(path)], capture_output=True, text=True)
+    return int(out.stdout.strip())
+
+
+def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composite: dict | None = None,
+          tail_first: set | None = None) -> list[dict]:
+    """seqs: [{seq, take, start, end, frames}] in order. Returns EDL rows in frames (deterministic, no media access).
+
+    Each row: seq, take, segments [(take, src_in_f, src_out_f)], rec_in_f, rec_out_f, offset_f (cut minus narration
+    boundary at the row's end), join (to next).
+    """
+    head_lock, composite, tail_first = head_lock or {}, composite or {}, tail_first or set()
+    B = [f(seqs[0]["start"])] + [f(s["end"]) for s in seqs]
+    n = len(seqs)
+    lock = [f(head_lock.get(s["seq"], 0.0)) for s in seqs]
+    mat = []                                   # usable material per row, frames
+    for k, s in enumerate(seqs):
+        if s["seq"] in composite:
+            mat.append(sum(f(b) - f(a) for _, a, b in composite[s["seq"]]))
+        else:
+            mat.append(s["frames"] - lock[k])
+    runs, cur = [], [0]
+    for k in range(n - 1):
+        if joins.get(seqs[k]["seq"], "HARD") == "CH":
+            cur.append(k + 1)
+        else:
+            runs.append(cur)
+            cur = [k + 1]
+    runs.append(cur)
+    head, tail, offs = [0] * n, [0] * n, [0] * n
+    d_start = 0
+    for run in runs:
+        a, b = run[0], run[-1]
+        slot = [B[k + 1] - B[k] for k in run]
+        e = [mat[k] - sl for k, sl in zip(run, slot)]
+        C = [d_start + sum(e[:j + 1]) for j in range(len(run) - 1)]        # offsets at internal boundaries before h
+        E = d_start + sum(e)
+        H = 0 if seqs[a]["seq"] in composite else mat[a] - FPS               # keep at least 1 s of the first clip
+        T = 0 if seqs[b]["seq"] in composite else mat[b] - FPS
+        if len(run) == 1:
+            H = T = min(H, T)
+        lo, hi = max(0, E - T), min(H, E)
+        if lo > hi:                                                         # material short: play all, cut early
+            h, t = 0, 0
+        elif not C:
+            h = lo if seqs[b]["seq"] in tail_first else hi
+            t = E - h
+        else:
+            h = min(max((max(C) + min(C)) // 2, lo), hi)
+            t = E - h
+        head[a], tail[b] = h, t
+        for j, k in enumerate(run[:-1]):
+            offs[k] = C[j] - h
+        offs[b] = E - h - t
+        d_start = offs[b]
+    rows, rec = [], 0
+    for k, s in enumerate(seqs):
+        if s["seq"] in composite:
+            segs = [(t_, f(x), f(y)) for t_, x, y in composite[s["seq"]]]
+        else:
+            segs = [(s["take"], lock[k] + head[k], s["frames"] - tail[k])]
+        length = sum(y - x for _, x, y in segs)
+        rows.append({"seq": s["seq"], "take": s["take"], "segments": segs, "rec_in_f": rec, "rec_out_f": rec + length,
+                     "slot_f": [B[k], B[k + 1]], "offset_f": offs[k], "join": joins.get(s["seq"], "END")})
+        rec += length
+    return rows
+
+
+def load_ep(ep: Path) -> list[dict]:
+    root = ep.parent.parent
+    delivery = json.loads((root / "docs" / f"{ep.name}_DELIVERY.json").read_text())
+    seqs = []
+    for c in delivery["clips"]:
+        pj = json.loads((ep / "SEQUENCES" / c["seq"] / "prompt.json").read_text())
+        seqs.append({"seq": c["seq"], "take": c["take"], "start": pj["global_start"], "end": pj["global_end"],
+                     "frames": frames_of(ep / "VIDEO" / f"{c['take']}.output.mp4"),
+                     "transcript": pj.get("transcript", "")})
+    return seqs
+
+
+def plan(ep: Path) -> dict:
+    seqs = load_ep(ep)
+    rows = solve(seqs, JOINS_EP05, HEAD_LOCK_EP05, COMPOSITE_EP05, TAIL_FIRST_EP05)
+    total = rows[-1]["rec_out_f"]
+    edl = {"episode": ep.name, "fps": FPS, "narration_frames": f(seqs[-1]["end"]), "picture_frames": total,
+           "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()}, "head_fade": HEAD_FADE,
+           "tail_fade": TAIL_FADE, "audio_mutes": AUDIO_MUTES_EP05, "rows": rows}
+    out = ep / "EDIT" / "edl.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(edl, indent=1))
+    return edl
+
+
+def tc(frames: int) -> str:
+    s, fr = divmod(frames, FPS)
+    m, s = divmod(s, 60)
+    return f"00:{m:02d}:{s:02d}:{fr:02d}"
+
+
+# ---------------------------------------------------------------- render (ffmpeg + numpy; local only)
+
+SR = 48000
+
+
+def _run(cmd: list[str]) -> None:
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode:
+        raise RuntimeError(f"{' '.join(cmd[:6])}...: {r.stderr[-800:]}")
+
+
+def _pcm(path: Path, sr: int = SR, ch: int = 2):
+    import numpy as np
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-vn", "-ac", str(ch), "-ar", str(sr), "-f", "f32le",
+                        "-"], capture_output=True, check=True)
+    return np.frombuffer(r.stdout, np.float32).reshape(-1, ch).copy()
+
+
+def _write_wav(path: Path, x, sr: int = SR) -> None:
+    import numpy as np
+    pcm = (np.clip(x, -1, 1) * 32767).astype("<i2")
+    p = subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "s16le", "-ar", str(sr), "-ac", str(x.shape[1]), "-i", "-",
+                        str(path)], input=pcm.tobytes(), capture_output=True)
+    if p.returncode:
+        raise RuntimeError(p.stderr.decode()[-400:])
+
+
+def _lufs(path: Path) -> dict:
+    import re
+    e = subprocess.run(["ffmpeg", "-nostats", "-hide_banner", "-i", str(path), "-vn", "-af", "ebur128=peak=true",
+                        "-f", "null", "-"], capture_output=True, text=True).stderr
+    s = e[e.rfind("Summary:"):]
+    g = lambda k: float(re.search(k + r":\s+(-?[\d.]+|-inf)", s).group(1).replace("-inf", "-200"))
+    return {"I": g("I"), "LRA": g("LRA"), "TP": g("Peak")}
+
+
+def render_picture(ep: Path, edl: dict, out: Path) -> Path:
+    """One intermediate per row (or dissolve pair), all libx264 24 fps yuv420p, then a stream-copy concat."""
+    vid = lambda take: ep / "VIDEO" / f"{take}.output.mp4"
+    tmp = out / "segments"
+    tmp.mkdir(parents=True, exist_ok=True)
+    rows, total = edl["rows"], edl["picture_frames"]
+    enc = ["-an", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p", "-r", str(FPS)]
+    files, skip = [], set()
+    for k, r in enumerate(rows):
+        if k in skip:
+            continue
+        tr = edl["transitions"].get(r["seq"])
+        if tr and tr[0] == "dissolve":
+            nxt = rows[k + 1]
+            hf = f(tr[1]) // 2
+            (ta, a0, a1), (tb, b0, b1) = r["segments"][-1], nxt["segments"][0]
+            assert len(r["segments"]) == 1 and len(nxt["segments"]) == 1
+            la, lb = a1 - a0 + hf, b1 - b0 + hf
+            fade = [] if k else [f"fade=t=in:st=0:d={HEAD_FADE}"]
+            g = (f"[0:v]trim=start_frame={a0}:end_frame={a1 + hf},setpts=PTS-STARTPTS[a];"
+                 f"[1:v]trim=start_frame={b0 - hf}:end_frame={b1},setpts=PTS-STARTPTS[b];"
+                 f"[a][b]xfade=transition=fade:duration={2 * hf / FPS}:offset={(la - 2 * hf) / FPS}"
+                 + ("," + fade[0] if fade else "") + "[v]")
+            dst = tmp / f"{k:02d}_{r['seq']}_{nxt['seq']}.mp4"
+            _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(ta)), "-i", str(vid(tb)), "-filter_complex", g,
+                  "-map", "[v]", "-frames:v", str(la + lb - 2 * hf)] + enc + [str(dst)])
+            files.append(dst)
+            skip.add(k + 1)
+            continue
+        for j, (take, a, b) in enumerate(r["segments"]):
+            vf = [f"trim=start_frame={a}:end_frame={b}", "setpts=PTS-STARTPTS"]
+            n = b - a
+            if k == 0 and j == 0:
+                vf.append(f"fade=t=in:st=0:d={HEAD_FADE}")
+            prev = edl["transitions"].get(rows[k - 1]["seq"]) if k else None
+            if prev and prev[0] == "dip" and j == 0:
+                vf.append(f"fade=t=in:st=0:d={prev[1]}")
+            if tr and tr[0] == "dip" and j == len(r["segments"]) - 1:
+                vf.append(f"fade=t=out:st={(n / FPS) - tr[1]:.4f}:d={tr[1]}")
+            if k == len(rows) - 1 and j == len(r["segments"]) - 1:
+                vf.append(f"fade=t=out:st={(n / FPS) - TAIL_FADE:.4f}:d={TAIL_FADE}")
+            dst = tmp / f"{k:02d}_{j}_{r['seq']}.mp4"
+            _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(take)), "-vf", ",".join(vf), "-frames:v", str(n)]
+                 + enc + [str(dst)])
+            files.append(dst)
+    lst = tmp / "concat.txt"
+    lst.write_text("".join(f"file '{p.name}'\n" for p in files))
+    pic = out / f"{edl['episode']}_picture.mp4"
+    _run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(pic)])
+    got = frames_of(pic)
+    if got != total:
+        raise RuntimeError(f"picture has {got} frames, EDL says {total}")
+    return pic
+
+
+def build_fx(ep: Path, edl: dict):
+    """FX bed in the timeline: per-clip loudness matched, policy spans muted, 10 ms edit fades, dissolve crossfade."""
+    import numpy as np
+    total = int(round(edl["picture_frames"] / FPS * SR))
+    bed = np.zeros((total, 2), np.float32)
+    cache: dict = {}
+    ramp = int(0.010 * SR)
+
+    def src(take):
+        if take not in cache:
+            x = _pcm(ep / "VIDEO" / f"{take}.output.mp4")
+            g = np.ones(len(x), np.float32)
+            for a, b, _ in edl["audio_mutes"].get(take, []):
+                ia, ib = int(a * SR), min(int(b * SR), len(x))
+                r = int(0.05 * SR)
+                g[ia:ib] = 0.0
+                g[max(0, ia - r):ia] = np.minimum(g[max(0, ia - r):ia], np.linspace(1, 0, ia - max(0, ia - r)))
+                g[ib:ib + r] = np.minimum(g[ib:ib + r], np.linspace(0, 1, len(g[ib:ib + r])))
+            x = x * g[:, None]
+            rms = float(np.sqrt(np.mean(x ** 2)) + 1e-9)
+            peak = float(np.abs(x).max() + 1e-9)
+            # match beds near -24 dBFS RMS, but never lift a clip's peak above -4 dBFS and never by more than +18 dB
+            gain = min(10 ** (-24 / 20) / rms, 10 ** (-4 / 20) / peak, 10 ** (18 / 20))
+            cache[take] = x * gain
+        return cache[take]
+
+    rec = 0
+    rows = edl["rows"]
+    for k, r in enumerate(rows):
+        for take, a, b in r["segments"]:
+            x = src(take)
+            ia, ib = int(round(a / FPS * SR)), int(round(b / FPS * SR))
+            seg = x[ia:ib].copy()
+            if len(seg) < ib - ia:
+                seg = np.vstack([seg, np.zeros((ib - ia - len(seg), 2), np.float32)])
+            seg[:ramp] *= np.linspace(0, 1, ramp)[:, None]
+            seg[-ramp:] *= np.linspace(1, 0, ramp)[:, None]
+            o = int(round(rec / FPS * SR))
+            bed[o:o + len(seg)] += seg[:total - o]
+            rec += b - a
+    # dissolve: replace the hard edit with an equal-power crossfade over the dissolve window
+    for k, r in enumerate(rows[:-1]):
+        tr = edl["transitions"].get(r["seq"])
+        if not tr or tr[0] != "dissolve":
+            continue
+        hf = f(tr[1]) // 2
+        (ta, a0, a1), (tb, b0, b1) = r["segments"][-1], rows[k + 1]["segments"][0]
+        cut = int(round(rows[k + 1]["rec_in_f"] / FPS * SR))
+        n = int(round(hf / FPS * SR))
+        A = src(ta)[int(round(a1 / FPS * SR)) - n:int(round(a1 / FPS * SR)) + n]
+        Bv = src(tb)[int(round(b0 / FPS * SR)) - n:int(round(b0 / FPS * SR)) + n]
+        w = np.linspace(0, np.pi / 2, len(A))[:, None]
+        bed[cut - n:cut + n] = A * np.cos(w) + Bv[:len(A)] * np.sin(w)
+    return bed
+
+
+def render_audio(ep: Path, edl: dict, out: Path) -> dict:
+    import numpy as np
+    stems = out / "stems"
+    stems.mkdir(parents=True, exist_ok=True)
+    total = int(round(edl["picture_frames"] / FPS * SR))
+    nar = _pcm(ep / "AUDIO" / "narration.wav")[:total]
+    nar = np.vstack([nar, np.zeros((total - len(nar), 2), np.float32)])
+    bed = build_fx(ep, edl)
+    # sidechain duck: narration envelope (20 ms attack, 400 ms release) pulls the bed down by up to 9 dB
+    env = np.abs(nar[:, 0])
+    hop = SR // 100
+    blocks = env[: len(env) // hop * hop].reshape(-1, hop).max(axis=1)
+    sm = np.zeros_like(blocks)
+    for i in range(1, len(blocks)):
+        c = 0.6 if blocks[i] > sm[i - 1] else 0.025
+        sm[i] = sm[i - 1] + c * (blocks[i] - sm[i - 1])
+    duck_db = -9.0 * np.clip((20 * np.log10(sm + 1e-9) + 50) / 20, 0, 1)
+    duck = np.repeat(10 ** (duck_db / 20), hop)
+    duck = np.concatenate([duck, np.full(total - len(duck), duck[-1] if len(duck) else 1.0)])[:total]
+    bed_d = bed * duck[:, None].astype(np.float32)
+    bed_d = (0.5 * np.tanh(bed_d / 0.5)).astype(np.float32)                 # soft ceiling at -6 dBFS for the bed
+    # fades that match the picture (head, dips, tail)
+    g = np.ones(total, np.float32)
+    def fade(a, b, up):
+        a, b = max(0, a), min(total, b)
+        g[a:b] *= np.linspace(0, 1, b - a) if up else np.linspace(1, 0, b - a)
+    fade(0, int(HEAD_FADE * SR), True)
+    for k, r in enumerate(edl["rows"][:-1]):
+        tr = edl["transitions"].get(r["seq"])
+        if tr and tr[0] == "dip":
+            c = int(round(r["rec_out_f"] / FPS * SR)); d = int(tr[1] * SR)
+            fade(c - d, c, False); fade(c, c + d, True)
+    fade(total - int(TAIL_FADE * SR), total, False)
+    bed_d *= g[:, None]
+    _write_wav(stems / "narration.wav", nar)
+    _write_wav(stems / "fx_bed.wav", bed_d)
+    mix = nar + bed_d
+    _write_wav(stems / "mix_prenorm.wav", mix)
+    pre = _lufs(stems / "mix_prenorm.wav")
+    final = out / f"{edl['episode']}_mix.wav"
+    # two-pass loudnorm to -16 LUFS, -1.5 dBTP ceiling, linear where possible
+    import re
+    e = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(stems / "mix_prenorm.wav"), "-af",
+                        "loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+                       capture_output=True, text=True).stderr
+    m = json.loads(e[e.rfind("{"):e.rfind("}") + 1])
+    _run(["ffmpeg", "-v", "error", "-y", "-i", str(stems / "mix_prenorm.wav"), "-af",
+          f"loudnorm=I=-16:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
+          f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,"
+          f"aresample={SR}", "-ar", str(SR), "-c:a", "pcm_s24le", str(final)])
+    return {"prenorm": pre, "loudnorm_pass1": m, "final": _lufs(final), "stem_narration": _lufs(stems / "narration.wav"),
+            "stem_fx": _lufs(stems / "fx_bed.wav")}
+
+
+def render(ep: Path, audio_only: bool = False) -> dict:
+    edl = json.loads((ep / "EDIT" / "edl.json").read_text())
+    out = ep / "EDIT" / "master"
+    out.mkdir(parents=True, exist_ok=True)
+    pic = out / f"{edl['episode']}_picture.mp4" if audio_only else render_picture(ep, edl, out)
+    if frames_of(pic) != edl["picture_frames"]:
+        raise RuntimeError(f"{pic} does not match the EDL; run render without --audio-only")
+    audio = render_audio(ep, edl, out)
+    master = out / f"{edl['episode']}_master.mp4"
+    _run(["ffmpeg", "-v", "error", "-y", "-i", str(pic), "-i", str(out / f"{edl['episode']}_mix.wav"), "-map", "0:v",
+          "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-ar", str(SR), "-shortest",
+          "-movflags", "+faststart", str(master)])
+    rep = {"master": str(master), "picture": str(pic), "audio": audio}
+    (out / "render.json").write_text(json.dumps(rep, indent=1))
+    return rep
+
+
+def qc(ep: Path) -> dict:
+    edl = json.loads((ep / "EDIT" / "edl.json").read_text())
+    out = ep / "EDIT" / "master"
+    m = out / f"{edl['episode']}_master.mp4"
+    pr = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(m)],
+                                   capture_output=True, text=True).stdout)
+    dec = subprocess.run(["ffmpeg", "-v", "error", "-i", str(m), "-f", "null", "-"], capture_output=True,
+                         text=True).stderr.strip()
+    bf = subprocess.run(["ffmpeg", "-v", "info", "-i", str(m), "-vf",
+                         "blackdetect=d=0.1:pix_th=0.10,freezedetect=n=0.003:d=1.5", "-an", "-f", "null", "-"],
+                        capture_output=True, text=True).stderr
+    black = [l.split("]")[-1].strip() for l in bf.splitlines() if "black_start" in l]
+    freeze = [l.split("]")[-1].strip() for l in bf.splitlines() if "freeze_start" in l or "freeze_duration" in l]
+    v = next(s for s in pr["streams"] if s["codec_type"] == "video")
+    a = next(s for s in pr["streams"] if s["codec_type"] == "audio")
+    res = {"file": str(m), "bytes": int(pr["format"]["size"]), "duration": float(pr["format"]["duration"]),
+           "video": {"codec": v["codec_name"], "size": f"{v['width']}x{v['height']}", "fps": v["r_frame_rate"],
+                     "frames": frames_of(m), "edl_frames": edl["picture_frames"]},
+           "audio": {"codec": a["codec_name"], "sr": a["sample_rate"], "channels": a["channels"],
+                     "loudness": _lufs(m)},
+           "narration_frames": edl["narration_frames"], "decode_errors": dec, "blackdetect": black,
+           "freezedetect": freeze}
+    (out / "qc.json").write_text(json.dumps(res, indent=1))
+    return res
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="ulac.edit", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("cmd", choices=["plan", "render", "mix", "qc"])
+    ap.add_argument("ep")
+    a = ap.parse_args(argv)
+    ep = Path(a.ep)
+    if a.cmd == "plan":
+        edl = plan(ep)
+        for r in edl["rows"]:
+            segs = " + ".join(f"{t[:3]}[{x / FPS:.3f}-{y / FPS:.3f}]" for t, x, y in r["segments"])
+            print(f"{r['seq']} {tc(r['rec_in_f'])}-{tc(r['rec_out_f'])} {segs:44s} off {r['offset_f'] / FPS:+.3f}s "
+                  f"-> {r['join']}")
+        print("picture", edl["picture_frames"], "narration", edl["narration_frames"])
+    elif a.cmd in ("render", "mix"):
+        print(json.dumps(render(ep, audio_only=a.cmd == "mix"), indent=1))
+    else:
+        print(json.dumps(qc(ep), indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

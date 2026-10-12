@@ -126,9 +126,11 @@ def seedance_flf_720p(prompt: str, first: str, last: str | None, *, seconds: int
 
 
 def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, seconds: int, prefix: str,
-                      model: str = "Seedance 2.0") -> dict:
-    """Video stage: @image1 storyboard sheet, @image2 identity board (skill handoff). Native audio is always on: the clip
-    carries sound effects, foley and ambience, and the sound-only policy must already be in the prompt."""
+                      model: str = "Seedance 2.0", opening: str | None = None, environment: str | None = None) -> dict:
+    """Video stage: @image1 storyboard sheet, @image2 identity board, then the opening frame (previous clip's last frame)
+    and the environment master, in that order with no gaps. Native audio is always on: the clip carries sound effects,
+    foley and ambience, and the sound-only policy must already be in the prompt. video.preflight refuses a graph without
+    the environment master."""
     if not 4 <= seconds <= 15:
         raise ValueError("Seedance 2.0 renders 4-15 whole seconds")
     problems = video.prompt_problems(prompt, authored=False)
@@ -142,6 +144,12 @@ def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, sec
     if identity:
         g["2"] = _load(identity, "@image2 identity board")
         inputs["model.reference_images.image_2"] = ["2", 0]
+    n = 1 + bool(identity)
+    for node, img, what in (("3", opening, "opening frame"), ("4", environment, "environment master")):
+        if img:
+            n += 1
+            g[node] = _load(img, f"@image{n} {what}")
+            inputs[f"model.reference_images.image_{n}"] = [node, 0]
     g["10"] = {"class_type": "ByteDance2ReferenceNodeV2", "inputs": inputs, "_meta": {"title": "Seedance 2.0 R2V"}}
     g["11"] = {"class_type": "SaveVideo", "inputs": {"video": ["10", 0], "filename_prefix": prefix, "format": "auto",
                                                      "format.codec": "auto", "codec": "auto"},

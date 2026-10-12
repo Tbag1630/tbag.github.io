@@ -37,6 +37,11 @@ def prep(seq: str, start: str) -> None:
 
 
 IDENTITY = "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"  # colour identity board on cloud
+# Cloud names of the uploaded environment masters, by penv_id. Empty: the EP05 masters were never sent to the video
+# stage, which is why every hall clip invented a grey room. prep_r2v refuses until the right master is recorded here.
+ENV_MASTERS: dict[str, str] = {}
+ENV_LINE = ("@image4 is the environment master for this room: match its walls, floor, furniture layout, props and palette "
+            "exactly; never invent or rearrange the room.")
 # SEQ_012 and SEQ_014 held one two-shot for the whole clip under "continue from it without a cut": the opening frame
 # is only the first frame; after it the clip follows each panel's framing and the cuts the storyboard draws.
 OPENING = ("Open exactly on @image3, the last frame of the previous shot, as the very first frame; after that opening, "
@@ -95,13 +100,20 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
         for a, b in AUDIO_SWAPS:
             rest = rest.replace(a, b)
         rest = rest.replace("\nTIMING:", "\n" + AUDIO_FIX + "\nTIMING:", 1)
-    prompt = "\n".join(head + [CUT if mode == "cut" else OPENING, rest])
+    prompt = "\n".join(head + [CUT if mode == "cut" else OPENING, ENV_LINE, rest])
     (d / "video_start").mkdir(exist_ok=True)
     (d / "video_start" / "prompt_video_r2v_open.txt").write_text(prompt)
+    env = ENV_MASTERS.get(pj.get("penv_id", ""))
+    if not env:
+        sys.exit(f"preflight: no environment master is uploaded for {pj.get('penv_id')!r} (ENV_MASTERS); the video stage "
+                 "never runs without it (EP05 lost its hall look this way)")
+    local = ROOT / "VIDEO" / opening
+    if local.exists():
+        bad = video.frame_source_problems(local, video.sketch_registry(ROOT))
+        if bad:
+            sys.exit(f"preflight: {bad}")
     g = comfy.seedance_r2v_720p(prompt, board_output(seq), IDENTITY, seconds=secs,
-                                prefix=f"ULAC/EP05/{seq}_VIDEO_r2v")
-    g["3"] = {"class_type": "LoadImage", "inputs": {"image": opening}, "_meta": {"title": "@image3 opening frame"}}
-    g["10"]["inputs"]["model.reference_images.image_3"] = ["3", 0]
+                                prefix=f"ULAC/EP05/{seq}_VIDEO_r2v", opening=opening, environment=env)
     credits = round(secs * RATE, 1)
     quote = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
                                  credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain r2v")

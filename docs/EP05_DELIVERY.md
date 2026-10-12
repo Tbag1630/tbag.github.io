@@ -1,5 +1,7 @@
 # EP05 video delivery
 
+> **Superseded for the cut:** the conformed episode is `project/EP05/EDIT/master/EP05_master.mp4`, built by `python3 -m ulac.edit`. Trims, the SEQ_032 composite and the audio-policy mutes are in `docs/EP05_EDL.json`, and defect status is in `docs/EP05_DEFECT_LEDGER.md`.
+
 All 37 sequences have a selected clip: Seedance 2.0 reference-to-video, 720p 16:9, embedded SFX/foley/ambience only (no music, no voices). The selected takes run 479.7 s in total, about 8.0 min before trims.
 
 - Credits on submitted jobs: 24,099.0 of the 30,000 standing budget (41 paid attempts, SEQ_001 pilot included).
