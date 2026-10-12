@@ -172,6 +172,17 @@ FLF_BLUEPRINT = ("Animate from the first frame image, the exact starting frame, 
                  "storyboard sheet; recreate the filmed sequence the panels imply.")
 
 
+START_BLUEPRINT = ("Animate forward from the first frame image, the exact starting frame, which continues the previous shot "
+                   "without a cut. Follow the panel beats in order as consecutive shots of one cinematic sequence. Keep the "
+                   "full-colour finished animation style of the first frame for the whole clip; never turn into a pencil "
+                   "sketch, storyboard or line drawing.")
+
+
+def video_text_start(plan: dict) -> str:
+    """Start-only handoff: video_text_flf without an ending-lock image."""
+    return video_text_flf(plan).replace(FLF_BLUEPRINT, START_BLUEPRINT, 1)
+
+
 def video_text_flf(plan: dict) -> str:
     """The first-last-frame handoff: the same policy, audio and panel beats as video_text, with the start and end images
     in place of the storyboard and identity references."""

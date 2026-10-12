@@ -92,3 +92,18 @@ def test_r2v_path_still_passes_preflight():
                                 "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png",
                                 seconds=14, prefix="ULAC/EP05/REGRESSION")
     assert video.preflight(g, PROMPT, seconds=14, segment_seconds=SEG) == []
+
+
+def test_start_only_graph_passes_and_keeps_colour_instruction():
+    p = storyboard.video_text_start(PLAN)
+    assert "last frame image" not in p and "never turn into a pencil sketch" in p
+    g = comfy.seedance_flf_720p(p, "5027b7fd5cb2ba5d289ffadf930f427471ef459a295aa1213e4417b0a9130d43.png", None,
+                                seconds=14, prefix="ULAC/EP05/SEQ_002_VIDEO_start")
+    assert "2" not in g and "last_frame" not in g["10"]["inputs"]
+    assert video.preflight(g, p, seconds=14, segment_seconds=SEG) == []
+
+
+def test_start_only_graph_refuses_a_last_frame_prompt():
+    g = comfy.seedance_flf_720p(PROMPT, "5027b7fd5cb2ba5d289ffadf930f427471ef459a295aa1213e4417b0a9130d43.png", None,
+                                seconds=14, prefix="X")
+    assert any("must not ask for a last frame" in x for x in video.preflight(g, PROMPT, seconds=14, segment_seconds=SEG))

@@ -122,11 +122,17 @@ def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float)
     if not segment_seconds <= seconds <= segment_seconds + 1.0:
         out.append(f"a {seconds} s render must cover the {segment_seconds} s segment and run at most 1 s past it")
     if flf:
-        wired = (("first_frame", "start frame"), ("last_frame", "ending lock"))
+        # start-only: the board END_LOCK is a grey pencil sketch, and as a last frame it pulls the clip into sketch
+        # style (SEQ_002 V02), so the chain may run from the start frame alone with the beats carried by the prompt
+        start_only = "last_frame" not in inp
+        wired = (("first_frame", "start frame"),) if start_only else (("first_frame", "start frame"),
+                                                                      ("last_frame", "ending lock"))
         if "@image" in prompt:
             out.append("a first-last-frame prompt must not refer to @image inputs")
-        if not all(key in inp for key, _ in wired):
-            out.append("both first_frame and last_frame must be wired")
+        if "first_frame" not in inp:
+            out.append("first_frame must be wired")
+        if start_only and "last frame image" in prompt:
+            out.append("a start-only graph's prompt must not ask for a last frame image")
     else:
         wired = (("model.reference_images.image_1", "@image1 storyboard"),
                  ("model.reference_images.image_2", "@image2 identity board"))
