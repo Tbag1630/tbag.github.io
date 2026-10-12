@@ -73,6 +73,11 @@ REPAIR_NOTES = {
 }
 
 
+# Hall scenes with many children twice produced a duplicated lead (two Marias, three Chicos): a standing cast lock.
+CAST_LOCK = ("CONTINUITY: exactly one Maria, one MACA and one Chico in every shot; never duplicate a character; the other "
+             "children are different children who stay in their own places; never cut back to an earlier shot.")
+
+
 def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
@@ -84,7 +89,7 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     base = storyboard.video_text(plan)
     head, rest = base.split("\n", 2)[:2], base.split("\n", 2)[2]
     if fix == "repair":
-        rest = rest.replace("\nPANEL BEATS:", "\n" + REPAIR_NOTES[seq] + "\nPANEL BEATS:", 1)
+        rest = rest.replace("\nPANEL BEATS:", "\n" + REPAIR_NOTES.get(seq, CAST_LOCK) + "\nPANEL BEATS:", 1)
         fix = "audio"
     if fix == "audio":
         for a, b in AUDIO_SWAPS:
