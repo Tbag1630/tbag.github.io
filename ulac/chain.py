@@ -36,6 +36,47 @@ def prep(seq: str, start: str) -> None:
     print(json.dumps(g))
 
 
+IDENTITY = "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"  # colour identity board on cloud
+OPENING = ("Open exactly on @image3, the last frame of the previous shot, and continue from it without a cut; keep the "
+           "full-colour finished animation look of @image3 and @image2 for the whole clip, never a pencil sketch.")
+
+
+def board_output(seq: str) -> str:
+    """Cloud name of the accepted storyboard sheet (the ledger's accepted attempt)."""
+    led = firewall.read_ledger(ROOT)
+    acc = [r["attempt"] for r in led if r.get("target") == seq and r["event"] == "accepted"][-1]
+    return [r["output"] for r in led if r.get("target") == seq and r.get("attempt") == acc and r.get("output")][-1]
+
+
+def prep_r2v(seq: str, opening: str) -> None:
+    """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
+    board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
+    alone loses identity and room when the previous clip ends on an insert."""
+    d = ROOT / "SEQUENCES" / seq
+    pj = json.loads((d / "prompt.json").read_text())
+    plan = json.loads((d / "storyboard_plan.json").read_text())
+    secs, seg = int(pj["render_seconds"]), float(pj["duration"])
+    base = storyboard.video_text(plan)
+    head, rest = base.split("\n", 2)[:2], base.split("\n", 2)[2]
+    prompt = "\n".join(head + [OPENING, rest])
+    (d / "video_start").mkdir(exist_ok=True)
+    (d / "video_start" / "prompt_video_r2v_open.txt").write_text(prompt)
+    g = comfy.seedance_r2v_720p(prompt, board_output(seq), IDENTITY, seconds=secs,
+                                prefix=f"ULAC/EP05/{seq}_VIDEO_r2v")
+    g["3"] = {"class_type": "LoadImage", "inputs": {"image": opening}, "_meta": {"title": "@image3 opening frame"}}
+    g["10"]["inputs"]["model.reference_images.image_3"] = ["3", 0]
+    credits = round(secs * RATE, 1)
+    quote = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
+                                 credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain r2v")
+    if quote["problems"]:
+        sys.exit(f"preflight: {quote['problems']}")
+    firewall.video_accept_price(ROOT, by="user", quote=firewall.load_conf(ROOT)["video_pilot"]["source"],
+                                graph_sha256=quote["graph_sha256"], credits=credits)
+    r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
+    print(json.dumps({"rid": r["rid"], "credits": credits, "committed_before": r["committed_before"], "chars": len(prompt)}))
+    print(json.dumps(g))
+
+
 def done(rid: str, job: str) -> None:
     g = json.loads((ROOT / "VIDEO" / f"{rid}.graph.json").read_text())
     firewall.video_submitted(ROOT, rid, job, g)
@@ -52,4 +93,4 @@ def lastframe_graph(video_name: str, seq: str) -> None:
 
 
 if __name__ == "__main__":
-    {"prep": prep, "done": done, "last": lastframe_graph}[sys.argv[1]](*sys.argv[2:])
+    {"prep": prep, "r2v": prep_r2v, "done": done, "last": lastframe_graph}[sys.argv[1]](*sys.argv[2:])
