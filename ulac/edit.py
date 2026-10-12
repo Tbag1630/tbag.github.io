@@ -122,6 +122,23 @@ def _pieces(s: dict, lock_f: int, sp: dict | None) -> list[tuple]:
     raise ValueError(f"unknown splice side {sp['side']!r}")
 
 
+def substitute_pieces(pieces: list[tuple], reps: list[tuple]) -> list[tuple]:
+    """Replace spans of a row's untrimmed pieces with repair clip spans of the same length.
+    reps: [((take, a, b), (clip, c0, c1)), ...]; each [a, b) must lie inside one piece of that take. The result is the
+    explicit piece list a "segments" splice carries, so the row keeps its material length and the solver's trims."""
+    out = [tuple(x) for x in pieces]
+    for (take, a, b), (clip, c0, c1) in reps:
+        if b - a != c1 - c0:
+            raise ValueError(f"{take} [{a}, {b}) and {clip} [{c0}, {c1}) differ in length")
+        for i, (t_, x, y) in enumerate(out):
+            if t_ == take and x <= a and b <= y:
+                out[i:i + 1] = [p for p in ((t_, x, a), (clip, c0, c1), (t_, b, y)) if p[2] > p[1]]
+                break
+        else:
+            raise ValueError(f"{take} [{a}, {b}) is not inside one piece of the row")
+    return out
+
+
 def _room(s: dict, lock_f: int, sp: dict | None, end: int) -> int:
     """Frames a head (end=0) or tail (end=-1) trim may remove: the original take's piece at that end. A repair clip is
     never trimmed unless its splice sets trim_ok (e.g. a tail repair whose last frames may go)."""

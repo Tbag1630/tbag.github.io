@@ -269,6 +269,17 @@ def test_segment_splice_puts_several_repairs_in_one_row_and_trims_only_the_origi
     assert rows[0]["rec_out_f"] == 240 and rows[-1]["rec_out_f"] == 480   # the 72-frame head trim took the take piece
 
 
+def test_substitute_pieces_swaps_spans_and_keeps_length():
+    pcs = [("T", 0, 337)]
+    got = edit.substitute_pieces(pcs, [(("T", 6, 197), ("RA", 1, 192)), (("T", 198, 337), ("RB", 1, 140))])
+    assert got == [("T", 0, 6), ("RA", 1, 192), ("T", 197, 198), ("RB", 1, 140)]
+    assert sum(b - a for _, a, b in got) == 337
+    with pytest.raises(ValueError):
+        edit.substitute_pieces(pcs, [(("T", 0, 10), ("R", 0, 9))])
+    with pytest.raises(ValueError):
+        edit.substitute_pieces([("T", 0, 5), ("U", 0, 5)], [(("T", 3, 8), ("R", 0, 5))])
+
+
 def test_flf_prompt_carries_continuity_and_preventions_and_stays_policy_clean():
     plan = {**FLF_PLAN, "continuity": "Maria in the near window-side seat, the crayon boy beside her",
             "preventions": ["no second table", "no other children or adults"]}
