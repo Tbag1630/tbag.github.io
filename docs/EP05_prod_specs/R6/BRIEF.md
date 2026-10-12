@@ -21,9 +21,11 @@ for your act and write specs only. You never submit, reserve or quote: do NOT ru
   purple boots. Chico: small tan-and-white chihuahua, pink collar. Crayon boy: ginger-blond, green dinosaur T-shirt.
 
 ## The one family drawing (canonical, locked by the lead)
-- out:K_DRAW_US: Maria's crayon drawing on white paper: on the left a girl in a pink dress with black hair and a yellow
-  headband; in the middle Chico, a tan dog sitting on a blue checked blanket; on the right MACA drawn upright, square
-  shoulders, teal visor, pink chest with a row of coloured chest lights; green grass zigzags along the bottom.
+- out:K_DRAW_US (LOCKED; project/EP05/PROD/K_DRAW_US/crop.png): Maria's crayon drawing, cropped to the paper only (no
+  sheet edges: in the hall it lives on the roll). Describe it AS DRAWN: on the left a girl with brown hair, a thin yellow
+  headband and a pink pinafore dress; in the middle a small tan dog with a blue checked blanket draped over its back; on
+  the right a robot drawn upright, round white head with a teal visor band and two blue eyes, square shoulders, a pink
+  chest with a row of five coloured chest lights, orange joints; green zigzag grass along the bottom.
 - out:K_DRAW_US_GLOW: the same drawing after the morning (SEQ_030): big yellow and orange glow scribbles all around
   MACA's chest, so much glow it runs off the edge of the paper.
 Every keyframe that shows Maria's drawing passes the right one as a reference ("the drawing on the paper is exactly

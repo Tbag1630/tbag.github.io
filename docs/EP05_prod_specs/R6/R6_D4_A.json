@@ -17,14 +17,17 @@
   "use": [
    1,
    192
-  ]
+  ],
+  "shared_start": true,
+  "join_in": "seamless: clip frame 0 is V29 f277, already the last frame of SEQ_026's segment",
+  "note": "clip frames 1..191 replace V30 f6..f196; clip frame 192 is V30 f197, which plays from the take (it is also the first frame of R6_D4_B)"
  },
  "plan": {
-  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the window at the left with Maria lying on it facing MACA, the cream four-panel door with warm hall light behind it at the right, a light switch beside the door, the blue star toy chest and the oval rug on the dark wood floor, grey-blue walls, a low warm glow from MACA's chest",
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed at the left, the cream four-panel door with warm hall light behind it at the right, the blue star toy chest and the oval rug on the dark wood floor, grey-blue walls, a low warm glow from MACA's chest",
   "emotional_guidance": "Valence: warm, loving, contented. Arousal: low, gently rising as the glow warms.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a soft servo whirr as MACA's fingers part; P02 a gentle low electrical purr from MACA's chest that swells three times; P03 a small soft mechanical whirr from inside her torso; P04 quiet night room tone and the soft rustle of Maria shifting on the blanket",
+   "sounds": "P01 a soft servo whirr as MACA's fingers part; P02 a gentle low electrical purr from MACA's chest that swells three times; P03 a small soft mechanical whirr from inside her torso",
    "room": "a small quiet bedroom at night, close and soft"
   },
   "panels": [
@@ -38,14 +41,13 @@
     "video_beat": "the glow settles warm and steady; MACA's hands come back together over the glowing chest, her smiling blue eyes on Maria; Maria watches her, quiet and happy"
    }
   ],
-  "continuity": "Maria in the left foreground seen from behind, leaning forward on the bed on her elbows in her pink pyjamas with the light-blue collar, her ponytail with the pink scrunchie, her face toward MACA; Chico lying on the bed at the bottom edge beside her, only his ears in frame; MACA seated upright facing Maria on the screen-right with her chest light glowing; the cream door with warm light behind it at the right; one Maria, one MACA, one Chico",
+  "continuity": "Maria in the left foreground seen from behind, leaning forward on the bed on her elbows in her pink pyjamas with the light-blue collar, her face toward MACA; Chico lying on the bed at the bottom edge beside her, only his ears in frame; MACA seated upright facing Maria on the screen-right with her chest light glowing; one Maria, one MACA, one Chico",
   "preventions": [
-   "the same clean round white helmet with only its two round ear discs in every frame; no lines, rays, fins or wings ever appear around her head or ears",
-   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears",
-   "MACA's fan is a sound only: nothing flutters, spins or sticks out of her head, ears, sides or back",
+   "the same clean round white helmet with only its two round ear discs in every frame",
+   "MACA's helmet stays a clean smooth round white shell with one round ear disc on each side and nothing attached: no fins, wings, rays, lines, spikes or antennae near her head or ears",
+   "MACA's fan is a sound only: nothing flutters, spins or sticks out of her head, ears or sides",
    "Maria wears plain pink pyjamas with the light-blue collar: no dots, no print, no outfit change",
-   "the camera stays in one wide over-the-shoulder view: no cut, no close-up",
-   "the room does not change"
+   "one wide over-the-shoulder view: no cut, no close-up, and the room does not change"
   ],
   "one_shot": true
  },

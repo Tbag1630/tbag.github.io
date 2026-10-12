@@ -17,14 +17,15 @@
   "use": [
    1,
    96
-  ]
+  ],
+  "note": "clip frames 1..95 replace V23 f85..f179; clip frame 0 (V23 f84) and clip frame 96 (V23 f180) play from the take"
  },
  "plan": {
-  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket and Maria resting on the pillow, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls and soft low light",
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls",
   "emotional_guidance": "Valence: warm, amused, tender. Arousal: very low.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a soft dull thump of Chico's tail on the knit blanket; P02 a faint metal creak as MACA's open hand turns toward him; P03 Chico's slow sleepy breath and quiet night room tone",
+   "sounds": "P01 a soft dull thump of Chico's tail on the knit blanket; P02 a faint metal creak as MACA's open hand turns toward him; P03 Chico's slow sleepy breath",
    "room": "a small quiet bedroom at night, soft and close"
   },
   "panels": [
@@ -38,11 +39,10 @@
   "continuity": "Maria on the pillow at the screen-left, under the grey knit blanket; MACA seated at the bedside on the screen-right with her open hand toward Chico and her chest light glowing; Chico, the only dog in the room, asleep on the bed on the blanket across Maria's feet; the four-panel door and the wooden chest at the right stay where they are",
   "preventions": [
    "one Chico only, asleep on the bed across Maria's feet from the first frame to the last",
-   "never a second dog, never a dog on the floor, the rug or the stripe rug, and never a shot of the floor",
+   "never a second dog, never a dog on the floor or the rug, and never a shot of the floor",
    "the camera does not pan, tilt, drop, travel or cut: it holds the same wide view of the bed from the first frame to the last, at most a very slow push-in",
    "the bed, the blanket and the room do not change",
-   "one Maria, one MACA, one Chico",
-   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+   "MACA's helmet stays a clean smooth round white shell with one round ear disc on each side and nothing attached: no fins, wings, rays, lines, spikes or antennae near her head or ears"
   ],
   "one_shot": true
  },

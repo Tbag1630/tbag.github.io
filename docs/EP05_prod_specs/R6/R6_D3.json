@@ -17,14 +17,17 @@
   "use": [
    1,
    96
-  ]
+  ],
+  "shared_start": true,
+  "join_in": "seamless: clip frame 0 is V23 f357, already the last frame of SEQ_021's segment",
+  "note": "clip frames 1..95 replace V24 f7..f101; clip frame 96 is V24 f102, which plays from the take"
  },
  "plan": {
-  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket and Maria resting on the pillow, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls and soft low light",
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls",
   "emotional_guidance": "Valence: playful, then thoughtful. Arousal: very low.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a soft sock-on-fur brush and the knit blanket shifting under her foot; P02 Chico's small content grunt and a tiny tail thump; P03 quiet night room tone and a faint low glow-purr from MACA's chest light",
+   "sounds": "P01 a soft sock-on-fur brush and the knit blanket shifting under her foot; P02 Chico's small content grunt and a tiny tail thump",
    "room": "a small quiet bedroom at night, soft and close"
   },
   "panels": [
@@ -43,9 +46,8 @@
    "Maria scratches Chico's ear with her FOOT only, her socked foot or the lump of her feet under the end of the blanket; her hands stay on the blanket and never touch Chico",
    "Chico lies across Maria's feet on the bed for the whole clip: one Chico only, nothing on the floor",
    "the camera holds the same wide view: no cut, no new angle, no close-up of a different room",
-   "the room does not change: no white bed frame, no radiator, no cream-coloured room, no star chest in a corner; the window, the door at the right and the wooden chest stay as in the first frame",
-   "one Maria, one MACA, one Chico",
-   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+   "the room does not change: no white bed frame, no radiator, no star chest in a corner; the window, the door at the right and the wooden chest stay as in the first frame",
+   "MACA's helmet stays a clean smooth round white shell with one round ear disc on each side and nothing attached: no fins, wings, rays, lines, spikes or antennae near her head or ears"
   ],
   "one_shot": true
  },

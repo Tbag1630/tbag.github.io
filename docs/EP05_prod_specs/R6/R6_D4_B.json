@@ -8,36 +8,38 @@
  "seconds": 7,
  "segment": 7.0,
  "splice": {
-  "seq": "SEQ_028",
+  "seq": "SEQ_027",
   "replace": [
-   [
-    "V30-afec35ce58f7",
-    198,
-    337
-   ],
-   [
+   "V30-afec35ce58f7",
+   198,
+   337
+  ],
+  "use": [
+   1,
+   140
+  ],
+  "shared_start": true,
+  "then": {
+   "seq": "SEQ_028",
+   "replace": [
     "V31-8830210c7b44",
     0,
     29
-   ]
-  ],
-  "use": [
-   [
-    1,
-    140
    ],
-   [
+   "use": [
     140,
     169
    ]
-  ]
+  },
+  "join_out": "hard cut to V31 f29 (8-frame dissolve by the edit); the take's close shot resumes at f29, five frames after its original cut",
+  "note": "clip frame 0 is V30 f197, the last frame of R6_D4_A, already played; use [1,140) then [140,169) are consecutive clip frames 1..168 = 139 + 29 replaced frames; clip frame 168 is the last wide frame before the cut"
  },
  "plan": {
-  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the window at the left with Maria lying on it facing MACA, the cream four-panel door with warm hall light behind it at the right, a light switch beside the door, the blue star toy chest and the oval rug on the dark wood floor, grey-blue walls, a low warm glow from MACA's chest",
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed at the left, the cream four-panel door with warm hall light behind it at the right, the blue star toy chest and the oval rug on the dark wood floor, grey-blue walls, a low warm glow from MACA's chest",
   "emotional_guidance": "Valence: warm, peaceful, loving. Arousal: very low.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a soft low electrical purr from MACA's chest that swells and settles like a slow heartbeat; P02 a small soft mechanical whirr from inside her torso; P03 quiet night room tone and the faint rustle of the blanket under Maria",
+   "sounds": "P01 a soft low electrical purr from MACA's chest that swells and settles like a slow heartbeat; P02 a small soft mechanical whirr from inside her torso; P03 the faint rustle of the blanket under Maria",
    "room": "a small quiet bedroom at night, close and soft"
   },
   "panels": [
@@ -51,14 +53,13 @@
     "video_beat": "the glow settles warm and steady; Maria shifts a little on the blanket, ready to reach toward MACA, and holds"
    }
   ],
-  "continuity": "Maria in the left foreground seen from behind, leaning forward on the bed on her elbows in her pink pyjamas with the light-blue collar and the ponytail with the pink scrunchie; Chico lying on the bed at the bottom edge beside her, only his ears in frame; MACA seated upright facing Maria on the screen-right with her hands over her glowing chest; the cream door with warm hall light at the right; one Maria, one MACA, one Chico",
+  "continuity": "Maria in the left foreground seen from behind, leaning forward on the bed on her elbows in her pink pyjamas with the light-blue collar; Chico lying on the bed at the bottom edge beside her, only his ears in frame; MACA seated upright facing Maria on the screen-right with her hands over her glowing chest; one Maria, one MACA, one Chico",
   "preventions": [
-   "the same clean round white helmet with only its two round ear discs in every frame; no lines, rays, fins or wings ever appear around her head or ears",
-   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears",
-   "MACA's fan is a sound only: nothing flutters, spins or sticks out of her head, ears, sides or back",
+   "the same clean round white helmet with only its two round ear discs in every frame",
+   "MACA's helmet stays a clean smooth round white shell with one round ear disc on each side and nothing attached: no fins, wings, rays, lines, spikes or antennae near her head or ears",
+   "MACA's fan is a sound only: nothing flutters, spins or sticks out of her head, ears or sides",
    "Maria wears plain pink pyjamas with the light-blue collar: no dots, no print, no outfit change",
-   "the camera stays in one wide over-the-shoulder view: no cut, no close-up",
-   "the room does not change"
+   "one wide over-the-shoulder view: no cut, no close-up, and the room does not change"
   ],
   "one_shot": true
  },
@@ -75,5 +76,6 @@
    "key": "V30_f203"
   }
  ],
- "shared_start": true
+ "shared_start": true,
+ "attempt_attribution": "SEQ_028 attempt 2 (within the ceiling of 2). Counting it under SEQ_027 would take SEQ_027 to attempt 3 (approved) and leave R6_D4_A only the contingency attempt 4."
 }
