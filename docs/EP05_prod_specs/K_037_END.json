@@ -1,0 +1,18 @@
+{
+ "tid": "K_037_END",
+ "kind": "keyframe",
+ "refs": [
+  [
+   "REF1 accepted frame of this shot (look, room, lens)",
+   "bde7766ed6698582e74e6ae26d20a8ef049971f80377db5c2bfbdb5b32d4e2e2.png"
+  ],
+  [
+   "REF2 identity board",
+   "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ]
+ ],
+ "base_frame": "V41_f72",
+ "size": "1280x720",
+ "quality": "high",
+ "prompt": "Pull back to a wide of the whole morning dining hall in the same layout as image 1: the one long table of family drawings running to the far doorway with children drawing on both sides; in the foreground MACA kneels holding Maria's hand, the drawing on her chest panel, Chico sitting on MACA's foot; nothing rearranged. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
+}

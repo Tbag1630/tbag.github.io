@@ -1,0 +1,18 @@
+{
+ "tid": "K_WIDE_006",
+ "kind": "keyframe",
+ "refs": [
+  [
+   "REF1 accepted frame of this shot (look, room, lens)",
+   "60da7e176f630a53865f4087f9b409f1e201ee89320209446099bd71c63666ce.png"
+  ],
+  [
+   "REF2 identity board",
+   "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ]
+ ],
+ "base_frame": "V09_f0",
+ "size": "1280x720",
+ "quality": "high",
+ "prompt": "Edit image 1 and change only the four children at the long table; keep the room, light, camera, table, chairs, paper sheets, crayon bucket and MACA standing in the far doorway exactly as they are. The child in the nearest seat on the left side of the table becomes Maria, sitting very still with her rolled-up white drawing held upright in her lap, looking down at it. The child beside her on the same left side becomes the crayon boy, drawing with a green crayon. On the right side of the table, the far child becomes the braids girl, drawing, and the near child stays the jersey boy, drawing. Exactly four children and MACA; nobody else in the room. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
+}

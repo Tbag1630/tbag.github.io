@@ -1,0 +1,31 @@
+{
+ "tid": "FIX_037_TAIL",
+ "seq": "SEQ_037",
+ "kind": "flf",
+ "first": "9464eff658b54994fbb2523d1a66e5ffb3f4798d43e20bc2dd6ab62fe63a01da.png",
+ "last": "out:K_037_END",
+ "seconds": 5,
+ "segment": 4.292,
+ "splice": {
+  "take": "V42-d673f2cfebf1",
+  "replace_from_f": 252,
+  "replace_to_f": 355
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall the next morning: one long wooden table running to the far doorway covered with a long paper of children's family drawings, brown chairs both sides, children drawing at the long table, a blue-tiled counter on the right, morning light from the left windows",
+  "emotional_guidance": "Valence: warm, resolved. Arousal: calm, settling.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 MACA's metal hand settles over Maria's hand with a soft tap; P02 the morning hall's gentle bustle of crayons",
+   "room": "the morning hall, bright and calm, children drawing at the long table"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA's hand covers Maria's hand"
+   },
+   {
+    "video_beat": "a slow final pullback to the whole morning dining hall: the long table of family drawings, MACA kneeling with Maria, Chico on her foot"
+   }
+  ]
+ }
+}

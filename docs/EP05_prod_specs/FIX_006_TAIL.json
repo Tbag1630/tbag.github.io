@@ -1,0 +1,34 @@
+{
+ "tid": "FIX_006_TAIL",
+ "seq": "SEQ_006",
+ "kind": "flf",
+ "first": "b87e4a21250a9f387e18a5e62a4d20bd944bb09bcbfc16c65aed2bce3eca8ab0.png",
+ "last": "out:K_WIDE_006",
+ "seconds": 5,
+ "segment": 4.542,
+ "splice": {
+  "take": "V08-076797ef641b",
+  "replace_from_f": 132,
+  "replace_to_f": 241
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: quiet, a little sad. Arousal: low and still.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft rustle of the paper roll in Maria's arms; P02 faint crayon scratching from the children at the table; P03 the quiet air of the big hall",
+   "room": "a large hard-walled hall in soft afternoon air, everything distant and gentle"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria sits very still hugging her rolled drawing; the boy beside her draws with his green crayon"
+   },
+   {
+    "video_beat": "the camera rises and pulls back smoothly along the long table; Maria and the boy stay in their same seats"
+   },
+   {
+    "video_beat": "the camera settles high at the near end: Maria small in her seat with the roll in her lap, the boy beside her, the braids girl and the jersey boy across, MACA standing in the far doorway; exactly four children"
+   }
+  ]
+ }
+}

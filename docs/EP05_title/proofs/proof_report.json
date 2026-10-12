@@ -8,7 +8,7 @@
   ],
   "series_width_frac": 0.6,
   "tag_width_frac": 0.35,
-  "bottom_px": 584,
+  "bottom_px": 549,
   "letters_vs_field": 10.96,
   "field_vs_sky": 6.85,
   "rim_vs_sky": 1.98,
@@ -19,25 +19,21 @@
     "min_stroke_px": 3.49
    },
    "tag": {
-    "cap_px": 14,
-    "min_stroke_px": 2.33
+    "cap_px": 16,
+    "min_stroke_px": 2.7
    },
    "tag_lines": {
-    "PART No. 05": {
-     "cap_px": 10,
-     "min_stroke_px": 2.05
-    },
     "The Family": {
      "cap_px": 16,
-     "min_stroke_px": 2.7
+     "min_stroke_px": 2.73
     },
     "Drawing": {
      "cap_px": 12,
-     "min_stroke_px": 3.0
+     "min_stroke_px": 2.98
     }
    },
-   "tag_min_cap_px": 10,
-   "tag_min_stroke_px": 2.05
+   "tag_min_cap_px": 12,
+   "tag_min_stroke_px": 2.73
   },
   "meets_floor": true
  },
@@ -50,7 +46,7 @@
   ],
   "series_width_frac": 0.6,
   "tag_width_frac": 0.35,
-  "bottom_px": 673,
+  "bottom_px": 628,
   "letters_vs_field": 10.96,
   "field_vs_sky": 6.85,
   "rim_vs_sky": 1.98,
@@ -61,27 +57,23 @@
     "min_stroke_px": 4.3
    },
    "tag": {
-    "cap_px": 14,
-    "min_stroke_px": 2.33
+    "cap_px": 16,
+    "min_stroke_px": 2.7
    },
    "tag_lines": {
-    "PART No. 05": {
-     "cap_px": 10,
-     "min_stroke_px": 2.05
-    },
     "The Family": {
      "cap_px": 16,
-     "min_stroke_px": 2.7
+     "min_stroke_px": 2.73
     },
     "Drawing": {
      "cap_px": 12,
-     "min_stroke_px": 3.0
+     "min_stroke_px": 2.98
     }
    },
-   "tag_min_cap_px": 10,
-   "tag_min_stroke_px": 2.05
+   "tag_min_cap_px": 12,
+   "tag_min_stroke_px": 2.73
   },
-  "meets_floor": false
+  "meets_floor": true
  },
- "chosen": "two_line"
+ "chosen": "three_line"
 }

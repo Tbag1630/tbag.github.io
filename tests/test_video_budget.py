@@ -201,3 +201,24 @@ def test_pass_needs_a_human_listening_review_of_every_item(tmp_path):
     firewall.video_qc_record(tmp_path, rec["rid"], verdict="PASS", reviewer="user", output_path=out, seconds=2,
                              listened=full, notes="speech, vocals and music absent; foley follows the action in every beat")
     assert firewall.video_state(tmp_path)["reservations"][0]["qc"] == "PASS"
+
+
+def test_per_sequence_ceiling_counts_repairs_and_needs_explicit_approval(tmp_path):
+    """Two paid video attempts per sequence, repairs included; a third needs the user's recorded approval."""
+    _pilot(tmp_path, max_attempts=10, cap_credits=10_000)
+    for k in range(2):
+        g = json.loads(json.dumps(GRAPH))
+        g["10"]["inputs"]["seed"] = k
+        _quote(tmp_path, graph=g)
+        _accept(tmp_path, graph=g)
+        _reserve(tmp_path, graph=g)
+    g3 = json.loads(json.dumps(GRAPH))
+    g3["10"]["inputs"]["seed"] = 3
+    _quote(tmp_path, graph=g3)
+    _accept(tmp_path, graph=g3)
+    with pytest.raises(firewall.FirewallError, match="SEQ_001 has used 2 of 2 paid video attempts"):
+        _reserve(tmp_path, graph=g3)
+    conf = json.loads((tmp_path / firewall.CONF).read_text())
+    conf["approvals"] = [{"target": "SEQ_001", "attempt": 3, "by": "user", "quote": "approve a third SEQ_001 render"}]
+    (tmp_path / firewall.CONF).write_text(json.dumps(conf))
+    assert _reserve(tmp_path, graph=g3)["rid"].startswith("V03-")

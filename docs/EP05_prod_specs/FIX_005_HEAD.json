@@ -1,0 +1,31 @@
+{
+ "tid": "FIX_005_HEAD",
+ "seq": "SEQ_005",
+ "kind": "flf",
+ "first": "out:K_005_START",
+ "last": "066841446f610f80f0b3d86f9c6d981a25005c4edbe4fc282880a75571e41956.png",
+ "seconds": 4,
+ "segment": 3.0,
+ "splice": {
+  "take": "V07-6aaee2ed215d",
+  "replace_from_f": 0,
+  "replace_to_f": 72
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: stuck, quiet. Arousal: low.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a small breath; P02 the hall's air",
+   "room": "the big hall in warm afternoon air, very close and quiet"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria, turned to the boy, opens her mouth and nothing comes out"
+   },
+   {
+    "video_beat": "the camera moves in close on Maria's face as she looks away down the long table"
+   }
+  ]
+ }
+}

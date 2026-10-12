@@ -120,7 +120,7 @@ All three play in the hall **as rendered** (grey, one long wooden table, brown c
 - **Button:** Chico tests it by flopping in the middle. Tail thump. Everyone glances at him.
 - **Why it works:** the first line of the episode ("rolled the big paper down the long table, set out the crayon buckets") becomes a payoff the audience already understands.
 - **Lesson rhyme:** four helpers who don't match (robot, girl, dog, buckets) do the same job: holding on. "Love is not the thing you are made of. It is the thing you do."
-- **Sign dent:** the Y of STORY curls up at its corner like the paper.
+- **Sign dent:** the plate corner under the Y of STORY curls up like the paper.
 
 ### Concept 2: "Wobble"
 - **Setup:** Maria's chair wobbles on one short leg (tock-tock), and her crayon line zigzags.
@@ -337,7 +337,7 @@ Each tag line is measured on its own, and the floor applies to the smallest. `Th
 - **Tag:** stamped steel with a split ring.
 - **Palette:** 4 dominant colours (sky blue, navy enamel, steel, crayon orange as the only accent).
 
-**Dent:** the Y of STORY has its outer corner curled into a 1.5-turn roll, like the paper end. It is the series' per-episode dent.
+**Dent:** the plate corner directly under the Y of STORY is curled up into a rolled lip, like the paper end. It is the series' per-episode dent.
 
 **Animation (frames at 24 fps):**
 - **Sign:** drop starts at f360 (15.00 s), ease-in-quad over 520 px. Lands with a **THUNK at f374**. Bounces of 18 px over 6 f, then 6 px over 5 f. Settles at f390.

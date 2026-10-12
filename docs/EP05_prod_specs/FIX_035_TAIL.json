@@ -1,0 +1,31 @@
+{
+ "tid": "FIX_035_TAIL",
+ "seq": "SEQ_035",
+ "kind": "flf",
+ "first": "a08b060b352d7df964230c32d6264df53033ff914817535216fb7e776bd311aa.png",
+ "last": "out:K_035_END",
+ "seconds": 4,
+ "segment": 3.0,
+ "splice": {
+  "take": "V40-1a6760c68f9e",
+  "replace_from_f": 248,
+  "replace_to_f": 320
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall the next morning: one long wooden table running to the far doorway covered with a long paper of children's family drawings, brown chairs both sides, children drawing at the long table, a blue-tiled counter on the right, morning light from the left windows",
+  "emotional_guidance": "Valence: proud, happy. Arousal: gentle.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 Chico's paws settle on MACA's metal boot with a soft tap; P02 gentle footsteps and paper rustle",
+   "room": "the morning hall, children drawing at a distance, soft and bright"
+  },
+  "panels": [
+   {
+    "video_beat": "Chico sits on MACA's boot looking up"
+   },
+   {
+    "video_beat": "the camera rises to MACA wearing the drawing with Maria beside her at the long table of drawings"
+   }
+  ]
+ }
+}

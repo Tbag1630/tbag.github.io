@@ -290,6 +290,11 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
     limit = int(pilot.get("max_attempts", 1))
     if st["attempts"] >= limit:
         why.append(f"{st['attempts']} paid video attempt(s) already reserved; the pilot allows {limit}")
+    used = sum(1 for x in st["reservations"] if x["seq"] == seq)       # per-sequence ceiling, repairs included
+    ceiling = int(load_conf(root)["max_attempts"])
+    if used >= ceiling and not approved(root, seq, used + 1):
+        why.append(f"{seq} has used {used} of {ceiling} paid video attempts; attempt {used + 1} needs the user's "
+                   "explicit approval (approve_extra)")
     why += video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
     gsha = video.graph_sha256(graph)
     quotes = [e for e in read_ledger(root) if e.get("event") == "video_quoted" and e.get("graph_sha256") == gsha]

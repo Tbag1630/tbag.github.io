@@ -49,18 +49,19 @@ def flf(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
     prompt = storyboard.video_text_flf(spec["plan"])
     secs = int(spec["seconds"])
+    seq = spec["seq"]                  # attempts and scope count against the real sequence, never the repair's own id
     g = comfy.seedance_flf_720p(prompt, spec["first"], spec.get("last"), seconds=secs, prefix=f"ULAC/EP05/PROD/{tid}")
     credits = round(secs * RATE, 1)
-    q = firewall.video_quote(ROOT, seq=tid, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]),
+    q = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]),
                              credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="prod flf")
     if q["problems"]:
         raise SystemExit(f"preflight: {q['problems']}")
     firewall.video_accept_price(ROOT, by="user", quote=firewall.load_conf(ROOT)["video_pilot"]["source"],
                                 graph_sha256=q["graph_sha256"], credits=credits)
-    r = firewall.video_reserve(ROOT, seq=tid, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]))
+    r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]))
     d = _dir(tid)
     (d / f"{r['rid']}.prompt.txt").write_text(prompt)
-    return {"tid": tid, "rid": r["rid"], "credits": credits, "graph": r["graph_file"], "committed_before": r["committed_before"]}
+    return {"tid": tid, "seq": seq, "rid": r["rid"], "credits": credits, "graph": r["graph_file"], "committed_before": r["committed_before"]}
 
 
 def sent(tid: str, ref: str, job: str) -> None:

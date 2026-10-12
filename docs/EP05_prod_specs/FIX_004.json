@@ -1,0 +1,37 @@
+{
+ "tid": "FIX_004",
+ "seq": "SEQ_004",
+ "kind": "flf",
+ "first": "out:K_004_START",
+ "last": "out:K_005_START",
+ "seconds": 15,
+ "segment": 14.958,
+ "splice": {
+  "take": "V06-3f58e4dd348a",
+  "replace_from_f": 0,
+  "replace_to_f": 361
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: curious, innocent, then uncertain. Arousal: low, rising slightly at the question.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 crayon scratches; P02 a chair creak as the boy leans over; P03 a crayon tapping softly on paper; P04 the crayon stops, a small breath",
+   "room": "the big hall in warm afternoon air, close soft table sounds, distant children drawing"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria admires her drawing; the crayon boy sits in the next seat on her screen-right"
+   },
+   {
+    "video_beat": "the boy leans over from his seat and points his green crayon at the drawn robot"
+   },
+   {
+    "video_beat": "close on the boy's face, eyebrows up, waiting; Maria's crayon stops"
+   },
+   {
+    "video_beat": "the boy leaning in, crayon on the robot; Maria turning toward him"
+   }
+  ]
+ }
+}
