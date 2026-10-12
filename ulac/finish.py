@@ -821,7 +821,7 @@ def _log(msg: str) -> None:
 
 def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: str | None = None, title: str | None = None,
            end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False,
-           end_fade_s: float = 0.0, title_push: float = 0.0) -> dict:
+           end_fade_s: float = 0.0, title_push: float = 0.0, title_fade_s: float = 0.0) -> dict:
     ep = Path(ep).resolve()                                 # protected folders are absolute; compare like with like
     root = ep.parent.parent
     ep_name = ep.name
@@ -918,7 +918,7 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         info = probe_reel(src)
         hf = hold_f if dom == "end" else 0
         reg(f"reel_{dom}", src, **{k: info[k] for k in ("width", "height", "fps", "frames", "has_audio")})
-        ff = end_fade_s if dom == "end" else 0.0
+        ff = end_fade_s if dom == "end" else title_fade_s       # the title dips to black into the body's fade-in
         pu = title_push if dom == "title" else 0.0
         conformed = needs_conform(info) or hf > 0 or ff > 0 or pu > 0
         use = info
@@ -1027,6 +1027,9 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
     shutil.copyfile(st_fx, sink.path(f"{stems_dir}/fx_bed.wav"))
     title_audio = (reel_audio["title"] + reel_music["title"]).astype(np.float32)
     end_audio = (reel_audio["end"] + reel_music["end"]).astype(np.float32)
+    if title_fade_s > 0:
+        kt = min(len(title_audio), _s(title_fade_s))
+        title_audio[len(title_audio) - kt:] *= np.linspace(1, 0, kt, dtype=np.float32)[:, None]
     if end_fade_s > 0:                                    # the sound fades with the last picture
         kf = min(len(end_audio), _s(end_fade_s))
         end_audio[len(end_audio) - kf:] *= np.linspace(1, 0, kf, dtype=np.float32)[:, None]
@@ -1243,6 +1246,8 @@ def main(argv=None) -> int:
                     help="clone the end reel's last frame for this long (a still hold), pad its SFX with silence and extend M11 to match")
     ap.add_argument("--end-fade", type=float, default=0.0, metavar="SECONDS",
                     help="fade the end reel's last seconds (picture and sound) to black: the film's final fade")
+    ap.add_argument("--title-fade", type=float, default=0.0, metavar="SECONDS",
+                    help="fade the title reel's last seconds (picture and sound) to black before the body fades in")
     ap.add_argument("--title-push", type=float, default=0.0, metavar="FRACTION",
                     help="deterministic camera push-in across the title reel, e.g. 0.06 zooms 1.00 -> 1.06 (the rig's dolly)")
     ap.add_argument("--no-review", action="store_true", help="skip the review proxy and the contact sheet")
@@ -1250,7 +1255,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work,
-                     a.end_fade, a.title_push)
+                     a.end_fade, a.title_push, a.title_fade)
     except ProtectedPathError as e:
         print(f"FINISH REFUSED: {e}", file=sys.stderr)
         return 2
