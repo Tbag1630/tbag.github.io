@@ -135,7 +135,7 @@ for (const c of CHAPTERS) {
       }
       state.textContent = "Ready to save";
       const res = await downloads.save({ filename: "The_Family_Drawing_1080p.mp4", data: new Blob(parts, { type: "video/mp4" }) });
-      state.textContent = res.status === "saved" ? "Saved" : "";
+      state.textContent = res && (res.status === "saved" || res.status === "delivered") ? "Saved" : "";
     } catch (e) {
       const code = e && e.code;
       state.textContent = code === "declined" ? "Download cancelled" :

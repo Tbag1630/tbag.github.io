@@ -247,3 +247,12 @@ def test_ep05_timeline_invariants():
     assert {r["seq"] for r in rows if r["repairs"]["candidate_splices"]} == set(inp["accepted"]["splices"])
     # no firewall or ledger file is read
     assert not any("FIREWALL" in i["path"] or "CREDIT_LEDGER" in i["path"] for i in tl["inputs"])
+
+
+def test_segment_splice_repairs_and_replaced_ranges():
+    x = {"side": "segments", "segments": [["BASE", 0, 77], ["R1", 1, 96], ["BASE", 172, 361], ["R2", 1, 10]]}
+    assert tlm._splice_repairs(x, "BASE") == ["R1", "R2"]
+    assert tlm._splice_replaced(x, "BASE") == [(77, 172), (361, 1 << 30)]
+    assert tlm._splice_repairs({"side": "tail", "repair": "R", "at": 40}, "BASE") == ["R"]
+    assert tlm._splice_replaced({"side": "tail", "repair": "R", "at": 40}, "BASE") == [(40, 1 << 30)]
+    assert tlm._splice_replaced({"side": "segments", "segments": [["R", 0, 265]]}, "BASE") == [(0, 1 << 30)]

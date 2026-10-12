@@ -323,6 +323,31 @@ def _span_overlap(a0: int, a1: int, b0: int, b1: int) -> int:
     return max(0, min(a1, b1) - max(a0, b0))
 
 
+def _splice_repairs(x: dict, base: str | None) -> list[str]:
+    """Repair takes of an ACCEPTED splice: head/tail name one; a "segments" splice names every take but the base."""
+    if x.get("side") != "segments":
+        return [x["repair"]]
+    return list(dict.fromkeys(t for t, _, _ in x["segments"] if t != base))
+
+
+def _splice_replaced(x: dict, base: str | None) -> list[tuple[int, int]]:
+    """Source frame ranges of the base take that a splice replaces."""
+    big = 1 << 30
+    if x["side"] == "tail":
+        return [(x["at"], big)]
+    if x["side"] == "head":
+        return [(0, x["at"])]
+    if x["side"] != "segments":
+        return [(0, big)]
+    kept = sorted((a, b) for t, a, b in x["segments"] if t == base)
+    gaps, pos = [], 0
+    for a, b in kept:
+        if a > pos:
+            gaps.append((pos, a))
+        pos = max(pos, b)
+    return gaps + [(pos, big)]
+
+
 def _transition(tr: list | None, cut_f: int, fps: int, from_seq: str, to_seq: str | None) -> dict | None:
     """EDL transitions are keyed by the outgoing sequence; the cut is that row's rec_out_f."""
     if not tr:
@@ -486,10 +511,10 @@ def build(inp: dict) -> dict:
                     base = next((q["take"] for q in rows_edl if q["seq"] == sseq), None)
                     if base != d.get("take"):
                         continue
-                    big = 1 << 30                                    # replaced source frames of the base take
-                    lo, hi = (x["at"], big) if x["side"] == "tail" else (0, x["at"]) if x["side"] == "head" else (0, big)
-                    if a0 < hi and a1 > lo:
-                        refs.append({"id": x["repair"], "kind": "candidate_splice", "covers_whole_span": lo <= a0 and a1 <= hi})
+                    for lo, hi in _splice_replaced(x, base):         # replaced source frames of the base take
+                        if a0 < hi and a1 > lo:
+                            refs.append({"id": "+".join(_splice_repairs(x, base)), "kind": "candidate_splice",
+                                         "covers_whole_span": lo <= a0 and a1 <= hi})
             dl.append({"id": d["id"], "kind": p["kind"], "ledger_seq_text": p["raw"],
                        "production_wide": p["kind"] == "range" and ss is None and not d.get("master_span"),
                        "severity": d.get("severity"), "status": d.get("status"), "take": d.get("take"),
@@ -501,11 +526,16 @@ def build(inp: dict) -> dict:
         cand = []
         if s in splices:
             x = splices[s]
-            q = repair_qc.get(x["repair"])
-            cand.append({"repair_take": x["repair"], "side": x["side"], "at_src_f": x.get("at"),
-                         "take_end_src_f": x.get("take_end"), "qc_cleared_ranges_of_repair_f": x.get("ranges"),
-                         "qc_note": x.get("qc"), "qc_verdict": q["verdict"] if q else UNKNOWN,
-                         "accepted": False, "status": "CANDIDATE (not accepted; in no EDL; accepted cut unchanged)"})
+            for rt in _splice_repairs(x, r.get("take")):
+                q = repair_qc.get(rt)
+                cand.append({"repair_take": rt, "side": x["side"], "at_src_f": x.get("at"),
+                             "take_end_src_f": x.get("take_end"), "qc_cleared_ranges_of_repair_f": x.get("ranges"),
+                             "segments": x.get("segments"),
+                             "qc_note": x.get("qc"), "qc_verdict": q["verdict"] if q else UNKNOWN,
+                             "accepted": False,
+                             "status": ("SEGMENT SPLICE (cut by edit.py variants from v4 on; this timeline shows the base EDL)"
+                                        if x["side"] == "segments" else
+                                        "CANDIDATE (not accepted; in no EDL; accepted cut unchanged)")})
         planned = []
         for tid in fix_by_seq.get(s, []):
             e = spec_entry(tid)
@@ -524,9 +554,10 @@ def build(inp: dict) -> dict:
             for a, b, why in (edl.get("audio_mutes", {}).get(g["take"]) or []):
                 mutes.append({"take": g["take"], "start_s": a, "end_s": b, "reason": why, "source": "EDL audio_mutes"})
         if s in splices:
-            for a, b, why in acc.get("audio_mutes", {}).get(splices[s]["repair"], []):
-                mutes.append({"take": splices[s]["repair"], "start_s": a, "end_s": b, "reason": why,
-                              "source": "PROD/ACCEPTED.json (candidate only)"})
+            for rt in _splice_repairs(splices[s], r.get("take")):
+                for a, b, why in acc.get("audio_mutes", {}).get(rt, []):
+                    mutes.append({"take": rt, "start_s": a, "end_s": b, "reason": why,
+                                  "source": "PROD/ACCEPTED.json (candidate only)"})
         it = sq["intent"] or {}
         rows.append({
             "seq": s,
@@ -742,7 +773,8 @@ def build(inp: dict) -> dict:
     if splices:
         uncertain.append((f"v3 candidate EDL not built (no project/{ep}/EDIT/v3/edl.json): record frames of the v3 cut are UNKNOWN; "
                           if not inp.get("v3_edl_exists") else "") +
-                         "candidate splices in PROD/ACCEPTED.json (" + ", ".join(f"{k}<-{v['repair']}" for k, v in splices.items()) +
+                         "candidate splices in PROD/ACCEPTED.json (" + ", ".join(f"{k}<-{'+'.join(_splice_repairs(v, next((q['take'] for q in rows_edl if q['seq'] == k), None)))}"
+                                                            for k, v in splices.items()) +
                          ") are shown as candidates only and are not folded into picture segments.")
     uncertain.append(f"Repair job state comes from project/{ep}/PROD and docs/{ep}_prod_specs, which are a live work area; each row shows them as "
                      f"hashed in `inputs` at build time. Re-run `python3 -m ulac.timeline project/{ep}` to refresh.")
