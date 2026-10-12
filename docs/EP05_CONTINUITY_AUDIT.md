@@ -55,3 +55,15 @@ No.
     2. Run a first+last-frame video between those keyframes.
   - SEQ_004 joins the trimmed SEQ_003 end and the trimmed SEQ_005 start.
 - **D1:** keep the grey hall. All 15 hall clips agree with each other, and matching the dressed master would mean re-rendering every hall clip.
+
+## Readiness for the keyframe-first method (zero spend)
+
+- Storyboard END_LOCKs: 37 of 37 present, sha256 verified, 16:9. They are layout guides only, never video frames.
+- Colour boundary keyframes K0..K37: 0 built. Each is an image job, quoted with `estimate_credits` before any spend.
+- Node check (live catalog, 2026-10-12):
+  - `ByteDance2FirstLastFrameNode` pins first and last frames but takes no reference images.
+  - `ByteDance2ReferenceNodeV2` takes up to 30 references but cannot pin the last frame.
+  - So environment and identity must be baked into the keyframes before first-last-frame (FLF) video.
+- Account queue: 0 running, 0 pending.
+- Budget: 24,099 spent on submitted jobs, plus 684.6 reserved and never submitted (V33). That leaves 5,215 of headroom under the 30,000 cap.
+- The keyframe and batch commands in CLAUDE.md section 6 are not built yet.
