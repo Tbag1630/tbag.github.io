@@ -64,6 +64,15 @@ AUDIO_FIX = ("SOUND TEXTURE: every sound is unpitched physical foley: the action
 AUDIO_SWAPS = (("magical, moving", "hushed, moving"), ("a soft rising servo whir", "a low mechanical servo whir"))
 
 
+# Repairs after a failed visual check: one continuity line added to that sequence's prompt.
+REPAIR_NOTES = {
+    # V36: two identical Marias walked down the table at once, and the clip cut back to its opening shot.
+    "SEQ_032": ("CONTINUITY: there is exactly one Maria in every shot; she walks alone down the table holding her "
+                "drawing while every other child stays seated; never show a second girl in Maria's pink dress; never "
+                "cut back to an earlier shot."),
+}
+
+
 def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
@@ -74,6 +83,9 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     secs, seg = int(pj["render_seconds"]), float(pj["duration"])
     base = storyboard.video_text(plan)
     head, rest = base.split("\n", 2)[:2], base.split("\n", 2)[2]
+    if fix == "repair":
+        rest = rest.replace("\nPANEL BEATS:", "\n" + REPAIR_NOTES[seq] + "\nPANEL BEATS:", 1)
+        fix = "audio"
     if fix == "audio":
         for a, b in AUDIO_SWAPS:
             rest = rest.replace(a, b)
