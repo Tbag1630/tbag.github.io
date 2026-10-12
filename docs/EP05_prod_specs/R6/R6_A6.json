@@ -1,0 +1,69 @@
+{
+ "tid": "R6_A6",
+ "seq": "SEQ_003",
+ "kind": "flf",
+ "fix": "A6",
+ "first": "c1595abde50f80f8967c58443b2f04914bce60a62aceb874e5c686b34b2901ba.png",
+ "last": "out:K_R6_003_DRAW",
+ "seconds": 6,
+ "segment": 5.25,
+ "splice": {
+  "seq": "SEQ_003",
+  "replace": [
+   "V05-bc46c7731c5d",
+   2,
+   128
+  ],
+  "use": [
+   1,
+   127
+  ],
+  "shared_start": true,
+  "join_out": "8-frame dissolve into V46 f0 (K_003_A)",
+  "note": "clip f0 is V03 f332, already the last frame of the SEQ_002 segment, so the clip is used from f1; 126 frames = the 126 replaced frames; frames 127-144 are an unused hold on the end keyframe"
+ },
+ "plan": {
+  "environment": "the shelter dining hall in warm low afternoon sun, a close view of one white sheet of paper lying on a long wooden table, the wood grain and soft golden light exactly as in the first frame",
+  "emotional_guidance": "Valence: proud, careful, warm. Arousal: calm and absorbed.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; the drawing is a child's crayon drawing on paper, never a pencil sketch",
+  "audio": {
+   "sounds": "P01 crayon strokes scratching on paper as the robot's outline is drawn; P02 a soft waxy crayon rub as the visor and the shoulders are coloured in; P03 small light crayon dabs, one after another, on the chest lights",
+   "room": "the big hall in warm afternoon air, very close soft table sounds"
+  },
+  "panels": [
+   {
+    "video_beat": "close on the paper: Maria's right hand moves the green crayon to the empty space to the right of the dog and draws MACA standing upright, a round white head at the top and the square shoulders below it"
+   },
+   {
+    "video_beat": "the crayon colours the teal visor band with its two small round blue eyes and then the pink chest panel; the camera eases back a little as the figure grows"
+   },
+   {
+    "video_beat": "she presses five small round dots onto the pink chest one at a time, the chest lights taking their colours one after another, and the green light last"
+   },
+   {
+    "video_beat": "the crayon tip rests on the green chest light and then lifts away; hold on the finished robot drawing standing upright beside the dog"
+   }
+  ],
+  "continuity": "only Maria's two small hands, her pink sleeves and the green crayon are in frame, her face out of frame, Maria seated in her window-side seat at the long table; one single white sheet of paper holds the dog on its blue checked blanket, the green grass zigzag and, beside them, MACA drawn upright; Chico and MACA exist on the page only, no real dog and no real robot are in the room",
+  "preventions": [
+   "MACA is drawn upright on the page, helmet at the top and feet on the grass line, never upside down and never lying on her side",
+   "one single sheet of paper; the page never changes, no second page and no page swap",
+   "the drawn dog and its blue blanket keep exactly the look of the first frame",
+   "the robot drawing keeps the proportions of the family drawing: a round white head, square shoulders, white arms and legs with orange joints, a pink chest panel with five round lights",
+   "it is a child's crayon drawing, no grey pencil lines are left on the page",
+   "no face, no other children and no real robot in frame",
+   "one continuous shot, no cut"
+  ],
+  "one_shot": true
+ },
+ "timing_cues": {
+  "clip_s": {
+   "shoulders": "1.8-3.0",
+   "teal visor": "3.4-4.2",
+   "chest lights begin": "4.7-5.25 (V46 f0 takes over at 5.25)"
+  },
+  "narration": "And she drew me (28.38-28.6), square shoulders (29.44-30.38), teal visor (30.86-31.62), chest lights (32.56-33.2)"
+ },
+ "design": "replaces the upside-down, round-helmet robot of V05 [2,128]; first frame pinned to V03 f332 (cloud grab c1595abd...), last frame the new upright-MACA keyframe; the page can no longer change at the splice because the robot is drawn inside one continuous take from the SEQ_002 end",
+ "attempt": "SEQ_003 attempt 4 (approved_extra, R6)"
+}

@@ -1,0 +1,59 @@
+{
+ "tid": "R6_A3_006",
+ "seq": "SEQ_006",
+ "kind": "flf",
+ "fix": "A3",
+ "first": "out:K_R6_006_A",
+ "last": "out:K_R6_WIDE_006",
+ "seconds": 5,
+ "segment": 5.0,
+ "splice": {
+  "seq": "SEQ_006",
+  "replace": [
+   "V45-0517022366c1",
+   0,
+   121
+  ],
+  "use": [
+   0,
+   121
+  ],
+  "join_in": "8-frame dissolve from V08 f131 (v4 is a hard cut; V45 never started on V08 f132, it starts on the K_006_A crop)",
+  "join_out": "shared keyframe: the last frame is K_R6_WIDE_006 and R6_A3_007 starts on it (seamless)"
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway with one long white paper roll of children's drawings unrolled down its centre, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: quiet, a little sad. Arousal: low and still.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft rustle of the paper tube in Maria's lap; P02 faint crayon scratching from the children at the table; P03 the quiet air of the big hall",
+   "room": "a large hard-walled hall in soft afternoon air, everything distant and gentle"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria sits very still with her small rolled drawing in her lap while the other children keep drawing at their seats beside the long paper roll"
+   },
+   {
+    "video_beat": "a slow zoom out from the same camera position, revealing more of the long table and the long roll of drawings running down its centre"
+   },
+   {
+    "video_beat": "the frame settles on the high wide: the long table with the roll running toward the far doorway, the four children at their seats, MACA standing in the doorway"
+   }
+  ],
+  "continuity": "Maria in the near seat on the window side of the long table with her small rolled drawing in her lap; the crayon boy in the next seat up on her side; across the table the jersey boy in the near seat and the braids girl beyond him; MACA standing in the far doorway",
+  "preventions": [
+   "one continuous shot, no cut",
+   "exactly four children, one of each",
+   "one long table only",
+   "the long paper roll stays flat down the middle of the table and never moves or rolls up",
+   "Maria keeps her small rolled drawing in her lap and never puts it on the table",
+   "no robot on any drawing",
+   "no adults",
+   "every child stays in the same seat",
+   "MACA stays still in the doorway"
+  ],
+  "one_shot": true
+ },
+ "design": "same-view FLF between two keyframes of one shot (zoom out), as V45 but with the roll; replaces V45",
+ "attempt": "SEQ_006 attempt 4 (approved_extra, R6)"
+}

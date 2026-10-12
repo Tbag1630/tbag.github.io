@@ -1,0 +1,27 @@
+{
+ "tid": "K_R6_005_B",
+ "seq": "SEQ_005",
+ "kind": "keyframe",
+ "fix": "D1",
+ "design": "End keyframe of R6_D1 (dissolved out into SEQ_006 V08 f0, so it is not a pixel match to it). Chained from K_R6_005_A for colour, light and roll continuity inside the same room (CLAUDE.md section 1.2). The track has travelled down the roll and settles on a drawn grandma with grey hair and a purple purse; no person in frame, so no cast-count risk; far doorway open and empty (MACA is absent in SEQ_005 state_after).",
+ "base_frame": "K_R6_005_A",
+ "chain_from": "K_R6_005_A",
+ "size": "1280x720",
+ "quality": "high",
+ "depends_on": [
+  "K_R6_005_A (locked)"
+ ],
+ "refs": [
+  [
+   "REF1 K_R6_005_A (look, light, room, the roll and its drawing style)",
+   "out:K_R6_005_A"
+  ]
+ ],
+ "prompt": "Make a later moment of the same slow forward camera glide as image 1, in the same warm afternoon dining hall and the same golden light: the camera has travelled down the long paper roll and is now low over it, at table height, about two thirds of the way along the table, looking forward along the roll toward the far open doorway, which is small and bright in the distance and empty. In the foreground, right of centre and filling the lower half of the frame, a drawn grandma with grey curly hair stands holding a big purple purse, drawn in the same soft crayon style and pastel colours as the other drawings; beside her a drawn dad in a white shirt with big brown shoes; more rows of drawn families of people, moms with brown hair, dads in big shoes and children, recede along the roll toward the door. Every figure stands upright with its head toward the far end of the table. No child and no adult is in this frame; every chair along both sides of the table is empty; Maria, the crayon boy, the jersey boy and the girl with braids are behind the camera. There is no robot, no machine and no writing on any drawing. Low sunset light from the tall barred windows on the left rakes across the paper. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
+ "review_checks": [
+  "no person in frame; all chairs empty; far doorway open and empty",
+  "foreground: drawn grandma with a purple purse and a dad with big shoes; moms with brown hair further along",
+  "NO robot on any drawing; one continuous roll, no separate sheets; drawing style matches K_R6_005_A",
+  "same warm light and room as K_R6_005_A; finished 3D film look; 16:9 1280x720"
+ ]
+}

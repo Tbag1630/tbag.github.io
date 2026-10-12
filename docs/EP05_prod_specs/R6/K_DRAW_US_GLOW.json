@@ -1,0 +1,11 @@
+{
+ "tid": "K_DRAW_US_GLOW",
+ "kind": "keyframe",
+ "refs": [
+  ["REF1 the canonical family drawing (locked K_DRAW_US)", "out:K_DRAW_US"]
+ ],
+ "base_frame": "out:K_DRAW_US",
+ "size": "1280x720",
+ "quality": "high",
+ "prompt": "Edit image 1 and keep everything in it exactly as it is: the same sheet of paper seen from above, the same table edge, the same girl in the pink dress, the same tan dog with the blue checked blanket, the same robot with the teal visor and the five coloured chest lights, the same green grass, the same crayon strokes, positions and sizes. Add only this, in the same child's wax-crayon style: big, warm, loopy scribbles of yellow and orange glow drawn all around the robot's pink chest, radiating outward in rough rings and zigzag rays, many layers of them, so much glow that the scribbles cross the robot's arms and run right off the right-hand edge and the top edge of the paper onto the table. The glow is drawn with crayon on the paper, flat, not a light effect, not a 3D render. The girl and the dog stay clear of the scribbles. No words, no letters, no new figures. Output one 16:9 image, 1280x720."
+}

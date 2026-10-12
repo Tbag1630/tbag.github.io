@@ -1,0 +1,55 @@
+{
+ "tid": "R6_A3_007",
+ "seq": "SEQ_007",
+ "kind": "flf",
+ "fix": "A3",
+ "first": "out:K_R6_WIDE_006",
+ "last": "459e7e51a64517c96a5c7129ae8305871b1d508dfacba51f953f4c600446b3e2.png",
+ "seconds": 5,
+ "segment": 4.96,
+ "splice": {
+  "seq": "SEQ_007",
+  "replace": [
+   "V44-82986bba5845",
+   1,
+   120
+  ],
+  "use": [
+   1,
+   120
+  ],
+  "shared_start": true,
+  "shared_end": "clip f120 = V09 f108 (cloud 459e7e51...); V09 [108,285] continues unchanged"
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway with one long white paper roll of children's drawings unrolled down its centre, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: quiet, watchful. Arousal: low.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 crayon scratches at the table; P02 the hall's air and distant birds outside the doorway; P03 a faint mechanical click as MACA stands still",
+   "room": "a large hard-walled hall, the open doorway letting in soft outdoor air"
+  },
+  "panels": [
+   {
+    "video_beat": "hold on the wide: the four children drawing, Maria still with her small roll, MACA in the far doorway"
+   },
+   {
+    "video_beat": "the camera glides slowly down the long table along the paper roll toward the doorway; the children pass out of frame at the sides and the roll ends in a clean straight edge well short of the table's end"
+   },
+   {
+    "video_beat": "the camera arrives near the doorway: the bare table end and MACA standing in the light"
+   }
+  ],
+  "continuity": "Maria in the near seat on the window side of the long table with her small rolled drawing in her lap; the crayon boy in the next seat up on her side; across the table the jersey boy in the near seat and the braids girl beyond him; MACA standing in the far doorway",
+  "preventions": [
+   "the children stay in their seats and do not stand or move",
+   "one long table only",
+   "the long paper roll stays flat and ends well short of the far end of the table; the last stretch of table is bare wood",
+   "MACA stays still in the doorway",
+   "no robot on any drawing",
+   "no other children, no adults"
+  ]
+ },
+ "design": "same FLF as V44 (FIX_007_HEAD) but starting on K_R6_WIDE_006 (roll) and ending on the existing V09 f108; the roll ends before the table end so the last frame needs no change",
+ "attempt": "SEQ_007 attempt 3 (approved_extra, R6)"
+}

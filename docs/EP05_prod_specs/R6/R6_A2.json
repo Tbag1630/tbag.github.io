@@ -1,0 +1,67 @@
+{
+ "tid": "R6_A2",
+ "seq": "SEQ_020",
+ "kind": "flf",
+ "fix": "A2",
+ "first": "grab:V22_f168",
+ "last": "out:K_R6_A2_END",
+ "seconds": 7,
+ "segment": 7.0,
+ "splice": {
+  "seq": "SEQ_020",
+  "replace": [
+   "V22-36ba4e9708b9",
+   169,
+   337
+  ],
+  "use": [
+   1,
+   169
+  ]
+ },
+ "plan": {
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed with its grey knit blanket and Maria asleep on the pillow, the star-patterned toy chest at the foot of the bed, MACA seated at the bedside with her chest light glowing, a starry window with curtains, a wooden floor, soft warm light on the grey-blue walls",
+  "emotional_guidance": "Valence: cosy, contented, funny. Arousal: low, settling.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 small paws padding softly on the knit blanket; P02 a soft thump and a woolly rustle as Chico flops down; P03 a contented dog sigh and a faint settle of fur on knit; P04 the quiet low glow-purr of MACA's chest light and night room tone",
+   "room": "a small quiet bedroom at night, close and soft"
+  },
+  "panels": [
+   {
+    "video_beat": "Chico, already up on the bed, trots along the knit blanket to the foot end where Maria's feet make a small lump under the blanket's edge, his little tail up"
+   },
+   {
+    "video_beat": "Chico turns once and flops down across Maria's feet, his small body lying over the lump of her toes at the foot of the bed"
+   },
+   {
+    "video_beat": "Chico rests his chin on the lump of her toes and settles in while the camera moves slowly closer to him"
+   },
+   {
+    "video_beat": "hold close on Chico lying across her feet, chin on her toes, ONE eye open and sleepy, looking toward the camera, the other eye closed, MACA's soft chest glow behind him"
+   }
+  ],
+  "continuity": "Maria asleep in the bed on the screen-left under the grey knit blanket, head on the pillow; MACA seated at the bedside on the screen-right with her chest light glowing softly; Chico, the only dog in the room, on the bed across Maria's feet at the foot end of the blanket",
+  "preventions": [
+   "Chico flops across Maria's FEET at the foot of the bed and never on her chest, shoulder, face or pillow",
+   "Chico ends with ONE eye open and the other eye closed, never both shut and never both wide open",
+   "one Chico only: no second dog, nothing on the floor or the rug, and he stays on the bed once he is up",
+   "Maria stays asleep in the bed and does not move or wake",
+   "one Maria, one MACA, one Chico",
+   "the room, the bed, the toy chest and the blanket do not change",
+   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+  ],
+  "one_shot": true
+ },
+ "design": "Replaces V22 f169-f336. The accepted shots keep Chico jumping from the star chest onto the foot of the bed (f139-f168). The defect is the wide f169-f252, where he walks up and lies at her chest and hip, then the macro f253-f336 whose eyes close before the line 'one eye open' (take f318-f337). 7 s = 168 frames ends exactly on the take's last used frame (f336), so the last pin is a new keyframe, K_R6_A2_END, (macro, one eye open). Cheaper variant (not specced): 4 s from V22 f168 to V22 f264 (frames of the take) leaves the closed-eye ending.",
+ "grabs_needed": [
+  {
+   "take": "V22-36ba4e9708b9",
+   "frame": 168,
+   "key": "V22_f168"
+  }
+ ],
+ "keyframes_needed": [
+  "K_R6_A2_END"
+ ]
+}

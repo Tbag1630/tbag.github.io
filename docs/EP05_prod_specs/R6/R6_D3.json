@@ -1,0 +1,66 @@
+{
+ "tid": "R6_D3",
+ "seq": "SEQ_022",
+ "kind": "flf",
+ "fix": "D3",
+ "first": "grab:V23_f357",
+ "last": "grab:V24_f102",
+ "seconds": 4,
+ "segment": 4.0,
+ "splice": {
+  "seq": "SEQ_022",
+  "replace": [
+   "V24-03998dec95a6",
+   7,
+   102
+  ],
+  "use": [
+   1,
+   96
+  ]
+ },
+ "plan": {
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket and Maria resting on the pillow, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls and soft low light",
+  "emotional_guidance": "Valence: playful, then thoughtful. Arousal: very low.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft sock-on-fur brush and the knit blanket shifting under her foot; P02 Chico's small content grunt and a tiny tail thump; P03 quiet night room tone and a faint low glow-purr from MACA's chest light",
+   "room": "a small quiet bedroom at night, soft and close"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria lies in bed looking down at Chico; under the end of the blanket her feet lift and one foot, in a soft sock, rubs behind Chico's ear, the lump of her foot moving against the side of his head while he tilts into it and his ear flicks"
+   },
+   {
+    "video_beat": "Maria watches him with a small smile, her hands resting still on the blanket beside her, as the scratching goes on for a moment"
+   },
+   {
+    "video_beat": "the scratching slows and stops; Chico settles back asleep across her feet; Maria's smile quiets and her eyes lift slowly from Chico toward MACA"
+   }
+  ],
+  "continuity": "Maria on the pillow at the screen-left, under the grey knit blanket, hands resting on the blanket; MACA seated at the bedside on the screen-right with her chest light glowing; Chico, the only dog in the room, lying on the blanket across Maria's feet",
+  "preventions": [
+   "Maria scratches Chico's ear with her FOOT only, her socked foot or the lump of her feet under the end of the blanket; her hands stay on the blanket and never touch Chico",
+   "Chico lies across Maria's feet on the bed for the whole clip: one Chico only, nothing on the floor",
+   "the camera holds the same wide view: no cut, no new angle, no close-up of a different room",
+   "the room does not change: no white bed frame, no radiator, no cream-coloured room, no star chest in a corner; the window, the door at the right and the wooden chest stay as in the first frame",
+   "one Maria, one MACA, one Chico",
+   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+  ],
+  "one_shot": true
+ },
+ "design": "Replaces the head of V24 (f7-f101; f0-f36 is an odd shot in a different room, white bed frame and radiator, where Maria's HAND is on his ear, then the take cuts at f36|f37 to the wide). The clip opens on the previous row's last frame (V23 f357, same wide view as V24 f37) so the join is seamless, and ends on V24 f102, a frame of the take (Maria smiling at Chico), after which the take continues. The face turns serious in the take itself (f160-f220); the narration 'then her face went serious' ends at take f120, so the take's slow change is accepted as harmless variation. Contingency (attempt 3 only after a recorded MATERIAL fail): build a keyframe from V24 f37 with her foot raised at his ear and use it as the first frame.",
+ "grabs_needed": [
+  {
+   "take": "V23-5633ad143f50",
+   "frame": 357,
+   "key": "V23_f357"
+  },
+  {
+   "take": "V24-03998dec95a6",
+   "frame": 102,
+   "key": "V24_f102"
+  }
+ ],
+ "shared_start": true
+}

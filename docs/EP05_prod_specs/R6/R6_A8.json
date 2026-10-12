@@ -1,0 +1,64 @@
+{
+ "tid": "R6_A8",
+ "seq": "SEQ_029",
+ "kind": "flf",
+ "fix": "A8",
+ "first": "grab:V32_f88",
+ "last": "out:K_R6_A8_WIDE",
+ "seconds": 8,
+ "segment": 8.0,
+ "splice": {
+  "seq": "SEQ_029",
+  "replace": [
+   "V32-a554b3a4d301",
+   89,
+   281
+  ],
+  "use": [
+   1,
+   193
+  ]
+ },
+ "plan": {
+  "environment": "Maria's bedroom at deep night exactly as in the first frame and the last frame: the bed under the starry window on the left, the cream chunky knit blanket, the star toy chest at the foot of the bed, the half-open door with warm light beyond it at the right, a dresser at the right edge, the oval rug on the dark wood floor, grey-blue walls, MACA's chest glowing low and warm as the only light",
+  "emotional_guidance": "Valence: peaceful, tender, awed. Arousal: very low, a slow settling into sleep.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft low electrical purr from MACA's chest fading slowly lower; P02 Maria's slow sleepy breath and a faint rustle of the blanket; P03 Chico's tiny sleepy sigh; P04 quiet deep-night room tone with a faint window draught",
+   "room": "a small quiet bedroom at deep night, close and soft, the room widening as the camera draws back"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria sleeps against MACA's chest with her cheek on the glowing panel and her small hand flat on it; MACA sits perfectly still"
+   },
+   {
+    "video_beat": "the camera draws back very slowly, revealing the bed with its cream knit blanket and Chico curled asleep on the blanket across Maria's feet at the foot of the bed"
+   },
+   {
+    "video_beat": "the camera keeps drawing back until the whole bedroom at deep night is in view: Maria asleep with her hand on MACA's chest, MACA seated perfectly still, Chico curled on Maria's feet on the bed, the glow of MACA's chest the only warmth in the room"
+   }
+  ],
+  "continuity": "Maria on her side in the bed, asleep, in her pink pyjamas with the light-blue collar, her cheek against MACA's chest and her hand flat on the panel; MACA seated upright and perfectly still on the floor beside the bed with her chest glowing low and warm; Chico, the only dog, curled asleep on the bed across Maria's feet next to the star toy chest; the same cream knit blanket throughout",
+  "preventions": [
+   "Chico stays ON THE BED across Maria's feet and never on the floor or the rug: one Chico only",
+   "the blanket stays the same cream chunky knit blanket from the first frame to the last: never blue, never a cloud print, never a different blanket",
+   "the room is the room of the first frame and the last frame: no stars painted on the walls, no rocket picture, no spindle footboard, no white door, no toys, no new furniture",
+   "Maria stays asleep in her pink pyjamas with the light-blue collar and her hand stays on MACA's chest panel",
+   "MACA stays perfectly still",
+   "one Maria, one MACA, one Chico",
+   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+  ],
+  "one_shot": true
+ },
+ "design": "Replaces V32 f89-f280 (the take pulls back at f120-f185 into a different room: stars on the wall, rocket picture, spindle bed, white door, blue cloud print blanket, Chico asleep on the rug at MACA's foot). Blue cloud blanket appears at the corner from f104 (clean to f96), so the first pin is f88. The last pin is the new wide keyframe K_R6_A8_WIDE; 8 s = 192 frames ends exactly at the take's last used frame (f280). The pull-back now arrives at the wide around f232-f280, when the narration says 'I did not move all night' and 'A robot does not have to'.",
+ "grabs_needed": [
+  {
+   "take": "V32-a554b3a4d301",
+   "frame": 88,
+   "key": "V32_f88"
+  }
+ ],
+ "keyframes_needed": [
+  "K_R6_A8_WIDE"
+ ]
+}

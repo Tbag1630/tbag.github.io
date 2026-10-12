@@ -1,0 +1,12 @@
+{
+ "tid": "K_DRAW_US",
+ "kind": "keyframe",
+ "refs": [
+  ["REF1 Maria's drawing as it is in SEQ_002 (V03 f214): the crayon girl, the dog, the blanket and the grass", "e563cffb7ed026af12933c665e78b72b247e01ffb922c5e27cb703b638f9572c.png"],
+  ["REF2 identity board (MACA's design only)", "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"]
+ ],
+ "base_frame": "V03_f214",
+ "size": "1280x720",
+ "quality": "high",
+ "prompt": "Image 1 shows a five-year-old girl's crayon drawing on a sheet of white paper lying on a wooden table. Show this same sheet of paper seen straight from above, flat, the whole sheet filling the frame with a thin edge of warm wooden table around it, soft even afternoon light. Keep the existing crayon drawing exactly as it is in image 1, same crayon strokes and colours: on the left the girl with brown hair, a thin yellow headband and a pink dress with puffed sleeves; in the middle the small tan dog with a blue checked blanket; the green zigzag grass along the bottom. Add, in the very same wobbly child's crayon style and at the same size as the girl, a robot standing upright on the grass on the right of the dog: a round white head with a teal visor band across its face and two small round blue eyes, square shoulders, a pink rectangular chest panel with a neat row of five little round chest lights coloured carefully one by one in red, yellow, green, blue and purple, white arms and legs with orange joints, feet on the grass. The robot stands the right way up with its head at the top. Image 2 is used only to know what the robot looks like; never copy its painted style. Exactly one girl, one dog and one robot on the paper; no other figures, no words, no letters, no signature. A real child's crayon drawing on paper, not a sketch of a scene, not a 3D render. Output one 16:9 image, 1280x720."
+}

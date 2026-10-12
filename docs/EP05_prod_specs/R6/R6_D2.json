@@ -1,0 +1,62 @@
+{
+ "tid": "R6_D2",
+ "seq": "SEQ_021",
+ "kind": "flf",
+ "fix": "D2",
+ "first": "grab:V23_f84",
+ "last": "grab:V23_f180",
+ "seconds": 4,
+ "segment": 4.0,
+ "splice": {
+  "seq": "SEQ_021",
+  "replace": [
+   "V23-5633ad143f50",
+   85,
+   180
+  ],
+  "use": [
+   1,
+   96
+  ]
+ },
+ "plan": {
+  "environment": "Maria's bedroom at night exactly as in the first frame: the bed under the starry window on the left with its grey knit blanket and Maria resting on the pillow, MACA seated at the bedside, the four-panel door with a light switch at the right, a wooden chest at the lower right, grey-blue walls and soft low light",
+  "emotional_guidance": "Valence: warm, amused, tender. Arousal: very low.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft dull thump of Chico's tail on the knit blanket; P02 a faint metal creak as MACA's open hand turns toward him; P03 Chico's slow sleepy breath and quiet night room tone",
+   "room": "a small quiet bedroom at night, soft and close"
+  },
+  "panels": [
+   {
+    "video_beat": "Chico lies asleep on the bed across Maria's feet; MACA's open metal hand turns a little more toward him as if presenting him; Maria on her pillow looks at MACA and then down at Chico"
+   },
+   {
+    "video_beat": "Chico's tail thumps once on the knit blanket without waking him; Maria smiles down at him from her pillow"
+   }
+  ],
+  "continuity": "Maria on the pillow at the screen-left, under the grey knit blanket; MACA seated at the bedside on the screen-right with her open hand toward Chico and her chest light glowing; Chico, the only dog in the room, asleep on the bed on the blanket across Maria's feet; the four-panel door and the wooden chest at the right stay where they are",
+  "preventions": [
+   "one Chico only, asleep on the bed across Maria's feet from the first frame to the last",
+   "never a second dog, never a dog on the floor, the rug or the stripe rug, and never a shot of the floor",
+   "the camera does not pan, tilt, drop, travel or cut: it holds the same wide view of the bed from the first frame to the last, at most a very slow push-in",
+   "the bed, the blanket and the room do not change",
+   "one Maria, one MACA, one Chico",
+   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears"
+  ],
+  "one_shot": true
+ },
+ "design": "Replaces V23 f88-f176, where the camera pans down off the bed (both Chicos are in frame at f97-f118: one on the bed, one on the rug) and then sits on a lone Chico on the rug until the cut at f176|f177. Both pins are accepted wide frames of the same view (f84, last clean frame before the pan; f180, after the cut). A pan is exactly what produced the second Chico, so this clip holds the wide; the edit's free push-in supplies the move. 4 s instead of the audit's 6 s.",
+ "grabs_needed": [
+  {
+   "take": "V23-5633ad143f50",
+   "frame": 84,
+   "key": "V23_f84"
+  },
+  {
+   "take": "V23-5633ad143f50",
+   "frame": 180,
+   "key": "V23_f180"
+  }
+ ]
+}

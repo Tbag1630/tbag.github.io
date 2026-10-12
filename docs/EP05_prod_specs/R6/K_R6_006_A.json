@@ -1,0 +1,21 @@
+{
+ "tid": "K_R6_006_A",
+ "seq": "SEQ_006",
+ "kind": "crop",
+ "fix": "A3",
+ "design": "Versioned replacement of K_006_A: the same pure crop (box 0,206,914,514, model-upscaled to 1280x720) of the new K_R6_WIDE_006, so V45' starts on the children's corner and zooms out to the wide exactly as V45 did. Zero image credits (a GPU-only derived job; the K_006_A job 3b03105b... has no billed event in BILLING_JOBS.json). Needs the reviewer before lock.",
+ "source": "out:K_R6_WIDE_006",
+ "box": [
+  0,
+  206,
+  914,
+  514
+ ],
+ "command": "python3 -m ulac.prod crop K_R6_006_A out:K_R6_WIDE_006 0 206 914 514",
+ "depends_on": [
+  "K_R6_WIDE_006 (locked)"
+ ],
+ "review_checks": [
+  "pure crop of the locked K_R6_WIDE_006: Maria, the crayon boy, the braids girl, the jersey boy partly at the right edge; the roll's near part visible"
+ ]
+}

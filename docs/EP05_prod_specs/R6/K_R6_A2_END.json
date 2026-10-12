@@ -1,0 +1,29 @@
+{
+ "tid": "K_R6_A2_END",
+ "seq": "SEQ_020",
+ "kind": "keyframe",
+ "fix": "A2",
+ "design": "End keyframe of R6_A2: the macro close-up that closes SEQ_020, built from the accepted macro frame V22 f253 (Chico chin on the lump of Maria's toes). Only Chico's eyes change: ONE eye open (the script's last words), the other closed. It replaces V22 f336 (both eyes shut, the narration says 'one eye open' over it).",
+ "grabs_needed": [
+  {
+   "take": "V22-36ba4e9708b9",
+   "frame": 253,
+   "key": "V22_f253"
+  }
+ ],
+ "base_frame": "V22_f253",
+ "size": "1280x720",
+ "quality": "high",
+ "refs": [
+  [
+   "REF1 V22_f253 accepted macro of Chico on the knit blanket (framing, light, blanket, MACA's chest glow behind)",
+   "grab:V22_f253"
+  ],
+  [
+   "REF2 identity board",
+   "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ]
+ ],
+ "prompt": "Edit image 1. Keep the framing, the lens, the warm low light, the grey knit blanket, the pillow and Maria's pink sleeve at the left edge, MACA's glowing pink chest plate and orange hip plate blurred behind, and Chico's pose exactly as they are: Chico lies across the foot of the bed with his chin resting on the soft pink lump of Maria's toes, his big ears relaxed. Change only Chico's eyes: the eye on the left of the frame is fully closed, and the eye on the right of the frame is open, calm and sleepy, looking toward the camera. Exactly one eye open, never both open and never both shut. Everything else, including his collar, the white blaze on his face and the tan and white fur, stays identical to image 1. Image 1 is the authority for render style, lens, lighting, room and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (Chico's colouring and collar); never copy its painted style, its plain background or its poses. Chico is a small tan-and-white chihuahua with a pink collar. One Chico only; no second dog. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
+ "credits_reserved_at": 55.3
+}

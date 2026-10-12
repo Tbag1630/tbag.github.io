@@ -1,0 +1,67 @@
+{
+ "tid": "R6_A10",
+ "seq": "SEQ_015",
+ "kind": "flf",
+ "fix": "A10",
+ "first": "grab:V17_f76",
+ "last": "grab:V17_f172",
+ "seconds": 4,
+ "segment": 4.0,
+ "splice": {
+  "seq": "SEQ_015",
+  "replace": [
+   "V17-60ca61e0bac1",
+   77,
+   172
+  ],
+  "use": [
+   1,
+   96
+  ]
+ },
+ "plan": {
+  "environment": "Maria's small bedroom at night exactly as in the first frame: the bed with its wooden headboard under the tall starry window on the left with the moon outside, the speckled teal wall, the doorway with white trim at the back right, the blue star toy chest and the oval rainbow rug on the dark wood floor, deep blue night light with a warm glow from MACA's chest",
+  "emotional_guidance": "Valence: tender, calm. Arousal: low, a gentle settling into bed.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft cloth rustle as MACA's metal hand lowers; P02 the knit blanket drawn smooth with a soft woolly drag; P03 a faint low electrical purr from MACA's chest light; P04 the quiet room tone of a night bedroom",
+   "room": "a small quiet bedroom at night, soft and close, window glass and night air outside"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA keeps leaning over the bed toward Maria, her two raised fingers lowering; Maria lies in bed on her pillow under the cream knit blanket, in her pink pyjamas, looking up at MACA with a small smile"
+   },
+   {
+    "video_beat": "MACA's hands take the edge of the cream knit blanket at the foot of the bed and draw it straight and smooth up over Maria's lap and chest while Maria stays in bed under the blanket and sits up only a little against her pillow"
+   },
+   {
+    "video_beat": "Maria takes hold of the straightened blanket edge at her chest with both small hands and looks up at MACA's face; MACA's metal forearm rests along the blanket beside her, her chest light glowing softly"
+   }
+  ],
+  "continuity": "Maria in the bed on the screen-left, head on the pillow, under the cream knit blanket up to her chest, in her pink pyjamas with the light-blue collar, her ponytail with the pink scrunchie on the pillow beside her; MACA bending over the bed from the screen-right, her chest light glowing softly; nobody else in the room; the bed stays under the window, the doorway and the star toy chest stay at the back right",
+  "preventions": [
+   "Maria never sits on top of the covers: she stays in the bed under the blanket from the waist down for the whole clip",
+   "Maria wears her pink pyjamas with the light-blue collar for the whole clip: no belt, no boots, no overall straps, no day clothes and no outfit change",
+   "Maria sits up only a little against the pillow and never kneels, stands or sits cross-legged",
+   "the knit blanket stays the same cream blanket and is only drawn straight: no new blanket, no sheet change, no blanket flung into the air",
+   "one Maria and one MACA",
+   "the camera stays in one wide view from the first frame to the last: no cut, no jump to a close-up, no new angle",
+   "MACA's helmet stays a clean, smooth, round white shell with one round ear disc on each side and nothing attached to it: no fins, no wings, no rays, no lines, no spikes, no antennae, no fan blades, no sparks and no steam near her head or ears",
+   "the room does not change: window, doorway, toy chest and rug stay where they are"
+  ],
+  "one_shot": true
+ },
+ "design": "Replaces the inner close-up shot of V17 (f81-f168: Maria sits on top of the covers in belted day clothes, then the cut back to the pyjamas) with a same-view FLF between two accepted frames of the same wide shot, V17 f76 and V17 f172. 4 s = 96 frames; both pins stay the take's own frames (clip frames 0 and 96 are not used). Narration 'I pulled her blanket straight' lands at take f109-f144, inside the clip.",
+ "grabs_needed": [
+  {
+   "take": "V17-60ca61e0bac1",
+   "frame": 76,
+   "key": "V17_f76"
+  },
+  {
+   "take": "V17-60ca61e0bac1",
+   "frame": 172,
+   "key": "V17_f172"
+  }
+ ]
+}

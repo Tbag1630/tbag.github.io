@@ -1,0 +1,148 @@
+<title>The Family Drawing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one screening-room column. The film sits on a night-blue wall, the credits card below it reads like the
+   back of a crayon drawing. Single dark look on purpose (a cinema), every colour set explicitly. */
+:root {
+  --night: #0d1220;        /* the bedroom at night */
+  --wall: #151c30;         /* raised surfaces */
+  --paper: #f3efe6;        /* drawing paper, for text */
+  --muted: #a7adbf;        /* secondary text */
+  --crayon: #f08a24;       /* crayon orange, the title rig's edge light */
+  --teal: #4fc3b8;         /* MACA's visor */
+  --line: #2a3350;
+  --display: "Gaegu", "Comic Sans MS", "Chalkboard SE", cursive;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+html, body { background: var(--night); color: var(--paper); }
+body { font-family: var(--body); font-size: 16px; line-height: 1.55; padding-inline: 16px; padding-block: 28px 48px; }
+.wrap { max-width: 1200px; margin-inline: auto; display: grid; gap: 22px; }
+header { display: grid; gap: 4px; }
+.series { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 7vw, 72px); line-height: 1; margin: 0;
+     color: var(--paper); text-wrap: balance; }
+h1 span { color: var(--crayon); }
+.screen { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 6px;
+          overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 30px 80px -30px rgba(240, 138, 36, .35); }
+video { width: 100%; height: 100%; display: block; background: #000; }
+.notice { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center;
+          color: var(--muted); font-size: 15px; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.spec { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.spec b { color: var(--paper); font-weight: 700; }
+button { font: 700 15px/1 var(--body); color: var(--night); background: var(--crayon); border: 0; border-radius: 999px;
+         padding: 12px 20px; cursor: pointer; }
+button:hover { filter: brightness(1.08); }
+button:focus-visible, .chap:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+button:disabled { opacity: .6; cursor: progress; }
+#dlstate { color: var(--muted); font-size: 14px; min-height: 1.4em; font-variant-numeric: tabular-nums; }
+.chapters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.chap { display: grid; gap: 2px; text-align: left; background: var(--wall); color: var(--paper); border: 1px solid var(--line);
+        border-radius: 8px; padding: 12px 14px; font: inherit; cursor: pointer; }
+.chap:hover { border-color: var(--crayon); }
+.chap .t { font-variant-numeric: tabular-nums; color: var(--crayon); font-weight: 700; font-size: 14px; }
+.chap .n { font-family: var(--display); font-size: 24px; line-height: 1.1; }
+.chap .d { color: var(--muted); font-size: 14px; }
+.note { max-width: 65ch; color: var(--muted); font-size: 14px; margin: 0; }
+h2 { font: 700 13px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 6px 0 0; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="series">__SERIES__</div>
+    <h1>The Family <span>Drawing</span></h1>
+  </header>
+
+  <div class="screen">
+    <video id="film" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <div class="notice" id="notice" hidden></div>
+  </div>
+
+  <div class="bar">
+    <div class="spec">
+      <span><b>__RUNTIME__</b> running time</span>
+      <span><b>__W__×__H__</b></span>
+      <span><b>24</b> fps</span>
+      <span><b>Stereo</b> mix at −16 LUFS</span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span id="dlstate"></span>
+      <button id="dl" type="button" hidden>Download MP4</button>
+    </div>
+  </div>
+
+  <h2>Chapters</h2>
+  <div class="chapters" id="chapters"></div>
+
+  <p class="note">__NOTE__</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<script>
+const MANIFEST = __MANIFEST__;
+const CHAPTERS = __CHAPTERS__;
+const video = document.getElementById("film");
+const notice = document.getElementById("notice");
+
+function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+
+function say(text) { notice.textContent = text; notice.hidden = !text; }
+
+(function play() {
+  if (window.Hls && Hls.isSupported()) {
+    const hls = new Hls({ maxBufferLength: 30 });
+    hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) say("The film could not load here. Reload the page to try again."); });
+    hls.loadSource("index.m3u8");
+    hls.attachMedia(video);
+  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    video.src = "index.m3u8";
+  } else {
+    say("This browser cannot stream the film. Use the Download MP4 button instead.");
+  }
+})();
+
+const box = document.getElementById("chapters");
+for (const c of CHAPTERS) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chap";
+  b.innerHTML = '<span class="t"></span><span class="n"></span><span class="d"></span>';
+  b.querySelector(".t").textContent = fmt(c.at);
+  b.querySelector(".n").textContent = c.name;
+  b.querySelector(".d").textContent = c.desc;
+  b.addEventListener("click", () => { video.currentTime = c.at; video.play().catch(() => {}); });
+  box.appendChild(b);
+}
+
+(async () => {
+  const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+  if (!downloads) return;
+  const btn = document.getElementById("dl"), state = document.getElementById("dlstate");
+  btn.hidden = false;
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      const names = [MANIFEST.init].concat(MANIFEST.segments);
+      const parts = []; let got = 0;
+      for (let i = 0; i < names.length; i++) {
+        const r = await fetch(names[i]);
+        if (!r.ok) throw { code: "fetch", message: names[i] };
+        const b = await r.blob(); parts.push(b); got += b.size;
+        state.textContent = "Preparing " + Math.round(100 * got / MANIFEST.total_bytes) + "%";
+      }
+      state.textContent = "Ready to save";
+      const res = await downloads.save({ filename: "The_Family_Drawing_1080p.mp4", data: new Blob(parts, { type: "video/mp4" }) });
+      state.textContent = res.status === "saved" ? "Saved" : "";
+    } catch (e) {
+      const code = e && e.code;
+      state.textContent = code === "declined" ? "Download cancelled" :
+        code === "too_large" ? "This app cannot save a file this size. Open the page in a browser." :
+        code === "fetch" ? "A part of the film did not load. Try again." :
+        "Saving is not available here.";
+    } finally { btn.disabled = false; }
+  });
+})();
+</script>

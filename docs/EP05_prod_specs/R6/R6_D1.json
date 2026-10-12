@@ -1,0 +1,73 @@
+{
+ "tid": "R6_D1",
+ "seq": "SEQ_005",
+ "kind": "flf",
+ "fix": "D1",
+ "first": "out:K_R6_005_A",
+ "last": "out:K_R6_005_B",
+ "seconds": 9,
+ "segment": 8.917,
+ "splice": {
+  "seq": "SEQ_005",
+  "replace": [
+   "V07-6aaee2ed215d",
+   72,
+   286
+  ],
+  "use": [
+   3,
+   217
+  ],
+  "join_in": "8-frame dissolve from V48 f96 (the last frame of V48 [1,97])",
+  "join_out": "8-frame dissolve into SEQ_006 V08 f0",
+  "note": "a 9 s render has 217 frames (f0-f216); using [3,217] gives the 214 replaced frames and ends exactly on K_R6_005_B; the entry is a dissolve so the first three frames are not needed"
+ },
+ "plan": {
+  "environment": "the shelter dining hall in warm low afternoon sun: tall barred windows on the left wall glowing gold over a grey wood-plank wall, one long wooden table running to a far open doorway with one long white paper roll unrolled flat down its centre, a blue-and-white tiled counter on the right, brown chairs along both sides",
+  "emotional_guidance": "Valence: quiet, searching, then sinking. Arousal: low and still.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; the drawings on the roll are children's crayon drawings in soft pastel colours, never a sketch",
+  "audio": {
+   "sounds": "P01 crayons scratching faintly on paper further down the table; P02 a soft chair creak and the quiet air of the big hall; P03 a faint paper rustle as the camera glides along the roll",
+   "room": "the big hall in warm afternoon air, soft and a little hollow"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria sits very still in the left foreground, her eyes fixed down the long roll, lips closed; the camera starts a slow low glide forward along the roll, past her"
+   },
+   {
+    "video_beat": "drawings everywhere: rows of small drawn families slide by on the roll, and the first to pass is a drawn mom with long brown hair holding the hands of two drawn children"
+   },
+   {
+    "video_beat": "next a drawn dad in a white shirt with big brown shoes standing beside a drawn mom with brown hair"
+   },
+   {
+    "video_beat": "the glide slows and settles on a drawn grandma with grey hair and a big purple purse beside a drawn dad with big shoes; more drawn families stretch away along the roll to the far doorway"
+   }
+  ],
+  "continuity": "Maria, seated in her window-side seat at the long table in the left foreground at first, then behind the camera; the crayon boy in the next seat on her side, drawing on his own small sheet; across the table the jersey boy and the girl with two braids, drawing on their own small sheets; all four stay in their seats and pass out of the frame; no other child, no adult and no robot in the room",
+  "preventions": [
+   "no robot, machine or robot-like figure on any drawing: the drawings show families of people only",
+   "one single long roll of paper down the table, never separate sheets or a second table",
+   "Maria's lips never form words and she never leaves her seat",
+   "exactly four children at the start, none added and none moved, every other chair empty",
+   "the far doorway stays empty, nobody stands in it",
+   "no writing or letters on any drawing",
+   "one continuous shot, no cut"
+  ],
+  "one_shot": true
+ },
+ "timing_cues": {
+  "clip_s_with_use_3_217": {
+   "drawings everywhere": "1.8",
+   "moms with brown hair": "3.5",
+   "dads with big shoes": "5.2",
+   "a grandma": "7.1",
+   "purple purse": "7.9-8.7",
+   "clip ends": "8.92"
+  },
+  "narration": "drawings everywhere 57.44, moms 59.14, dads 60.78, a grandma 62.72, purple purse 63.5-64.28; the V07 span is 55.75-64.67 s"
+ },
+ "fallback": "if the reviewer finds the middle (moms, dads) missing: same 9 s, two clips (5 s + 4 s) through one more keyframe K_R6_005_M; no extra video credits, one more keyframe image",
+ "design": "replaces V07 [72,286]: wrong table, wrong drawings, Maria's seat empty, her drawing switching from the roll to a sheet. Two new keyframes, a slow low glide forward along one long roll in the warm hall of SEQ_001-004; no robot on any drawing; her seat and her own sheet are where they were",
+ "attempt": "SEQ_005 attempt 3 (approved_extra, R6)"
+}
