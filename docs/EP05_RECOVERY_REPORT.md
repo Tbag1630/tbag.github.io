@@ -16,7 +16,7 @@ Companion files:
 | 1 | Verified production inventory | COMPLETE AND VERIFIED | section 1; `project/EP05/EDIT/analysis/baseline_inventory.json` |
 | 2 | Full-content audit and timestamped defect ledger | COMPLETE AND VERIFIED (visual); COMPLETE BUT NOT FULLY VERIFIED (audio: spectrogram reading, no human listen) | `docs/EP05_DEFECT_LEDGER.md` |
 | 3 | Hall and environment findings | COMPLETE AND VERIFIED | section 3 |
-| 4 | Root cause and pipeline corrections | COMPLETE AND VERIFIED (153 tests pass, 2 opt-in; tooling restamped) | section 4 |
+| 4 | Root cause and pipeline corrections | COMPLETE AND VERIFIED (157 tests pass, 2 opt-in; tooling restamped) | section 4 |
 | 5 | Editorial decision list | COMPLETE AND VERIFIED | section 5; `docs/EP05_EDL.json` |
 | 6 | Inter-sequence transition map | COMPLETE AND VERIFIED | section 6 |
 | 7 | Music cue sheet and music-asset status | Cue sheet PARTIALLY COMPLETE (spotting only); music BLOCKED (no approved music exists; generation is frozen) | section 7 |
@@ -38,6 +38,7 @@ Companion files:
 - **Slots:** the 37 `prompt.json` slots are contiguous from 0 to 462.917 s.
 - **Clip length:** every clip runs 1-23 frames (0.04-0.96 s) longer than its slot.
 - **Budget:** 24,785.2 credits committed over 42 attempts against the 30,000 cap. Nothing was added in this recovery.
+- **Identity basis unconfirmed:** EP05 was rendered from `IDENTITY/identity_board.png`. Its references `cast_ref_02` and `cast_ref_03` were regenerated on Comfy Cloud (Nano Banana Pro), so they are not provably the original Higgsfield set. Whether this is the rejected "Story 5" look is UNKNOWN; see `docs/EP05_TITLE_SEQUENCE.md` section 0.6.
 - **Agents:** the four parallel audit agents (bedroom A1/A2, hall A3, audio C) stopped early on an account usage limit before reporting. The project agents in `.claude/agents` were not loaded in this session. The lead re-ran the whole audit, and nothing in the ledger comes from an agent.
 
 ## 2. Audit method
@@ -81,8 +82,8 @@ Companion files:
 3. **Freeze:** `video_pilot.status = FROZEN` and `authorization.sequence_boards = false`, with backups in `project/EP05/backups/`. Tests prove a frozen reserve refuses and writes nothing.
 4. **Tests cannot submit:** an autouse `no_network` fixture fails any outbound connection in the suite.
 5. **Results:**
-   - `python3 -m pytest -q tests` gives **153 passed, 2 skipped**. The two live project-state checks are opt-in: `ULAC_PROJECT_STATE=1` gives 15 of 15 in `tests/test_recovery.py`.
-   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `2ad7291d...`.
+   - `python3 -m pytest -q tests` gives **157 passed, 2 skipped**. The two live project-state checks are opt-in: `ULAC_PROJECT_STATE=1` gives 15 of 15 in `tests/test_recovery.py`.
+   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `5a131fd4...`.
 6. **Not closed:** the MCP `submit_workflow` tool is outside the firewall, so submission discipline is still a process control (L34).
 
 ## 5. Editorial decision list

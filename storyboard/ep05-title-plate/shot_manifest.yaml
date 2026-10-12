@@ -1,0 +1,119 @@
+# EP05 title plate board: exterior establishing, crane-up to the sky plate, sign and tag composited.
+# authority: sketch until the exterior authority exists (MISSING).
+scene_id: EP05_TITLE_PLATE
+slug: ep05-title-plate
+mode: edu_kids
+audience: kids_5_8
+authority: sketch
+provider: seedance2
+provider_max_s: 15
+fps_render: 24
+duration_s: 10.25
+vo:
+  file: null
+  words: null
+  note: kid voice reads the tag in P03 (recording MISSING)
+engagement:
+  role: title
+  open_question: null
+  pause_point_after: null
+tentpole: null
+continuous: false
+continuity:
+  invariants:
+  - 'shelter exterior: same Thursday-afternoon sun direction as the hall (key from screen-left)'
+  - 'sky plate: clean, cloudless upper two-thirds, no birds or objects crossing the title zone'
+  - no roll; one move only (P02)
+  - 'title text never generated: composited from docs/EP05_title/ep05.json'
+  allowed_changes:
+  - cloud texture near the horizon
+  spatial_lock: []
+authorship:
+  human:
+  - concept, gag design, physics ledger, shot plan, title design (this package)
+  - 'script and lesson: Ray Adam Basaldua, The-Family-Drawing.docx'
+  generated:
+  - 'planned: interior clips A/B/C and exterior FLF via seedance2; keyframes and plates via image model - NONE generated yet'
+  notes: Board 2 of 2 (exterior, crane-up, title plate). Typography and the speed ramp are edit-time work, never in the model.
+panels:
+- id: P01
+  beat: 'Establishing: shelter exterior'
+  phase: transition
+  t_in: 0.0
+  t_out: 2.0
+  shot:
+    size: EWS
+    angle: eye
+    lens_mm: 24
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 2.0
+  action: The shelter building from the street, Thursday afternoon, the same low warm sun; the dining-hall windows on the left facade. (Exterior authority MISSING.)
+  speakers: []
+  transition_in: cut
+  keyframe: first
+  sfx:
+  - exterior air, distant birds, one passing bicycle bell
+- id: P02
+  beat: Crane-up to sky plate, then the sign drops
+  phase: title
+  t_in: 2.0
+  t_out: 7.25
+  shot:
+    size: EWS
+    angle: low
+    lens_mm: 24
+  camera:
+    move: crane_title
+    start: P09 framing
+    end: clean sky plate, roof line just out of frame bottom
+    easing: ease_in_out_cubic
+    speed_wps: 0.08
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 3.0
+  target:
+    id: sky_plate
+    word: null
+    t_word: null
+  action: 'Crane/tilt up off the roof into open sky (2.25 s on screen, speed-ramped in the edit: 100% -> 300% -> 30% landing). On the held sky plate the sheet-metal sign is lowered on a crane hook, lands
+    with a THUNK, bounces twice and settles; the Y of STORY is curled at its corner like the paper roll.'
+  speakers: []
+  transition_in: continuous
+  keyframe: last
+  reduced_motion_alt: cut
+  sfx:
+  - ramp -> whoosh rising with the speed curve
+  - sign landing -> THUNK (series sonic logo)
+  - chain rattle on bounces
+  backend_hints:
+    edit_retime: source 3.9 s -> 2.25 s on screen; 0-0.5 s 100%, 0.5-1.0 s 100->300%, 1.0-1.5 s 300%, 1.5-2.0 s 300->30%, 2.0-2.25 s 30% (optical-flow interpolation on the 30% tail; content there is near-static
+      sky)
+    blender: title rig from docs/EP05_title/ep05.json composites over the held sky plate
+- id: P03
+  beat: Episode tag swings up; kid voice reads it
+  phase: title
+  t_in: 7.25
+  t_out: 10.25
+  shot:
+    size: EWS
+    angle: low
+    lens_mm: 24
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 2.25
+  action: 'A stamped steel tag swings up from below the sign on a split ring, overshoots 12 degrees, CLINKs and faces camera: PART No. 05 / The Family Drawing. Kid voice reads it. Hard cut into EP05 SEQ_001.'
+  speakers:
+  - KID_VO
+  transition_in: continuous
+  sfx:
+  - tag ring contact -> CLINK
+  - 'kid VO: ''Part number five. The Family Drawing.'''

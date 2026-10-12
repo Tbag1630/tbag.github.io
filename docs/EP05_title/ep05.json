@@ -1,0 +1,180 @@
+{
+ "schema": "sheet-metal-title/1",
+ "episode_id": "EP05",
+ "series_title": "THE SHEET METAL GIRL STORY",
+ "part_label": "PART No. 05",
+ "episode_title": "The Family Drawing",
+ "episode_title_source": "Drive: The-Family-Drawing.docx (id 1c5-vYEVsOZf1pQw047qLfcphfOa7emJu), first line “The Family Drawing”; corroborated by the narration master c5346f9d-EP05_The_Family_Drawing_NARRATION_MASTER.mp3. Typographic quotation marks dropped on the tag (overridable).",
+ "tag_back_text": "Love is the thing you do.",
+ "tag_back_source": "Script, final line: “Love is not the thing you are made of. It is the thing you do.” (6-word reduction)",
+ "kid_vo_line": "Part number five. The Family Drawing.",
+ "fps": 24,
+ "frame": [
+  1280,
+  720
+ ],
+ "layouts_to_test": [
+  "two_line",
+  "three_line"
+ ],
+ "layouts": {
+  "two_line": [
+   {
+    "text": "THE SHEET METAL",
+    "scale": 1.0
+   },
+   {
+    "text": "GIRL STORY",
+    "scale": 1.0
+   }
+  ],
+  "three_line": [
+   {
+    "text": "THE",
+    "scale": 0.42
+   },
+   {
+    "text": "SHEET METAL",
+    "scale": 1.0
+   },
+   {
+    "text": "GIRL STORY",
+    "scale": 1.0
+   }
+  ]
+ },
+ "readability_floor_320": {
+  "min_stroke_px": 2.0,
+  "series_cap_px": 14,
+  "tag_cap_px": 8
+ },
+ "typography": {
+  "series": {
+   "family": "Rubik",
+   "weight": 900,
+   "licence": "SIL OFL 1.1",
+   "file": "fonts/Rubik-Black.ttf",
+   "fallback_files": [
+    "/usr/share/fonts/opentype/inter/InterDisplay-Black.otf"
+   ],
+   "note": "proxy until the licensed file is placed in fonts/: Inter Display Black (SIL OFL 1.1)"
+  },
+  "episode": {
+   "family": "Rubik",
+   "weight": 800,
+   "licence": "SIL OFL 1.1",
+   "file": "fonts/Rubik-ExtraBold.ttf",
+   "fallback_files": [
+    "/usr/share/fonts/opentype/inter/InterDisplay-ExtraBold.otf"
+   ],
+   "note": "one weight lighter than the series lockup"
+  },
+  "tracking_em": 0.02,
+  "case": {
+   "series": "upper",
+   "part_label": "as written",
+   "episode_title": "as written"
+  }
+ },
+ "palette": {
+  "sky": "#8FC8EE",
+  "navy_enamel": "#1E3557",
+  "steel": "#C9D1D9",
+  "crayon_orange": "#F28C28",
+  "rule": "at most 4 dominant colours on the title frames"
+ },
+ "plate": {
+  "sky_top": "#8FC8EE",
+  "sky_bottom": "#DCEFFB",
+  "note": "flat stand-in for the generated sky plate"
+ },
+ "sign": {
+  "lockup_width_frac": 0.6,
+  "field": "#1E3557",
+  "letters": "#EEF2F5",
+  "rim": "#7D8996",
+  "edge": "#0E1A2B",
+  "material": "brushed stainless plate, rolled rim, 4 rivets; letters stamped 3 mm proud with a 1 mm bevel; navy enamel field",
+  "size_m": [
+   2.4,
+   1.1
+  ],
+  "thickness_mm": 3,
+  "hook": {
+   "type": "crane hook",
+   "chains": 2,
+   "chain_angle_deg": 30
+  },
+  "dent": {
+   "letter": "Y",
+   "word": "STORY",
+   "shape": "outer corner of the Y's plate curled up into a 1.5-turn roll, like the end of the paper roll",
+   "why": "EP05's physical gag is a paper roll that will not lie flat; the dent rhymes with it"
+  },
+  "block_y_bias": 0.35
+ },
+ "tag": {
+  "part_label": "PART No. 05",
+  "part_scale": 0.6,
+  "width_frac": 0.35,
+  "gap_frac": 0.03,
+  "field": "#C9D1D9",
+  "letters": "#1E3557",
+  "material": "stamped steel tag, rounded corners, punched hole with a split ring hung from the sign's lower edge",
+  "back": {
+   "text": "Love is the thing you do.",
+   "use": "outro: tag flips and is hung on the Wall of Fixes (proposed element, not canon)"
+  },
+  "title_lines": [
+   {
+    "text": "The Family",
+    "scale": 1.0
+   },
+   {
+    "text": "Drawing",
+    "scale": 1.0
+   }
+  ]
+ },
+ "animation": {
+  "sign_drop": {
+   "start_f": 360,
+   "land_f": 374,
+   "ease": "ease_in_quad",
+   "drop_px": 520,
+   "bounces": [
+    {
+     "amp_px": 18,
+     "frames": 6
+    },
+    {
+     "amp_px": 6,
+     "frames": 5
+    }
+   ],
+   "settle_f": 390,
+   "sfx": {
+    "THUNK": 374
+   }
+  },
+  "tag_swing": {
+   "start_f": 432,
+   "contact_f": 443,
+   "overshoot_deg": 12,
+   "settle_f": 450,
+   "from_deg": -70,
+   "sfx": {
+    "CLINK": 443
+   }
+  },
+  "kid_vo": {
+   "start_f": 452,
+   "end_f": 492
+  },
+  "hard_cut_f": 504,
+  "readable_from_settle_s": {
+   "series": 4.75,
+   "tag": 2.25
+  }
+ }
+}

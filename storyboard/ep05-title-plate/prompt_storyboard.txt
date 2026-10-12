@@ -1,0 +1,43 @@
+Create a 16:9 image.
+[PROJECT CARD]
+Compact designed masthead, not a table.
+TITLE: Up And Over The Roof
+META LINE: bright / kids' animated comedy / lift then land
+PRIORITY: an empty sky holding the upper two-thirds of frame for the title
+MICRO BRIEF: from the shelter building the camera rises off the roof into clean sky and holds for the sign and tag
+[CONTINUITY HEADER]
+SEQUENCE ID: EP05_TITLE_PLATE
+REFERENCE PRIORITY: identity references control identity; this storyboard controls staging, motion, geography, continuity
+[SCENE PACKET]
+PREMISE: the cold open's building, then the sky where the series sign will hang.
+LOCATION: the shelter building from the street on a Thursday afternoon, dining-hall windows on the left facade, low warm sun from screen-left, open sky above.
+START -> END: building fills the lower frame -> roof line slips out of the bottom, clean sky fills the frame and holds.
+ACTION CHAIN: hold on the building -> crane and tilt up past the roof -> settle on empty sky -> hold.
+PROP / EFFECT STATE: no props; no birds, kites or objects in the upper two-thirds.
+MUST READ: a clean sky with room for a sign.
+[CHARACTER SANITIZATION]
+No characters in frame.
+[IDENTITY CONSISTENCY]
+No characters; the building keeps one design from the first to the last panel.
+[STORYBOARD PURITY]
+Panel images are visual-only low-detail monochrome light-gray rough sketches. Panel number, beat, lens and keyframe tag sit in the header strip outside each panel. No color, text, arrows, captions, subtitles, logos, timing marks, diagrams, UI, ghost poses, duplicate bodies, or overlays inside panels.
+[MASTER SHOT RULE]
+P01 is the geography master of the building; P02 rises from it on one path; P03 is the same sky, not a new location.
+[EMOTIONAL ARC]
+settled -> lift -> open -> anticipation.
+[STYLE LOCKS]
+STYLE LOCK: finished full-colour 3D storybook animation, warm afternoon light from the left, soft gradient sky, matte materials.
+EFFECT LOCK: none.
+ENVIRONMENT LOCK: one building design; sky stays clean.
+[DIRECTOR STRIP]
+Bottom animatic track board aligned to panel columns. Tracks: BEAT LINE, CAMERA PATH, ACTION PATH, RHYTHM TRACK, ESCALATION MAP, STATE TRACK, SFX TRACK, STYLE TRACK. Shot chips, thin lines, rhythm blocks, small intensity bars, one-to-three-word labels. No seconds or timestamps.
+PANEL HEADERS: P01 / 24mm / exterior / KF-first -> P02 / 24mm / crane to sky / KF-last -> P03 / 24mm / sky hold
+CAMERA + LENS PLAN: P01 locked extreme wide from the street -> P02 crane and tilt up past the roof to clean sky, then hold -> P03 hold on the same sky
+ACTION PATH: P01 building in sun -> P02 roof drops out of frame, sky fills it -> P03 empty sky
+RHYTHM TRACK: RHY P01: hold / medium block / clean beat -> RHY P02: impact / long block / smash beat -> RHY P03: final hit / medium block / held beat
+ESCALATION MAP: ESC P01: L1 calm / flat -> ESC P02: L4 surge / spike -> ESC P03: L2 tension / release
+STATE TRACK: P01 building -> P02 sky -> P03 sky
+SFX TRACK: SFX P01: street → birds -> SFX P02: camera rise → whoosh -> SFX P03: sky → wind hush
+STYLE TRACK: P01 exterior afternoon -> P02 sky plate -> P03 sky plate
+[SEQUENCE]
+Grid: 3 panels 3x1, establishing then one crane move to a held clean sky plate

@@ -1,0 +1,233 @@
+# EP05 title sequence: cold open "The Roll That Won't Lie Down" + series/episode title.
+# Provider-neutral. Character references are PENDING (see docs/EP05_TITLE_SEQUENCE.md section 0): authority stays
+# `sketch` until the approved original sheets are named, so no downstream gate treats this as approved.
+scene_id: EP05_TITLE
+slug: ep05-title-cold-open
+mode: edu_kids
+audience: kids_5_8
+authority: sketch
+provider: seedance2
+provider_max_s: 15
+fps_render: 24
+duration_s: 10.75
+vo:
+  file: null
+  words: null
+  note: no dialogue in the cold open; kid voice reads the tag in P11 only (recording MISSING)
+engagement:
+  role: hook
+  open_question: How do you make the big paper lie flat?
+  pause_point_after: null
+tentpole: null
+continuous: false
+continuity:
+  invariants:
+  - PENV_HALL as rendered in EP05 (grey institutional hall, one long wood table to the far doorway, brown chairs both sides) - the hard cut into EP05 SEQ_001 must not change rooms
+  - 'time of day: Thursday afternoon, warm low sun through the left windows, identical in P09 exterior'
+  - 'cast: MACA, Maria, Chico, Ms. Montes only; no other children (set-up before drawing time)'
+  - Maria seat L2 (window side, left of camera axis at the near end); MACA far end left; Ms. Montes near end standing with the bucket tray at frame left; Chico on the bench at the near end
+  - camera stays on the near-end side of the table axis for P01-P08 (no axis cross)
+  - 'paper: 0.76 m wide white roll, unrolled 3.0 m along the table centre; curl rule in the physics ledger'
+  - four crayon buckets (steel pails, same as EP05 renders) on Ms. Montes' tray until P07
+  - mouths closed for every character in P01-P10; nobody speaks
+  allowed_changes:
+  - camera size and angle within the near-end side
+  - paper state per the ledger
+  - character poses
+  spatial_lock:
+  - P01
+  - P05
+  - P07
+authorship:
+  human:
+  - concept, gag design, physics ledger, shot plan, title design (this package)
+  - 'script and lesson: Ray Adam Basaldua, The-Family-Drawing.docx'
+  generated:
+  - 'planned: interior clips A/B/C and exterior FLF via seedance2; keyframes and plates via image model - NONE generated yet'
+  notes: Typography is deterministic (ulac/title.py proofs now; Blender rig from docs/EP05_title/ep05.json later). Speed ramp is an edit-time retime, never in the model. Board 1 of 2 (interior gag); board
+    2 is storyboard/ep05-title-plate.
+panels:
+- id: P01
+  beat: 'Problem: the roll springs back'
+  phase: hook
+  t_in: 0.0
+  t_out: 1.5
+  shot:
+    size: WS
+    angle: eye
+    lens_mm: 28
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.5
+  action: Ms. Montes gives the paper roll a push at the near end; it unrolls down the long table to the far end, then the far edge springs back and rolls one third of the way home as a tight tube. Maria
+    (seat L2) and MACA (far end) watch it; Chico on the bench.
+  speakers: []
+  transition_in: cut
+  keyframe: first
+  sfx:
+  - roll unspooling on wood -> soft rumble
+  - free end springs back -> fwip, then rolling patter
+- id: P02
+  beat: 'Maria: palms on the middle'
+  phase: hook
+  t_in: 1.5
+  t_out: 3.0
+  shot:
+    size: MS
+    angle: eye
+    lens_mm: 35
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.5
+  action: Maria, tongue out, presses both palms flat on the paper in front of her seat; both free ends roll in toward her hands and stop against her fingertips as two tubes. She looks from one tube to the
+    other, mouth closed.
+  speakers: []
+  transition_in: cut
+  sfx:
+  - two ends rolling in -> paper patter x2
+  - tubes bump her hands -> soft tup tup
+- id: P03
+  beat: 'Chico: lies on the near end'
+  phase: hook
+  t_in: 3.0
+  t_out: 4.25
+  shot:
+    size: MS
+    angle: low
+    lens_mm: 35
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.5
+  action: Chico looks at the flat paper end (anticipation 12 f), steps from the bench onto it, circles once and lies down as if it were a blanket, content, one eye open. Under him the near end stays flat;
+    past him the paper is still curled.
+  speakers: []
+  transition_in: cut
+  sfx:
+  - paws on paper -> crinkle
+  - Chico settles -> contented huff
+- id: P04
+  beat: MACA computes
+  phase: hook
+  t_in: 4.25
+  t_out: 5.0
+  shot:
+    size: MCU
+    angle: eye
+    lens_mm: 50
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.3
+  action: MACA's visor shows a small grid and four blinking corner dots; her chest lights step up once. Decision made.
+  speakers: []
+  transition_in: cut
+  sfx:
+  - visor grid -> two soft computer blips
+  - decision -> hum rises
+- id: P05
+  beat: 'Escalation: everyone is a paperweight'
+  phase: hook
+  t_in: 5.0
+  t_out: 6.5
+  shot:
+    size: WS
+    angle: high
+    lens_mm: 28
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 1.0
+  action: 'MACA plants a palm on each far corner, arms at full stretch; Maria keeps her palms on the middle and pins the near-left corner with an elbow; Chico stays on the near end. The paper is flat. Nobody
+    can move. Hold the tableau 1.0 s: Maria''s closed-mouth grin, Chico dozing, MACA''s visor showing a patient flat line.'
+  speakers: []
+  transition_in: cut
+  keyframe: last
+  sfx:
+  - MACA's palms -> two soft metal taps on paper
+  - silence under the hold
+- id: P06
+  beat: Ms. Montes looks at the tray
+  phase: explain
+  knowledge_beat: true
+  t_in: 6.5
+  t_out: 7.0
+  shot:
+    size: MS
+    angle: eye
+    lens_mm: 35
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.5
+  action: Ms. Montes, calm, looks from the frozen trio down to her tray of four crayon buckets (12 f look), then lifts the first one.
+  speakers: []
+  transition_in: cut
+  sfx:
+  - total silence (room tone only)
+- id: P07
+  beat: 'Payoff: four buckets, four corners'
+  phase: explain
+  knowledge_beat: true
+  t_in: 7.0
+  t_out: 9.25
+  shot:
+    size: WS
+    angle: top_down
+    lens_mm: 24
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.45
+  action: 'Top-down on the paper: Ms. Montes sets one bucket on each corner - near-right, far-right, far-left, near-left - each set down, never dropped. MACA lifts her hands, Maria lifts hers, Chico stands.
+    The paper stays flat.'
+  speakers: []
+  transition_in: cut
+  keyframe: last
+  sfx:
+  - bucket set down -> tok (x4, rising pitch, crayons rattle)
+  - 'hands lift -> paper settles: nothing'
+- id: P08
+  beat: 'Button: Chico tests it'
+  phase: recap
+  t_in: 9.25
+  t_out: 10.75
+  shot:
+    size: MS
+    angle: low
+    lens_mm: 35
+  camera:
+    move: static
+    easing: none
+    speed_wps: 0
+    roll_deg: 0
+    hold_pre: 0.0
+    hold_post: 0.5
+  action: Chico steps to the middle of the flat paper, circles, flops down. The paper does not move. His tail thumps once on it - tup. Maria, MACA and Ms. Montes all glance at him. Cut.
+  speakers: []
+  transition_in: cut
+  sfx:
+  - tail thump on paper -> single tup (button)

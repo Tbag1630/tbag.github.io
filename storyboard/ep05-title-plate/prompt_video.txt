@@ -1,0 +1,10 @@
+Use @image1 as the authoritative director-approved storyboard blueprint for the sequence. Treat every storyboard panel as a consecutive shot within a single cinematic sequence. Follow panel order exactly and do not invent alternative coverage. Do not render the storyboard sheet itself. Preserve camera placement, framing, lens intent, shot scale, character staging, screen direction, environmental geography, prop placement, action choreography, continuity and emotional escalation shown by the storyboard. The storyboard is the primary source of truth for visual storytelling. Recreate the filmed sequence implied by the panels rather than the physical storyboard artwork.
+Use the identity details in this prompt as the character reference.
+ENVIRONMENT: the shelter building from the street on a Thursday afternoon, dining-hall windows on the left facade, low warm sun from the left, open sky above; no people, no birds, nothing crossing the sky.
+EMOTIONAL GUIDANCE: Valence: bright, expectant. Arousal: calm, then a lift, then a settled hold.
+VISUAL STYLE: finished full-colour 3D storybook animation, warm afternoon light, soft gradient sky, matte materials.
+AUDIO: No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence. No generated dialogue or narration: the kid title read is added in the edit. No character is on screen; any character would keep mouths closed.
+PANEL BEATS:
+P01: Locked extreme wide of the building from the street in the afternoon sun.
+P02: The camera cranes and tilts up past the roof until only clean sky fills the frame, then holds; no roll.
+P03: Hold on the same clean sky; leave the upper two-thirds empty.

@@ -1,0 +1,55 @@
+{
+ "two_line": {
+  "layout": "two_line",
+  "series_base_px": 83,
+  "plate_px": [
+   836,
+   206
+  ],
+  "series_width_frac": 0.6,
+  "tag_width_frac": 0.35,
+  "bottom_px": 584,
+  "letters_vs_field": 10.96,
+  "field_vs_sky": 6.85,
+  "rim_vs_sky": 1.98,
+  "tag_letters_vs_field": 7.99,
+  "thumb": {
+   "series": {
+    "cap_px": 15,
+    "min_stroke_px": 3.49
+   },
+   "tag": {
+    "cap_px": 11,
+    "min_stroke_px": 2.33
+   }
+  },
+  "meets_floor": true
+ },
+ "three_line": {
+  "layout": "three_line",
+  "series_base_px": 110,
+  "plate_px": [
+   860,
+   328
+  ],
+  "series_width_frac": 0.6,
+  "tag_width_frac": 0.35,
+  "bottom_px": 673,
+  "letters_vs_field": 10.96,
+  "field_vs_sky": 6.85,
+  "rim_vs_sky": 1.98,
+  "tag_letters_vs_field": 7.99,
+  "thumb": {
+   "series": {
+    "cap_px": 20,
+    "min_stroke_px": 4.3
+   },
+   "tag": {
+    "cap_px": 11,
+    "min_stroke_px": 2.33
+   }
+  },
+  "meets_floor": false
+ },
+ "chosen": "two_line"
+}

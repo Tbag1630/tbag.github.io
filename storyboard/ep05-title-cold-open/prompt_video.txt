@@ -1,0 +1,15 @@
+Use @image1 as the authoritative director-approved storyboard blueprint for the sequence. Treat every storyboard panel as a consecutive shot within a single cinematic sequence. Follow panel order exactly and do not invent alternative coverage. Do not render the storyboard sheet itself. Preserve camera placement, framing, lens intent, shot scale, character staging, screen direction, environmental geography, prop placement, action choreography, continuity and emotional escalation shown by the storyboard. The storyboard is the primary source of truth for visual storytelling. Recreate the filmed sequence implied by the panels rather than the physical storyboard artwork.
+Use @image2 as the authoritative MACA, Maria, Chico and Ms. Montes character reference.
+ENVIRONMENT: shelter dining hall, Thursday afternoon, one long wooden table to a single far doorway, brown chairs both sides, tall windows on the left with low warm sun, grey walls. One white paper roll along the table centre; four steel crayon buckets on a tray at the near end until the teacher sets them on the four corners. Only these four characters; no other children.
+EMOTIONAL GUIDANCE: Valence: playful, warm. Arousal: rising through the attempts, peak when everyone is stuck holding the paper, then a calm drop and a small laugh.
+VISUAL STYLE: finished full-colour 3D storybook animation, soft window light, matte materials, clean shapes, soft contact shadows.
+AUDIO: No background music or score. Use only diegetic ambience, foley, impacts, texture, and silence. No dialogue: every character keeps their mouth closed.
+PANEL BEATS:
+P01: Locked wide from the near end: Ms. Montes pushes the roll; it unrolls to the far end, then the free end springs back into a tight tube rolling a third of the way home.
+P02: Medium on Maria, tongue out: she presses both palms on the middle; both ends roll in and stop against her hands as two tubes.
+P03: Low medium: Chico looks, steps onto the near end and lies down on it like a blanket, content; the far end stays curled.
+P04: Medium close on MACA: her visor shows a small grid with four corner dots; her chest lights step up once.
+P05: High wide: MACA holds both far corners at full stretch, Maria holds the middle and a near corner, Chico lies on the near end; the paper is flat; everyone holds still.
+P06: Medium on Ms. Montes, calm: she looks at the frozen trio, then down at her tray, and lifts a bucket.
+P07: Top-down on the table: she sets one bucket on each corner, tok, tok, tok, tok; everyone lifts their hands; the paper stays flat.
+P08: Low medium: Chico steps to the middle, flops down, tail thumps once; everyone glances at him.
