@@ -26,6 +26,12 @@
    {
     "video_beat": "the camera rises to MACA wearing the drawing with Maria beside her at the long table of drawings"
    }
+  ],
+  "continuity": "MACA standing beside the long table of drawings with the drawing on her chest; Maria beside her; Chico at MACA's feet",
+  "preventions": [
+   "one long table of drawings, never small square tables",
+   "no kitchen pots or stove counter",
+   "one Maria, one MACA, one Chico"
   ]
  }
 }

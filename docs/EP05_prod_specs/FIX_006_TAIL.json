@@ -21,14 +21,21 @@
   },
   "panels": [
    {
-    "video_beat": "Maria sits very still hugging her rolled drawing; the boy beside her draws with his green crayon"
+    "video_beat": "Maria sits very still hugging her rolled drawing; the boy beside her keeps drawing with his green crayon"
    },
    {
-    "video_beat": "the camera rises and pulls back smoothly along the long table; Maria and the boy stay in their same seats"
+    "video_beat": "the camera cranes up and arcs a quarter turn around the near end of the long table, Maria and the boy staying in their own seats on the window side"
    },
    {
-    "video_beat": "the camera settles high at the near end: Maria small in her seat with the roll in her lap, the boy beside her, the braids girl and the jersey boy across, MACA standing in the far doorway; exactly four children"
+    "video_beat": "the camera settles high at the near end looking straight down the long table to the far doorway: Maria small in her seat with the roll in her lap, the boy beside her, the jersey boy and the braids girl across, MACA standing in the doorway"
    }
+  ],
+  "continuity": "Maria in the near seat on the window side of the long table with her rolled drawing; the crayon boy in the next seat up on her side; across the table the jersey boy in the near seat and the braids girl beyond him; MACA standing in the far doorway",
+  "preventions": [
+   "one long table only, never a second table behind the children",
+   "no other children, no adults, no legs or shoes at the frame edges",
+   "Maria and the boy never swap sides or seats",
+   "Maria keeps the white roll in her arms or lap the whole time"
   ]
  }
 }

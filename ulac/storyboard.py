@@ -194,6 +194,10 @@ def video_text_flf(plan: dict) -> str:
              *audio_lines(plan.get("audio")),
              "PANEL BEATS:"]
     lines += [f"P{i:02d}: {_c(p['video_beat'])}." for i, p in enumerate(plan["panels"], start=1)]
+    if plan.get("continuity"):                     # CLAUDE.md prompt order: every character once, with seat or zone
+        lines.append(f"CONTINUITY: {_c(plan['continuity'])}.")
+    if plan.get("preventions"):                    # explicit preventions for errors detected in the source frames
+        lines.append("PREVENT: " + "; ".join(_c(x) for x in plan["preventions"]) + ".")
     return "\n".join(lines) + "\n"
 
 

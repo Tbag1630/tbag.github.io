@@ -239,3 +239,29 @@ def test_ep05_edl_matches_narration_and_policy():
             assert b <= 113 or a >= 265                                            # no duplicate Maria, no cut-back
         else:
             assert b <= 246                                                        # never V37's three-Chico ending
+
+
+def test_solver_splices_repairs_at_the_shared_frame_and_trims_outside_them():
+    """A tail repair starts on the take's frame `at`; a head repair ends on it; trims land on the original take."""
+    seqs = _seqs([(10.0, 10.5), (10.0, 10.5), (10.0, 10.0)])
+    sp = {"S001": {"repair": "R1", "side": "tail", "at": 132, "frames": 120},
+          "S002": {"repair": "R2", "side": "head", "at": 108, "frames": 120},
+          "S003": {"repair": "R3", "side": "whole", "frames": 240}}
+    rows = edit.solve(seqs, {"S001": "CH", "S002": "HARD"}, splices=sp)
+    assert rows[0]["segments"][-1] == ("R1", 0, 120)                      # the repair plays through to its end frame
+    assert rows[0]["segments"][0][2] == 132                               # the take stops just before the shared frame
+    assert rows[1]["segments"][0] == ("R2", 0, 119)                       # head repair drops its last (shared) frame
+    assert rows[1]["segments"][1][1] == 108
+    assert rows[2]["segments"] == [("R3", 0, 240)]
+    assert rows[-1]["rec_out_f"] == 30 * 24
+    for r in rows:
+        assert r["rec_out_f"] - r["rec_in_f"] == sum(b - a for _, a, b in r["segments"])
+
+
+def test_flf_prompt_carries_continuity_and_preventions_and_stays_policy_clean():
+    plan = {**FLF_PLAN, "continuity": "Maria in the near window-side seat, the crayon boy beside her",
+            "preventions": ["no second table", "no other children or adults"]}
+    p = storyboard.video_text_flf(plan)
+    assert "CONTINUITY: Maria in the near window-side seat" in p and "PREVENT: no second table; no other children" in p
+    assert video.prompt_problems(p, authored=False) == []
+    assert "CONTINUITY" not in storyboard.video_text_flf(FLF_PLAN)          # optional: old plans are unchanged

@@ -85,14 +85,43 @@ def frames_of(path: Path) -> int:
     return int(out.stdout.strip())
 
 
+def _pieces(s: dict, lock_f: int, sp: dict | None) -> list[tuple]:
+    """Source pieces of one row before head and tail trims. A splice swaps part of the take for a repair clip that shares
+    one frame with it (the FLF clip was pinned to that exact frame): tail = take[lock, at) + repair[0, n);
+    head = repair[0, n - 1) + take[at, end); whole = repair[0, n)."""
+    if not sp:
+        return [(s["take"], lock_f, s["frames"])]
+    n, at = sp["frames"], sp.get("at", 0)
+    if sp["side"] == "tail":
+        return [(s["take"], lock_f, at), (sp["repair"], 0, n)]
+    if sp["side"] == "head":
+        return [(sp["repair"], 0, n - 1), (s["take"], max(at, lock_f), s["frames"])]
+    if sp["side"] == "whole":
+        return [(sp["repair"], 0, n)]
+    raise ValueError(f"unknown splice side {sp['side']!r}")
+
+
+def _trim(pieces: list[tuple], h: int, t: int) -> list[tuple]:
+    out = [list(x) for x in pieces if x[2] > x[1]]
+    while h and out:
+        d = min(h, out[0][2] - out[0][1]); out[0][1] += d; h -= d
+        if out[0][1] == out[0][2]:
+            out.pop(0)
+    while t and out:
+        d = min(t, out[-1][2] - out[-1][1]); out[-1][2] -= d; t -= d
+        if out[-1][1] == out[-1][2]:
+            out.pop()
+    return [tuple(x) for x in out]
+
+
 def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composite: dict | None = None,
-          tail_first: set | None = None) -> list[dict]:
+          tail_first: set | None = None, splices: dict | None = None) -> list[dict]:
     """seqs: [{seq, take, start, end, frames}] in order. Returns EDL rows in frames (deterministic, no media access).
 
     Each row: seq, take, segments [(take, src_in_f, src_out_f)], rec_in_f, rec_out_f, offset_f (cut minus narration
     boundary at the row's end), join (to next).
     """
-    head_lock, composite, tail_first = head_lock or {}, composite or {}, tail_first or set()
+    head_lock, composite, tail_first, splices = head_lock or {}, composite or {}, tail_first or set(), splices or {}
     B = [f(seqs[0]["start"])] + [f(s["end"]) for s in seqs]
     n = len(seqs)
     lock = [f(head_lock.get(s["seq"], 0.0)) for s in seqs]
@@ -101,7 +130,7 @@ def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composit
         if s["seq"] in composite:
             mat.append(sum(f(b) - f(a) for _, a, b in composite[s["seq"]]))
         else:
-            mat.append(s["frames"] - lock[k])
+            mat.append(sum(b - a for _, a, b in _pieces(s, lock[k], splices.get(s["seq"]))))
     runs, cur = [], [0]
     for k in range(n - 1):
         if joins.get(seqs[k]["seq"], "HARD") == "CH":
@@ -141,7 +170,7 @@ def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composit
         if s["seq"] in composite:
             segs = [(t_, f(x), f(y)) for t_, x, y in composite[s["seq"]]]
         else:
-            segs = [(s["take"], lock[k] + head[k], s["frames"] - tail[k])]
+            segs = _trim(_pieces(s, lock[k], splices.get(s["seq"])), head[k], tail[k])
         length = sum(y - x for _, x, y in segs)
         rows.append({"seq": s["seq"], "take": s["take"], "segments": segs, "rec_in_f": rec, "rec_out_f": rec + length,
                      "slot_f": [B[k], B[k + 1]], "offset_f": offs[k], "join": joins.get(s["seq"], "END")})
@@ -161,14 +190,38 @@ def load_ep(ep: Path) -> list[dict]:
     return seqs
 
 
-def plan(ep: Path) -> dict:
+def _paths(ep: Path, variant: str | None) -> tuple[Path, Path]:
+    """(edl.json, master dir). The accepted cut lives in EDIT/; a candidate variant (v3 = accepted paid repairs) lives in
+    EDIT/<variant>/ so experimentation never overwrites the accepted master."""
+    base = ep / "EDIT" / variant if variant else ep / "EDIT"
+    return base / "edl.json", base / "master"
+
+
+def load_splices(ep: Path) -> dict:
+    """PROD/ACCEPTED.json: {"splices": {seq: {"repair": take, "side": tail|head|whole, "at": frame, ...}},
+    "joins": {seq: join}}. Only repairs that passed QC are listed there; each repair is a VIDEO/<take>.output.mp4."""
+    acc = json.loads((ep / "PROD" / "ACCEPTED.json").read_text())
+    sp = {}
+    for seq, x in acc.get("splices", {}).items():
+        sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
+    return {"splices": sp, "joins": acc.get("joins", {})}
+
+
+def plan(ep: Path, variant: str | None = None) -> dict:
     seqs = load_ep(ep)
-    rows = solve(seqs, JOINS_EP05, HEAD_LOCK_EP05, COMPOSITE_EP05, TAIL_FIRST_EP05)
+    joins, splices, tail_first = dict(JOINS_EP05), {}, set(TAIL_FIRST_EP05)
+    if variant:
+        acc = load_splices(ep)
+        splices = acc["splices"]
+        joins.update(acc["joins"])
+        tail_first -= set(splices)              # the tail defect is repaired: surplus no longer has to land on it
+    rows = solve(seqs, joins, HEAD_LOCK_EP05, COMPOSITE_EP05, tail_first, splices)
     total = rows[-1]["rec_out_f"]
-    edl = {"episode": ep.name, "fps": FPS, "narration_frames": f(seqs[-1]["end"]), "picture_frames": total,
-           "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()}, "head_fade": HEAD_FADE,
-           "tail_fade": TAIL_FADE, "audio_mutes": AUDIO_MUTES_EP05, "rows": rows}
-    out = ep / "EDIT" / "edl.json"
+    edl = {"episode": ep.name, "variant": variant, "fps": FPS, "narration_frames": f(seqs[-1]["end"]),
+           "picture_frames": total, "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()},
+           "head_fade": HEAD_FADE, "tail_fade": TAIL_FADE, "audio_mutes": AUDIO_MUTES_EP05, "splices": splices,
+           "rows": rows}
+    out, _ = _paths(ep, variant)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(edl, indent=1))
     return edl
@@ -381,9 +434,9 @@ def render_audio(ep: Path, edl: dict, out: Path) -> dict:
             "stem_fx": _lufs(stems / "fx_bed.wav")}
 
 
-def render(ep: Path, audio_only: bool = False) -> dict:
-    edl = json.loads((ep / "EDIT" / "edl.json").read_text())
-    out = ep / "EDIT" / "master"
+def render(ep: Path, audio_only: bool = False, variant: str | None = None) -> dict:
+    edl_path, out = _paths(ep, variant)
+    edl = json.loads(edl_path.read_text())
     out.mkdir(parents=True, exist_ok=True)
     pic = out / f"{edl['episode']}_picture.mp4" if audio_only else render_picture(ep, edl, out)
     if frames_of(pic) != edl["picture_frames"]:
@@ -398,9 +451,9 @@ def render(ep: Path, audio_only: bool = False) -> dict:
     return rep
 
 
-def qc(ep: Path) -> dict:
-    edl = json.loads((ep / "EDIT" / "edl.json").read_text())
-    out = ep / "EDIT" / "master"
+def qc(ep: Path, variant: str | None = None) -> dict:
+    edl_path, out = _paths(ep, variant)
+    edl = json.loads(edl_path.read_text())
     m = out / f"{edl['episode']}_master.mp4"
     pr = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(m)],
                                    capture_output=True, text=True).stdout)
@@ -428,19 +481,20 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="ulac.edit", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["plan", "render", "mix", "qc"])
     ap.add_argument("ep")
+    ap.add_argument("--variant", help="candidate cut in EDIT/<variant>/ built from PROD/ACCEPTED.json (e.g. v3)")
     a = ap.parse_args(argv)
     ep = Path(a.ep)
     if a.cmd == "plan":
-        edl = plan(ep)
+        edl = plan(ep, a.variant)
         for r in edl["rows"]:
             segs = " + ".join(f"{t[:3]}[{x / FPS:.3f}-{y / FPS:.3f}]" for t, x, y in r["segments"])
             print(f"{r['seq']} {tc(r['rec_in_f'])}-{tc(r['rec_out_f'])} {segs:44s} off {r['offset_f'] / FPS:+.3f}s "
                   f"-> {r['join']}")
         print("picture", edl["picture_frames"], "narration", edl["narration_frames"])
     elif a.cmd in ("render", "mix"):
-        print(json.dumps(render(ep, audio_only=a.cmd == "mix"), indent=1))
+        print(json.dumps(render(ep, audio_only=a.cmd == "mix", variant=a.variant), indent=1))
     else:
-        print(json.dumps(qc(ep), indent=1))
+        print(json.dumps(qc(ep, a.variant), indent=1))
     return 0
 
 

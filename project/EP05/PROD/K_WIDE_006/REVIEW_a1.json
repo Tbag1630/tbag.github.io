@@ -1,0 +1,12 @@
+{"target": "K_WIDE_006", "attempt": 1, "file": "project/EP05/PROD/K_WIDE_006/a1.png",
+ "sha256": "4125e72caad018c6dbb32809292b11be22eeeae066be68c7b4f87e52f0f36a9a",
+ "cloud": "8c9951a47a3e40285d21641cbaa56a27684f3d5c030ab78064ccd300ca7bc21f.png",
+ "verdict": "FAIL (records), pixels pass", "reviewer": "reviewer agent, 2026-10-12",
+ "pass": ["exactly 4 children + MACA", "identity matches board", "no duplicates", "room/furniture/camera unchanged vs V09_f0",
+          "3D look, no sketch", "1280x720 opaque", "screen direction consistent with V08_f132"],
+ "findings": [
+  {"id": "G1", "class": "MATERIAL", "what": "built from the rendered grey hall (V09_f0), not PENV_HALL_DRESSED_MASTER; no recorded user approval of that exception", "fix": "user decision (0 credits)"},
+  {"id": "G2", "class": "MATERIAL", "what": "state_*.json puts the braids girl at R2 and the jersey boy at R3; the accepted V09 wides, END_LOCK and INTENT line 13 show the jersey boy nearer the camera", "fix": "correct the state record to the footage, with approval (0 credits)"},
+  {"id": "R1", "class": "risk", "what": "FIX_006_TAIL from V08_f132 needs a crane + quarter-turn arc; V08_f132 shows a stray second table and a leg/shoes at the edges", "fix": "prompt rewritten: arc named, CONTINUITY and PREVENT lines added (done)"}],
+ "harmless": ["slightly warmer (mean R +6)", "boy's hair more ginger than V08", "jersey boy's crayon is blue"],
+ "locked": false}
