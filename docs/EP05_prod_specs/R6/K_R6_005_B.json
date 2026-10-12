@@ -17,11 +17,18 @@
    "out:K_R6_005_A"
   ]
  ],
- "prompt": "Make a later moment of the same slow forward camera glide as image 1, in the same warm afternoon dining hall and the same golden light: the camera has travelled down the long paper roll and is now low over it, at table height, about two thirds of the way along the table, looking forward along the roll toward the far open doorway, which is small and bright in the distance and empty. In the foreground, right of centre and filling the lower half of the frame, a drawn grandma with grey curly hair stands holding a big purple purse, drawn in the same soft crayon style and pastel colours as the other drawings; beside her a drawn dad in a white shirt with big brown shoes; more rows of drawn families of people, moms with brown hair, dads in big shoes and children, recede along the roll toward the door. Every figure stands upright with its head toward the far end of the table. No child and no adult is in this frame; every chair along both sides of the table is empty; Maria, the crayon boy, the jersey boy and the girl with braids are behind the camera. There is no robot, no machine and no writing on any drawing. Low sunset light from the tall barred windows on the left rakes across the paper. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
+ "prompt": "Make a later moment of the same slow forward camera glide as image 1, in the same warm afternoon dining hall and the same golden light: the camera has travelled down the long paper roll and is now low over it, at table height, about two thirds of the way along the table, looking forward along the roll toward the far open doorway, which is now much closer and larger than in image 1, at least three times its size there, bright and empty; the near end of the table, Maria's seat and every child's seat are behind the camera and out of frame. In the foreground, right of centre and filling the lower half of the frame, a drawn grandma with grey curly hair stands holding a big purple purse, drawn in the same soft crayon style and pastel colours as the other drawings; beside her a drawn dad in a white shirt with big brown shoes; more rows of drawn families of people, moms with brown hair, dads in big shoes and children, recede along the roll toward the door. Every figure stands upright with its head toward the far end of the table. No child and no adult is in this frame; the chairs that are visible, far down both sides of the table near the doorway, are empty; Maria, the crayon boy, the jersey boy and the girl with braids are behind the camera. There is no robot, no machine and no writing on any drawing. Low sunset light from the tall barred windows on the left rakes across the paper. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
  "review_checks": [
   "no person in frame; all chairs empty; far doorway open and empty",
   "foreground: drawn grandma with a purple purse and a dad with big shoes; moms with brown hair further along",
   "NO robot on any drawing; one continuous roll, no separate sheets; drawing style matches K_R6_005_A",
   "same warm light and room as K_R6_005_A; finished 3D film look; 16:9 1280x720"
+ ],
+ "history": [
+  {
+   "attempt": 1,
+   "verdict": "FAIL",
+   "why": "the camera did not travel (doorway same size as in K_R6_005_A), so the children's seats showed empty: they would vanish mid-shot (reviewer)"
+  }
  ]
 }

@@ -170,6 +170,8 @@ def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composit
     boundary at the row's end), join (to next).
     """
     head_lock, composite, tail_first, splices = head_lock or {}, composite or {}, tail_first or set(), splices or {}
+    # an explicit segment splice replaces the row outright, including a composite of alternates
+    composite = {k: v for k, v in composite.items() if (splices.get(k) or {}).get("side") != "segments"}
     B = [f(seqs[0]["start"])] + [f(s["end"]) for s in seqs]
     n = len(seqs)
     lock = [f(head_lock.get(s["seq"], 0.0)) for s in seqs]

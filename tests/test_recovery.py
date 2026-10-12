@@ -269,6 +269,13 @@ def test_segment_splice_puts_several_repairs_in_one_row_and_trims_only_the_origi
     assert rows[0]["rec_out_f"] == 240 and rows[-1]["rec_out_f"] == 480   # the 72-frame head trim took the take piece
 
 
+def test_segment_splice_overrides_a_composite_row():
+    seqs = _seqs([(10.0, 12.0)])
+    comp = {"S001": [("T1", 0.0, 5.0), ("ALT", 1.0, 6.0)]}
+    rows = edit.solve(seqs, {}, composite=comp, splices={"S001": {"side": "segments", "segments": [["R", 0, 240]]}})
+    assert rows[0]["segments"] == [("R", 0, 240)]
+
+
 def test_substitute_pieces_swaps_spans_and_keeps_length():
     pcs = [("T", 0, 337)]
     got = edit.substitute_pieces(pcs, [(("T", 6, 197), ("RA", 1, 192)), (("T", 198, 337), ("RB", 1, 140))])

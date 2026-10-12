@@ -35,13 +35,13 @@
     "video_beat": "close on the paper: Maria's right hand moves the green crayon to the empty space to the right of the dog and draws MACA standing upright, a round white head at the top and the square shoulders below it"
    },
    {
-    "video_beat": "the crayon colours the teal visor band with its two small round blue eyes and then the pink chest panel; the camera eases back a little as the figure grows"
+    "video_beat": "the crayon draws the teal visor band with its two small round blue eyes, then outlines the pink chest panel; the camera eases back a little as the figure grows"
    },
    {
-    "video_beat": "she presses five small round dots onto the pink chest one at a time, the chest lights taking their colours one after another, and the green light last"
+    "video_beat": "she colours the five small round chest lights carefully one at a time, red, yellow, green, blue and purple, each light taking its colour in turn"
    },
    {
-    "video_beat": "the crayon tip rests on the green chest light and then lifts away; hold on the finished robot drawing standing upright beside the dog"
+    "video_beat": "with all five chest lights coloured, she lifts the green crayon up to the robot's teal visor and gives it one last small touch; hold on the finished robot drawing standing upright beside the dog"
    }
   ],
   "continuity": "only Maria's two small hands, her pink sleeves and the green crayon are in frame, her face out of frame, Maria seated in her window-side seat at the long table; one single white sheet of paper holds the tan dog with its blue checked blanket draped over its back, the green grass zigzag and, beside them, MACA drawn upright; Chico and MACA exist on the page only, no real dog and no real robot are in the room",
@@ -65,5 +65,10 @@
   "narration": "And she drew me (28.38-28.6), square shoulders (29.44-30.38), teal visor (30.86-31.62), chest lights (32.56-33.2)"
  },
  "design": "replaces the upside-down, round-helmet robot of V05 [2,128]; first frame pinned to V03 f332 (cloud grab c1595abd...), last frame the new upright-MACA keyframe; the page can no longer change at the splice because the robot is drawn inside one continuous take from the SEQ_002 end",
- "attempt": "SEQ_003 attempt 4 (approved_extra, R6)"
+ "attempt": "SEQ_003 attempt 4 (approved_extra, R6)",
+ "history": [
+  {
+   "why": "end keyframe K_R6_003_DRAW a2 shows all five lights coloured and the crayon on the visor; beats re-ordered to match (lights coloured one by one, then a last touch on the visor)"
+  }
+ ]
 }
