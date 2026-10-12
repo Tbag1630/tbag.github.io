@@ -444,6 +444,16 @@ def longest_still(motion: list[float], thresh: float) -> int:
     return best
 
 
+def zoom_shape(match_in: bool, match_out: bool) -> str:
+    """Push-in profile over the segment, t in [0, 1], as an ffmpeg expression: 0 (1x) at any end that is a shared
+    keyframe. Push in from a match, pull out into one, or push in and back out when both ends match."""
+    if match_in and match_out:
+        return "sin(PI*{t})"
+    if match_out:
+        return "(1-{t})"
+    return "{t}"
+
+
 def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
     """Every join between different takes becomes a short cross-dissolve centred on the original cut, so the record
     timing (the narration lock) is unchanged; scene changes keep their dips; shared-keyframe splices stay seamless.
@@ -462,8 +472,9 @@ def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
     for i, it in enumerate(items):
         m = motion_profile(vid(it["take"]), it["a"], it["b"])
         it["still"] = longest_still(m, thresh)
-        touching_match = (i > 0 and joins[i - 1]["kind"] == "match") or (i < len(joins) and joins[i]["kind"] == "match")
-        it["zoom"] = zoom if it["still"] >= min_still and not touching_match else 0.0
+        # the zoom is exactly 1x on any side that meets a shared keyframe, so those joins stay pixel-identical
+        it["shape"] = zoom_shape(i > 0 and joins[i - 1]["kind"] == "match", i < len(joins) and joins[i]["kind"] == "match")
+        it["zoom"] = zoom if it["still"] >= min_still else 0.0
         it["h_in"] = joins[i - 1]["frames"] // 2 if i > 0 and joins[i - 1]["kind"] == "xfade" else 0
         it["h_out"] = joins[i]["frames"] // 2 if i < len(joins) and joins[i]["kind"] == "xfade" else 0
         if it["b"] - it["a"] < it["h_in"] + it["h_out"] + 1:
@@ -489,7 +500,8 @@ def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
         if it["zoom"]:
             span = max(1, it["b"] - it["a"])
             # clipped to the segment, so dissolve handles outside [a, b] hold the end zoom and never drop below 1x
-            z = f"(1+{it['zoom']}*clip((({lo}+n)-{it['a']})/{span},0,1))"
+            t = f"clip((({lo}+n)-{it['a']})/{span},0,1)"
+            z = f"(1+{it['zoom']}*{it['shape'].format(t=t)})"
             vf += [f"scale=w='trunc(2560*{z}/2)*2':h='trunc(1440*{z}/2)*2':eval=frame:flags=lanczos",
                    "crop=2560:1440:(iw-2560)/2:(ih-1440)/2", "scale=1280:720:flags=lanczos"]
         return vf
@@ -525,7 +537,7 @@ def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
                   "-filter_complex", g, "-map", "[v]", "-frames:v", str(2 * h)] + enc + [str(dst)])
             files.append(dst)
         report.append({"seq": it["seq"], "take": it["take"], "src": [it["a"], it["b"]], "rec_in": it["rec"],
-                       "still_frames": it["still"], "push_in": it["zoom"],
+                       "still_frames": it["still"], "push_in": it["zoom"], "zoom_shape": it["shape"] if it["zoom"] else None,
                        "join_out": joins[i] if i < len(joins) else None})
     lst = tmp / "concat.txt"
     lst.write_text("".join(f"file '{p.name}'\n" for p in files))

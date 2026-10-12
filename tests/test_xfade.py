@@ -53,6 +53,41 @@ def test_push_in_on_the_incoming_side_of_a_dissolve(tmp_path):
     assert edit.frames_of(pic) == 96
 
 
+def _bars(path, seconds=2):
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"smptebars=s=1280x720:r=24:d={seconds}",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", str(path)], check=True, timeout=120)
+
+
+def test_zoom_shape_is_1x_at_every_shared_keyframe_end():
+    ev = lambda shape, t: eval(shape.format(t=t).replace("sin", "np.sin").replace("PI", "np.pi"))
+    for mi, mo in ((False, False), (True, False), (False, True), (True, True)):
+        sh = edit.zoom_shape(mi, mo)
+        if mi:
+            assert abs(ev(sh, 0.0)) < 1e-9
+        if mo:
+            assert abs(ev(sh, 1.0)) < 1e-9
+        assert max(ev(sh, t) for t in (0.25, 0.5, 0.75)) > 0.4       # still moves in the middle
+
+
+@needs_ffmpeg
+def test_still_segments_on_a_shared_keyframe_keep_the_join_identical_and_still_push(tmp_path):
+    ep = tmp_path / "EP99"
+    (ep / "VIDEO").mkdir(parents=True)
+    _bars(ep / "VIDEO" / "VA.output.mp4")
+    _bars(ep / "VIDEO" / "VB.output.mp4")
+    edl = {"episode": "EP99", "picture_frames": 96, "transitions": {}, "tail_fade": 0.0,
+           "picture": {"xfade_frames": 8, "push_in": 0.06, "still_frames": 36},
+           "rows": [{"seq": "SEQ_001", "segments": [["VA", 0, 48]], "rec_in_f": 0, "rec_out_f": 48},
+                    {"seq": "SEQ_002", "segments": [["VB", 0, 48]], "rec_in_f": 48, "rec_out_f": 96}]}
+    pic = edit.render_picture_xf(ep, edl, tmp_path / "out")
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(pic), "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+                         capture_output=True, check=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(96, 720, 1280).astype(np.float32)
+    assert np.abs(fr[47] - fr[48]).mean() < 2          # the shared frame: both sides at 1x
+    assert np.abs(fr[24] - fr[47]).mean() > 4          # mid-segment is pushed in, so a still never sits frozen
+    assert np.abs(fr[72] - fr[48]).mean() > 4
+
+
 def test_still_run_detection():
     assert edit.longest_still([0, 0.1, 0.2, 5, 0.1, 0.1, 0.1], 0.6) == 3
     assert edit.longest_still([0, 2, 3, 4], 0.6) == 0
