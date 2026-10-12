@@ -48,6 +48,10 @@ REVEAL = {
 }
 
 ROOT_INPUTS = "TITLE_INPUTS/rig_inputs.json"
+# The background plate is environment only. The episode's characters appear once, inside the letters, so a plate that
+# also shows them would put two of each on screen in the reveal (CLAUDE.md hard rule 3; EP05 title gate 2026-10-12).
+ENV_ONLY = ("The backdrop is the empty room only: leave out every person, robot and animal that appears in image 1 and "
+            "fill their places with the room behind them.")
 
 
 def _sha(path: Path) -> str:
@@ -83,7 +87,7 @@ def final_frame_prompt(card: dict, accent: str) -> str:
     sub_txt = (f" Beneath the title, smaller, the episode name in the same face filled with a waxy {accent} colour like "
                f"crayon on its front faces: \"{sub}\".") if sub else ""
     return (f"Image 1 is the background plate: keep its room, perspective and colours, but render it softly out of focus "
-            f"and slightly darker, as a shallow depth-of-field backdrop. In front of it, a finished 3D animated film title "
+            f"and slightly darker, as a shallow depth-of-field backdrop. {ENV_ONLY} In front of it, a finished 3D animated film title "
             f"card. The title text, spelled exactly, with these exact line breaks and capitals: {words}.{sub_txt} "
             f"{style} {REVEAL['final']}. {light} No other text, letters, captions, logos or watermarks anywhere. Every "
             f"letter is crisp, correctly spelled and evenly spaced. Output one 16:9 full-colour production frame.")
@@ -147,8 +151,8 @@ def clip_plan(kind: str, card: dict, accent: str) -> dict:
             {"video_beat": "hold on the final wide of the morning dining hall: Maria and MACA holding hands beside the "
                            "long table of drawings, Chico at MACA's knee, the children drawing"},
             {"video_beat": "the scene softens into a gentle blur and dims slightly while the message lettering rises "
-                           "gently into view in front of it, its letters first like windows filled with the warm scene, "
-                           "then turning to solid brushed sheet metal with a warm edge light"},
+                           "gently into view in front of it as solid brushed sheet metal and settles, catching a warm "
+                           "edge light"},
             {"video_beat": "hold on the message with gentle micro-movement: a soft warm flicker, a cool blue rim glow and "
                            "dust motes drifting in the morning light"}],
         "continuity": ("Maria, MACA and Chico stay exactly where they are in the first frame, holding hands, as the scene "

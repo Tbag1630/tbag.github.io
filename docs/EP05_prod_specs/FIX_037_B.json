@@ -8,7 +8,7 @@
  "segment": 5.0,
  "splice": {
   "side": "tail",
-  "at": 235,
+  "at": 233,
   "hard_cut": true
  },
  "plan": {

@@ -236,14 +236,17 @@ def load_splices(ep: Path) -> dict:
     for seq, x in acc.get("splices", {}).items():
         sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
     mutes = {k: [tuple(x) for x in v] for k, v in acc.get("audio_mutes", {}).items()}
-    return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes}
+    return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes, "tail_fade": acc.get("tail_fade")}
 
 
 def plan(ep: Path, variant: str | None = None) -> dict:
     seqs = load_ep(ep)
     joins, splices, tail_first, mutes = dict(JOINS_EP05), {}, set(TAIL_FIRST_EP05), dict(AUDIO_MUTES_EP05)
+    tail_fade = TAIL_FADE
     if variant:
         acc = load_splices(ep)
+        if acc.get("tail_fade") is not None:   # 0 when an end reel continues from the last frame (no dip to black)
+            tail_fade = float(acc["tail_fade"])
         splices = acc["splices"]
         joins.update(acc["joins"])
         mutes.update(acc["audio_mutes"])          # policy spans found in the repair clips' own audio
@@ -252,7 +255,7 @@ def plan(ep: Path, variant: str | None = None) -> dict:
     total = rows[-1]["rec_out_f"]
     edl = {"episode": ep.name, "variant": variant, "fps": FPS, "narration_frames": f(seqs[-1]["end"]),
            "picture_frames": total, "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()},
-           "head_fade": HEAD_FADE, "tail_fade": TAIL_FADE, "audio_mutes": mutes, "splices": splices,
+           "head_fade": HEAD_FADE, "tail_fade": tail_fade, "audio_mutes": mutes, "splices": splices,
            "rows": rows}
     out, _ = _paths(ep, variant)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -310,43 +313,54 @@ def render_picture(ep: Path, edl: dict, out: Path) -> Path:
     rows, total = edl["rows"], edl["picture_frames"]
     enc = ["-an", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p", "-r", str(FPS)]
     files, skip = [], set()
+    def segment(k: int, r: dict, j: int, take: str, a: int, b: int) -> Path:
+        tr = edl["transitions"].get(r["seq"])
+        vf = [f"trim=start_frame={a}:end_frame={b}", "setpts=PTS-STARTPTS"]
+        n = b - a
+        if k == 0 and j == 0:
+            vf.append(f"fade=t=in:st=0:d={HEAD_FADE}")
+        prev = edl["transitions"].get(rows[k - 1]["seq"]) if k else None
+        if prev and prev[0] == "dip" and j == 0:
+            vf.append(f"fade=t=in:st=0:d={prev[1]}")
+        if tr and tr[0] == "dip" and j == len(r["segments"]) - 1:
+            vf.append(f"fade=t=out:st={(n / FPS) - tr[1]:.4f}:d={tr[1]}")
+        tf = edl.get("tail_fade", TAIL_FADE)
+        if k == len(rows) - 1 and j == len(r["segments"]) - 1 and tf > 0:
+            vf.append(f"fade=t=out:st={(n / FPS) - tf:.4f}:d={tf}")
+        dst = tmp / f"{k:02d}_{j}_{r['seq']}.mp4"
+        _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(take)), "-vf", ",".join(vf), "-frames:v", str(n)]
+             + enc + [str(dst)])
+        return dst
+
     for k, r in enumerate(rows):
         if k in skip:
             continue
         tr = edl["transitions"].get(r["seq"])
         if tr and tr[0] == "dissolve":
+            # the dissolve joins this row's only segment to the next row's FIRST segment; the next row's later segments
+            # (a spliced repair after a hard cut) render as plain segments after the pair
             nxt = rows[k + 1]
             hf = f(tr[1]) // 2
             (ta, a0, a1), (tb, b0, b1) = r["segments"][-1], nxt["segments"][0]
-            assert len(r["segments"]) == 1 and len(nxt["segments"]) == 1
+            assert len(r["segments"]) == 1, f"{r['seq']}: a dissolve needs a single-segment outgoing row"
             la, lb = a1 - a0 + hf, b1 - b0 + hf
             fade = [] if k else [f"fade=t=in:st=0:d={HEAD_FADE}"]
+            pre = min(hf, b0)                  # an incoming clip that starts near its frame 0 has less pre-roll: hold frame 0
+            hold = f",tpad=start_mode=clone:start={hf - pre}" if hf > pre else ""
             g = (f"[0:v]trim=start_frame={a0}:end_frame={a1 + hf},setpts=PTS-STARTPTS[a];"
-                 f"[1:v]trim=start_frame={b0 - hf}:end_frame={b1},setpts=PTS-STARTPTS[b];"
+                 f"[1:v]trim=start_frame={b0 - pre}:end_frame={b1},setpts=PTS-STARTPTS{hold}[b];"
                  f"[a][b]xfade=transition=fade:duration={2 * hf / FPS}:offset={(la - 2 * hf) / FPS}"
                  + ("," + fade[0] if fade else "") + "[v]")
             dst = tmp / f"{k:02d}_{r['seq']}_{nxt['seq']}.mp4"
             _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(ta)), "-i", str(vid(tb)), "-filter_complex", g,
                   "-map", "[v]", "-frames:v", str(la + lb - 2 * hf)] + enc + [str(dst)])
             files.append(dst)
+            for j, (take, a, b) in enumerate(nxt["segments"][1:], start=1):
+                files.append(segment(k + 1, nxt, j, take, a, b))
             skip.add(k + 1)
             continue
         for j, (take, a, b) in enumerate(r["segments"]):
-            vf = [f"trim=start_frame={a}:end_frame={b}", "setpts=PTS-STARTPTS"]
-            n = b - a
-            if k == 0 and j == 0:
-                vf.append(f"fade=t=in:st=0:d={HEAD_FADE}")
-            prev = edl["transitions"].get(rows[k - 1]["seq"]) if k else None
-            if prev and prev[0] == "dip" and j == 0:
-                vf.append(f"fade=t=in:st=0:d={prev[1]}")
-            if tr and tr[0] == "dip" and j == len(r["segments"]) - 1:
-                vf.append(f"fade=t=out:st={(n / FPS) - tr[1]:.4f}:d={tr[1]}")
-            if k == len(rows) - 1 and j == len(r["segments"]) - 1:
-                vf.append(f"fade=t=out:st={(n / FPS) - TAIL_FADE:.4f}:d={TAIL_FADE}")
-            dst = tmp / f"{k:02d}_{j}_{r['seq']}.mp4"
-            _run(["ffmpeg", "-v", "error", "-y", "-i", str(vid(take)), "-vf", ",".join(vf), "-frames:v", str(n)]
-                 + enc + [str(dst)])
-            files.append(dst)
+            files.append(segment(k, r, j, take, a, b))
     lst = tmp / "concat.txt"
     lst.write_text("".join(f"file '{p.name}'\n" for p in files))
     pic = out / f"{edl['episode']}_picture.mp4"
@@ -457,7 +471,10 @@ def build_fx(ep: Path, edl: dict):
         cut = int(round(rows[k + 1]["rec_in_f"] / FPS * SR))
         n = int(round(hf / FPS * SR))
         A = src(ta)[int(round(a1 / FPS * SR)) - n:int(round(a1 / FPS * SR)) + n]
-        Bv = src(tb)[int(round(b0 / FPS * SR)) - n:int(round(b0 / FPS * SR)) + n]
+        ib = int(round(b0 / FPS * SR))
+        Bv = src(tb)[max(0, ib - n):ib + n]
+        if ib < n:                                   # less pre-roll than the dissolve: lead in with silence
+            Bv = np.vstack([np.zeros((n - ib, 2), np.float32), Bv])
         w = np.linspace(0, np.pi / 2, len(A))[:, None]
         bed[cut - n:cut + n] = A * np.cos(w) + Bv[:len(A)] * np.sin(w)
     return bed
@@ -495,7 +512,9 @@ def render_audio(ep: Path, edl: dict, out: Path) -> dict:
         if tr and tr[0] == "dip":
             c = int(round(r["rec_out_f"] / FPS * SR)); d = int(tr[1] * SR)
             fade(c - d, c, False); fade(c, c + d, True)
-    fade(total - int(TAIL_FADE * SR), total, False)
+    tf = edl.get("tail_fade", TAIL_FADE)
+    if tf > 0:
+        fade(total - int(tf * SR), total, False)
     bed_d *= g[:, None]
     _write_wav(stems / "narration.wav", nar)
     _write_wav(stems / "fx_bed.wav", bed_d)

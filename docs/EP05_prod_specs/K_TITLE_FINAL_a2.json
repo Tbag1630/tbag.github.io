@@ -1,0 +1,9 @@
+{
+ "tid": "K_TITLE_FINAL",
+ "kind": "keyframe",
+ "size": "2048x1152",
+ "out_size": [1920, 1080],
+ "refs": [["REF1 K_TITLE_FINAL a1 (edit this frame; lettering passed the gate)", "08156b5d0a69e1f59eafdb94d6f21fd7484b009f5069282bf0f7f00ee4ac63dd.png"]],
+ "reason": "title gate 2026-10-12 M1: the blurred hall behind the lettering shows Maria and MACA, who also appear inside the letters in the reveal; the plate must be environment only",
+ "prompt": "Edit image 1 and change only the softly blurred background behind the lettering: remove every person and robot from it (the girl at the lower left, the boy at the lower right and the robot standing in the far doorway) and fill those places with the empty hall as it would look behind them: chairs, the long wooden table, the floor and the open bright doorway, in the same soft focus, warm light and colours. Keep the lettering exactly as it is in image 1: every letter's spelling, shape, size, position, brushed steel material, rivets, orange edge light and blue rim stay identical: line 1 \"THE\", line 2 \"SHEET METAL\", line 3 \"GIRL STORY\", and below it the episode name \"The Family Drawing\" in orange. Keep the dust motes. No people, robots, animals or any new text anywhere. Output one 16:9 full-colour production frame."
+}

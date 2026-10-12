@@ -529,14 +529,18 @@ def needs_conform(info: dict) -> bool:
             or info["sar"] not in ("1:1", "N/A", "0:1") or info["pix_fmt"] != "yuv420p")
 
 
-def conform_reel(src, dst, info: dict, hold_frames: int = 0) -> dict:
+def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float = 0.0) -> dict:
     """Lanczos scale to 1280x720 and constant 24 fps into a lossless intermediate; the original is only read. Refuses a reel that is not
-    16:9 rather than cropping or padding it. hold_frames clones the last frame (a still hold)."""
+    16:9 rather than cropping or padding it. hold_frames clones the last frame (a still hold); fade_out_s fades the reel's
+    last seconds to black (the film's last picture)."""
     if abs(info["width"] / info["height"] - 16 / 9) > 0.005:
         raise FinishError(f"{src}: {info['width']}x{info['height']} is not 16:9; the reel is not conformed by cropping or padding")
     vf = "scale=1280:720:flags=lanczos,fps=24,setsar=1,format=yuv420p"
     if hold_frames:
         vf += f",tpad=stop_mode=clone:stop={hold_frames}"
+    if fade_out_s > 0:
+        total_s = round(info["frames"] / (info["fps"] or FPS) * FPS) / FPS + hold_frames / FPS   # video length, not the audio's
+        vf += f",fade=t=out:st={max(0.0, total_s - fade_out_s):.4f}:d={fade_out_s}"
     _run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-an", "-vf", vf, "-fps_mode", "cfr", "-r", str(FPS), "-c:v", "ffv1",
           "-pix_fmt", "yuv420p", str(dst)])
     return probe_reel(dst)
@@ -809,7 +813,8 @@ def _log(msg: str) -> None:
 
 
 def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: str | None = None, title: str | None = None,
-           end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False) -> dict:
+           end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False,
+           end_fade_s: float = 0.0) -> dict:
     ep = Path(ep)
     root = ep.parent.parent
     ep_name = ep.name
@@ -906,13 +911,14 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         info = probe_reel(src)
         hf = hold_f if dom == "end" else 0
         reg(f"reel_{dom}", src, **{k: info[k] for k in ("width", "height", "fps", "frames", "has_audio")})
-        conformed = needs_conform(info) or hf > 0
+        ff = end_fade_s if dom == "end" else 0.0
+        conformed = needs_conform(info) or hf > 0 or ff > 0
         use = info
         if conformed:
             _log(f"conforming {dom} reel {info['width']}x{info['height']} @ {info['fps']} fps -> {SIZE[0]}x{SIZE[1]} @ {FPS}"
-                 + (f" + {hf} hold frames" if hf else ""))
+                 + (f" + {hf} hold frames" if hf else "") + (f" + {ff} s fade to black" if ff else ""))
             dst = sink.path(f"reels/{dom}_{SIZE[1]}p{FPS}.mkv")
-            use = conform_reel(src, dst, info, hf)
+            use = conform_reel(src, dst, info, hf, ff)
         reel_media[dom] = Path(use["path"])
         frames = use["frames"]
         reel_frames[dom] = frames
@@ -1013,6 +1019,9 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
     shutil.copyfile(st_fx, sink.path(f"{stems_dir}/fx_bed.wav"))
     title_audio = (reel_audio["title"] + reel_music["title"]).astype(np.float32)
     end_audio = (reel_audio["end"] + reel_music["end"]).astype(np.float32)
+    if end_fade_s > 0:                                    # the sound fades with the last picture
+        kf = min(len(end_audio), _s(end_fade_s))
+        end_audio[len(end_audio) - kf:] *= np.linspace(1, 0, kf, dtype=np.float32)[:, None]
     write_audio(sink.path(f"{stems_dir}/title_sfx.wav"), reel_audio["title"], SR, "wav24")
     write_audio(sink.path(f"{stems_dir}/end_sfx.wav"), reel_audio["end"], SR, "wav24")
     write_audio(sink.path(f"{stems_dir}/title_audio.wav"), title_audio, SR, "wav24")
@@ -1224,11 +1233,14 @@ def main(argv=None) -> int:
     ap.add_argument("--end", help="end reel (default EDIT/title_v2/end_card.mp4)")
     ap.add_argument("--end-hold", type=float, default=0.0, metavar="SECONDS",
                     help="clone the end reel's last frame for this long (a still hold), pad its SFX with silence and extend M11 to match")
+    ap.add_argument("--end-fade", type=float, default=0.0, metavar="SECONDS",
+                    help="fade the end reel's last seconds (picture and sound) to black: the film's final fade")
     ap.add_argument("--no-review", action="store_true", help="skip the review proxy and the contact sheet")
     ap.add_argument("--keep-work", action="store_true", help="keep the work/ scratch folder")
     a = ap.parse_args(argv)
     try:
-        res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work)
+        res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work,
+                     a.end_fade)
     except ProtectedPathError as e:
         print(f"FINISH REFUSED: {e}", file=sys.stderr)
         return 2

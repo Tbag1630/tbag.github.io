@@ -446,3 +446,17 @@ def test_end_to_end_on_a_synthetic_episode(tmp_path):
     b = finish.decode(out / "stems/music.wav")
     assert np.abs(a - b).max() < 2e-6
     assert finish.window_peak_db(b, 4.0, 6.0, 48000) < finish.SILENCE_MAX_DBFS
+
+
+@needs_ffmpeg
+def test_end_reel_fades_to_black(tmp_path):
+    src = tmp_path / "end.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=white:s=192x108:r=24:d=2",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", str(src)], check=True, timeout=120)
+    got = finish.conform_reel(src, tmp_path / "faded.mkv", finish.probe_reel(src), hold_frames=12, fade_out_s=0.5)
+    assert got["frames"] == 60
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", got["path"], "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+                         capture_output=True, check=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(60, 720, 1280)
+    assert fr[0].mean() > 200 and fr[-1].mean() < 30 and fr[40].mean() > 200
