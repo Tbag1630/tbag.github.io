@@ -90,7 +90,7 @@ def prompt_problems(prompt: str, *, authored: bool = True) -> list[str]:
 SEEDANCE_NODES = ("ByteDance2ReferenceNodeV2", "ByteDance2FirstLastFrameNode")
 
 
-def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float) -> list[str]:
+def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float, resolution: str = "720p") -> list[str]:
     """Zero-spend checks before a paid submission: audio on, the sound-only prompt inside the graph, the references, and
     the render length against the segment. Only an empty list may be quoted or reserved. Covers the reference-to-video
     graph (storyboard and identity boards) and the first-last-frame graph (start frame and ending lock)."""
@@ -109,8 +109,9 @@ def preflight(graph: dict, prompt: str, *, seconds: int, segment_seconds: float)
     if inp.get("model.prompt") != prompt:
         out.append("the graph's prompt is not the prompt file's text")
     out += prompt_problems(prompt)
-    if inp.get("model.resolution") != "720p" or inp.get("model.ratio") != "16:9":
-        out.append("the render must be 720p at 16:9")
+    # sequences render 720p; the firewall passes 1080p only for a title/end-card target the user authorized at 1080p
+    if inp.get("model.resolution") != resolution or inp.get("model.ratio") != "16:9":
+        out.append(f"the render must be {resolution} at 16:9")
     if inp.get("watermark") is not False:
         out.append("watermark must be off")
     dur = inp.get("model.duration")

@@ -275,13 +275,24 @@ def video_state(root: Path) -> dict:
     return {"reservations": list(res.values()), "attempts": len(res), "committed": round(committed, 2)}
 
 
+def allowed_resolution(root: Path, seq: str) -> str:
+    """720p for every sequence clip. A title or end-card target renders at the resolution of a user authorization that
+    names it (video_pilot.title_1080p), and only then."""
+    t = (video_pilot(root).get("title_1080p") or {})
+    if str(t.get("status", "")).upper() == "AUTHORIZED" and _user(str(t.get("authorized_by", ""))) \
+            and seq in (t.get("scope") or []) and not seq.startswith("SEQ_"):
+        return str(t.get("resolution", "720p"))
+    return "720p"
+
+
 def video_quote(root: Path, *, seq: str, graph: dict, prompt: str, seconds: int, segment_seconds: float,
                 credits: float, source: str, dry_run: str) -> dict:
     """Record the pre-submission estimate for one exact graph, with its preflight result. A quote is a record, not
     permission: video_reserve re-runs the preflight and still needs the user's acceptance of the price."""
     if not (isinstance(credits, (int, float)) and not isinstance(credits, bool) and math.isfinite(credits) and credits > 0):
         raise FirewallError("a quote must be a positive credit figure")
-    problems = video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
+    problems = video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds,
+                               resolution=allowed_resolution(root, seq))
     return record(root, "video_quoted", seq=seq, graph_sha256=video.graph_sha256(graph),
                   prompt_sha256=video.prompt_sha256(prompt), credits=round(float(credits), 2), source=source,
                   dry_run=dry_run, problems=problems)
@@ -334,7 +345,8 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
                  and str(e.get("verdict", "")).upper().startswith("FAIL")]
         if not fails:
             why.append(f"{seq} attempt {used + 1} is a contingency: it needs a recorded MATERIAL QC failure of {last}")
-    why += video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
+    why += video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds,
+                           resolution=allowed_resolution(root, seq))
     gsha = video.graph_sha256(graph)
     quotes = [e for e in read_ledger(root) if e.get("event") == "video_quoted" and e.get("graph_sha256") == gsha]
     credits = quotes[-1]["credits"] if quotes else None

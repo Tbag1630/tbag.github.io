@@ -18,7 +18,7 @@
   "emotional_guidance": "Valence: stuck, quiet. Arousal: low.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a small breath; P02 the hall's quiet air",
+   "sounds": "P01 a soft chair creak as Maria shifts in her seat; P02 the hall's quiet air",
    "room": "the big hall in warm afternoon air, very close and quiet"
   },
   "panels": [
@@ -26,7 +26,7 @@
     "video_beat": "Maria, turned to the boy, opens her mouth and nothing comes out"
    },
    {
-    "video_beat": "the camera pushes in slowly; Maria stays turned to him, lips parted, silent"
+    "video_beat": "the camera pushes in slowly; Maria stays turned to him, lips just parted, still"
    }
   ],
   "continuity": "Maria in her window-side seat at the long table; the crayon boy beside her on her screen-right",

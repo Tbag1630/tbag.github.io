@@ -4,11 +4,11 @@
  "kind": "flf",
  "first": "out:K_003_A",
  "last": "out:K_004_START",
- "seconds": 5,
- "segment": 5.0,
+ "seconds": 4,
+ "segment": 4.0,
  "splice": {
   "side": "tail",
-  "at": 138,
+  "at": 128,
   "hard_cut": true
  },
  "plan": {
@@ -21,10 +21,10 @@
   },
   "panels": [
    {
-    "video_beat": "Maria colours the chest lights of the robot in her drawing carefully, one by one"
+    "video_beat": "Maria adds a last careful stroke to her drawing with her crayon"
    },
    {
-    "video_beat": "she lifts her crayon and sits back a little, admiring her drawing with a small proud smile"
+    "video_beat": "she sets her crayon down and sits back a little, admiring her drawing with a small proud smile"
    },
    {
     "video_beat": "the boy beside her glances over at her drawing"
@@ -39,5 +39,6 @@
   ],
   "one_shot": true
  },
- "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take",
+ "gate": "docs/EP05_reviews/J23_gate.md: 4 s at 128 so the chest-lights cue plays in V05's own dotting run"
 }

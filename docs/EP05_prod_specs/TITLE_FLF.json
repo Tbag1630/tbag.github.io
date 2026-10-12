@@ -1,0 +1,40 @@
+{
+ "tid": "TITLE_FLF",
+ "seq": "TITLE_A",
+ "kind": "flf",
+ "first": "out:K_TITLE_OPEN",
+ "last": "out:K_TITLE_FINAL",
+ "seconds": 5,
+ "segment": 5.0,
+ "resolution": "1080p",
+ "plan": {
+  "environment": "the shelter dining hall in warm afternoon light: tall windows on the left, one long wooden table running to a far doorway, softly out of focus behind the title",
+  "emotional_guidance": "Valence: warm, curious, inviting. Arousal: gentle lift, then settled.",
+  "visual_style": "finished full-colour 3D animated title, identical in look, lighting and lettering to the first and last frames; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft airy whoosh as the lettering turns toward the camera; P02 a gentle metallic shimmer as the letters become solid steel; P03 a faint warm room tone with dust in the air",
+   "room": "a large quiet hall, soft and warm"
+  },
+  "panels": [
+   {
+    "video_beat": "the lettering starts a little smaller and turned slightly away, its letters like windows showing Maria in pink pyjamas with her side ponytail sitting on her bed beside Chico the little tan chihuahua, while MACA, the tall white-and-pink robot, holds up her softly glowing hand in the warm night-time bedroom; that picture fades out of the letters as the lettering eases forward and turns to face the camera"
+   },
+   {
+    "video_beat": "the letters become solid brushed sheet metal and catch the warm edge light as they settle"
+   },
+   {
+    "video_beat": "hold on the finished title with gentle micro-movement: the warm key flickers softly like a candle, the cool blue rim glows, dust motes drift slowly, and the camera dollies in very slowly"
+   }
+  ],
+  "continuity": "the lettering keeps the exact spelling, letter shapes, line breaks and layout of the first and last frames for the whole clip; the background stays softly out of focus",
+  "preventions": [
+   "never add, remove, reorder or reshape any letter",
+   "no extra words, captions or logos",
+   "no flash frames",
+   "no cut",
+   "no people walking through the frame"
+  ],
+  "one_shot": true
+ },
+ "design": "series title rig: reveal between two pinned frames (ulac/titlerig.py)"
+}

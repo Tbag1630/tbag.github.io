@@ -37,5 +37,7 @@
   ],
   "one_shot": true
  },
- "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take",
+ "superseded_by": "FIX_036",
+ "status": "NOT SUBMITTED: superseded (V41 head flips Maria to screen-right; whole-sequence replacement chosen)"
 }

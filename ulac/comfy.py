@@ -46,7 +46,8 @@ def _ref_nodes(g: dict, k: int, title: str, name: str, prefix: str) -> list:
 
 
 def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: str = SHEET_SIZE,
-              quality: str = "high", model: str = GPT_MODEL, mask_box: tuple[int, int, int, int, int, int] | None = None) -> dict:
+              quality: str = "high", model: str = GPT_MODEL, mask_box: tuple[int, int, int, int, int, int] | None = None,
+              out_size: tuple[int, int] | None = None) -> dict:
     """refs: [(title, cloud_filename)] in reference order (image 1, image 2, ...).
     mask_box=(W, H, x, y, w, h) builds an inpaint mask in-graph (white = replace); needs one ref."""
     if len(refs) > 16:
@@ -75,7 +76,14 @@ def gpt_image(prompt: str, refs: list[tuple[str, str]], *, prefix: str, size: st
                    "_meta": {"title": "inpaint mask"}}
         inputs["model.mask"] = ["22", 0]
     g["30"] = {"class_type": "OpenAIGPTImageNodeV2", "inputs": inputs, "_meta": {"title": "GPT Image 2.5"}}
-    g["31"] = {"class_type": "SaveImage", "inputs": {"images": ["30", 0], "filename_prefix": prefix},
+    out = ["30", 0]
+    if out_size is not None:                          # exact delivery size, e.g. 1920x1080 (not a multiple of 16)
+        w, h = out_size
+        g["32"] = {"class_type": "ImageScale", "inputs": {"image": ["30", 0], "upscale_method": "lanczos", "width": w,
+                                                          "height": h, "crop": "disabled"},
+                   "_meta": {"title": f"to {w}x{h}"}}
+        out = ["32", 0]
+    g["31"] = {"class_type": "SaveImage", "inputs": {"images": out, "filename_prefix": prefix},
                "_meta": {"title": "save"}}
     return g
 
@@ -104,6 +112,18 @@ def seedance_flf_720p(prompt: str, first: str, last: str | None, *, seconds: int
                       model: str = "Seedance 2.0") -> dict:
     """Video stage from a start frame: first_frame is the exact starting image (the previous clip's last frame) and
     last_frame is the ending lock. Input names follow the Seedance first-last-frame node. Native audio is always on."""
+    return seedance_flf(prompt, first, last, seconds=seconds, prefix=prefix, model=model)
+
+
+FLF_RESOLUTIONS = ("720p", "1080p")
+
+
+def seedance_flf(prompt: str, first: str, last: str | None, *, seconds: int, prefix: str, model: str = "Seedance 2.0",
+                 resolution: str = "720p") -> dict:
+    """seedance_flf_720p with the resolution as a parameter. Sequence clips stay 720p; 1080p is only for the title and
+    end-card scope the user authorized, which video.preflight enforces per target (firewall.allowed_resolution)."""
+    if resolution not in FLF_RESOLUTIONS:
+        raise ValueError(f"resolution {resolution!r} is not one of {FLF_RESOLUTIONS}")
     if not 4 <= seconds <= 15:
         raise ValueError("Seedance 2.0 renders 4-15 whole seconds")
     problems = video.prompt_problems(prompt, authored=False)
@@ -117,7 +137,7 @@ def seedance_flf_720p(prompt: str, first: str, last: str | None, *, seconds: int
     g["10"] = {"class_type": "ByteDance2FirstLastFrameNode",
                "inputs": {**frames, "model": model, "model.duration": seconds,
                           "model.generate_audio": True, "model.prompt": prompt, "model.ratio": "16:9",
-                          "model.resolution": "720p", "seed": 0, "watermark": False},
+                          "model.resolution": resolution, "seed": 0, "watermark": False},
                "_meta": {"title": "Seedance 2.0 FLF"}}
     g["11"] = {"class_type": "SaveVideo", "inputs": {"video": ["10", 0], "filename_prefix": prefix, "format": "auto",
                                                      "format.codec": "auto", "codec": "auto"},

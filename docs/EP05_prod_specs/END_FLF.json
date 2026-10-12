@@ -1,0 +1,42 @@
+{
+ "tid": "END_FLF",
+ "seq": "END_CARD",
+ "kind": "flf",
+ "first": "out:K_037_W",
+ "last": "out:K_END_MESSAGE",
+ "seconds": 5,
+ "segment": 5.0,
+ "resolution": "1080p",
+ "plan": {
+  "environment": "the morning dining hall: one long wooden table covered with children's family drawings, brown chairs, morning light from the left windows, a tiled counter on the right",
+  "emotional_guidance": "Valence: warm, resolved, tender. Arousal: calm, settling.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 the morning hall's gentle air, crayons at the long table; P02 a soft airy whoosh as the lettering rises into view; P03 a gentle metallic shimmer as it settles",
+   "room": "the morning hall, bright and calm"
+  },
+  "panels": [
+   {
+    "video_beat": "hold on the final wide of the morning dining hall: Maria and MACA holding hands beside the long table of drawings, Chico at MACA's knee, the children drawing"
+   },
+   {
+    "video_beat": "the scene softens into a gentle blur and dims slightly while the message lettering rises gently into view in front of it, its letters first like windows filled with the warm scene, then turning to solid brushed sheet metal with a warm edge light"
+   },
+   {
+    "video_beat": "hold on the message with gentle micro-movement: a soft warm flicker, a cool blue rim glow and dust motes drifting in the morning light"
+   }
+  ],
+  "continuity": "Maria, MACA and Chico stay exactly where they are in the first frame, holding hands, as the scene behind softens; once the message appears, the lettering keeps the exact spelling, letter shapes, line breaks and layout of the first and last frames for the whole clip",
+  "preventions": [
+   "never add, remove, reorder or reshape any letter",
+   "no extra words, captions or logos",
+   "no flash frames",
+   "no cut",
+   "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left",
+   "Maria's lips never form words"
+  ],
+  "one_shot": true
+ },
+ "design": "series title rig: reveal between two pinned frames (ulac/titlerig.py)"
+}

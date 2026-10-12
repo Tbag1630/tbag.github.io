@@ -8,7 +8,7 @@
  "segment": 4.0,
  "splice": {
   "side": "tail",
-  "at": 261,
+  "at": 223,
   "hard_cut": true
  },
  "plan": {
@@ -21,13 +21,13 @@
   },
   "panels": [
    {
-    "video_beat": "MACA stands on the right of frame wearing Maria's drawing of a girl, a dog and a robot glowing on her chest panel; Maria stands on the left smiling up at her; Chico sits on MACA's boot nearest Maria"
+    "video_beat": "MACA stands on the right of frame wearing Maria's drawing of a girl, a dog and a robot glowing on her chest panel; Maria stands on the left smiling up at her; Chico sits snug against MACA's screen-left boot, front paws on its toe"
    },
    {
     "video_beat": "a slow gentle push in on the three of them, like a family photo"
    }
   ],
-  "continuity": "Maria standing on the screen-left smiling up at MACA; MACA standing upright on the screen-right with the drawing glowing on her pink chest panel; Chico sitting on MACA's screen-left boot, nearest Maria; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
+  "continuity": "Maria standing on the screen-left smiling up at MACA; MACA standing upright on the screen-right with the drawing glowing on her pink chest panel; Chico sitting snug against MACA's screen-left boot, front paws on its toe; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
   "preventions": [
    "one long table of drawings, never small square tables",
    "one Maria, one MACA, one Chico",
@@ -37,5 +37,6 @@
   ],
   "one_shot": true
  },
- "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take",
+ "gate": "docs/EP05_reviews/J23_gate.md: splice at 223 keeps the audio lock"
 }

@@ -8,7 +8,7 @@
  "segment": 5.0,
  "splice": {
   "side": "tail",
-  "at": 253,
+  "at": 235,
   "hard_cut": true
  },
  "plan": {
@@ -38,5 +38,6 @@
   ],
   "one_shot": true
  },
- "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take",
+ "gate": "docs/EP05_reviews/J23_gate.md: splice at 235 ends the picture on the narration end (f11110)"
 }

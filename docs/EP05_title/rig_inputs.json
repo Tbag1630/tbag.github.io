@@ -1,0 +1,48 @@
+{
+ "episode": "EP05",
+ "series": "THE SHEET METAL GIRL STORY",
+ "accent": {
+  "name": "crayon orange",
+  "hex": "#F28C28",
+  "why": "warm episode (docs/EP05_title/ep05.json palette)"
+ },
+ "title": {
+  "target": "TITLE_A",
+  "lines": [
+   "THE",
+   "SHEET METAL",
+   "GIRL STORY"
+  ],
+  "subtitle": "The Family Drawing",
+  "subtitle_source": "docs/EP05_title/ep05.json episode_title (no part number, per the user)",
+  "character": {
+   "cloud": "24dda924ebe89c372c343b68293af690144630f6b0ce952a9ba1d4bde8d53ac4.png",
+   "local": "project/EP05/TITLE_INPUTS/character_V30_f101.png",
+   "sha256": "0238261d8f6d5138ae499eea9f4d9279f536b788d7f5bbab3f7cf2ffca3a463f",
+   "source": "V30-afec35ce58f7 frame 101 (cloud frame grab job cbf3abbb-5344-4da7-82f6-44938f9d230e)",
+   "desc": "Maria in pink pyjamas with her side ponytail sitting on her bed beside Chico the little tan chihuahua, while MACA, the tall white-and-pink robot, holds up her softly glowing hand in the warm night-time bedroom"
+  },
+  "background": {
+   "cloud": "8c9951a47a3e40285d21641cbaa56a27684f3d5c030ab78064ccd300ca7bc21f.png",
+   "local": "project/EP05/TITLE_INPUTS/background_K_WIDE_006.png",
+   "sha256": "4125e72caad018c6dbb32809292b11be22eeeae066be68c7b4f87e52f0f36a9a",
+   "source": "locked keyframe K_WIDE_006 (the afternoon hall wide)",
+   "desc": "the shelter dining hall in warm afternoon light: tall windows on the left, one long wooden table running to a far doorway"
+  }
+ },
+ "end": {
+  "target": "END_CARD",
+  "lines": [
+   "Love is the thing you do."
+  ],
+  "lines_source": "docs/EP05_title/ep05.json tag_back_text (script's final line, six words)",
+  "first_frame": "out:K_037_W",
+  "character": {
+   "desc": "Maria and MACA holding hands in the morning hall"
+  },
+  "background": {
+   "desc": "the morning dining hall: one long wooden table covered with children's family drawings, brown chairs, morning light from the left windows, a tiled counter on the right"
+  }
+ },
+ "rig": "ulac/titlerig.py (STYLE, REVEAL, CAMERA_LIGHT are locked; only this file changes per episode)"
+}

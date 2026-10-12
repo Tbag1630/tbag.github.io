@@ -72,7 +72,17 @@ AUDIO_MUTES_EP05 = {
     "V28-e9c5010fc5af": [(5.95, 14.05, "stepped melodic tones, likely music")],
     "V29-f22ccbb1beb2": [(9.9, 13.05, "pulsed voiced bursts, possible vocalization")],
     "V39-a67a4b9420bb": [(0.35, 1.45, "voiced burst, possible vocalization"), (3.5, 3.95, "voiced burst")],
+    # sustained tonal lines 33-46 dB above their neighbourhood (docs/EP05_SOUND_CUE_SHEET.json policy_mutes, 2026-10-12)
+    "V14-961bf08ab33f": [(4.75, 5.69, "stable tonal lines 984-1324 Hz, ringing helmet taps at about B5/E6")],
+    "V18-5575153249e1": [(3.45, 4.49, "stable tonal lines 258-387 Hz, whistle-like")],
+    "V31-8830210c7b44": [(6.7, 9.79, "stable tonal lines 281-621 Hz, chord-like hum")],
 }
+
+# Room tone: the per-clip loudness match below left the noise floor 16-27 dB apart within a scene. Each take is then
+# trimmed toward its scene's median floor (10th percentile of 50 ms RMS), by at most this much, never above the peak
+# limit. Scenes by sequence number (scene changes at SEQ_008 and SEQ_030).
+FLOOR_MATCH_DB = 9.0
+SCENES_EP05 = ((1, 7, "hall_afternoon"), (8, 29, "bedroom_night"), (30, 37, "hall_morning"))
 
 
 def f(sec: float) -> int:
@@ -347,8 +357,46 @@ def render_picture(ep: Path, edl: dict, out: Path) -> Path:
     return pic
 
 
+def scene_of(seq: str) -> str:
+    n = int(seq.split("_")[1])
+    return next((name for a, b, name in SCENES_EP05 if a <= n <= b), "other")
+
+
+def floor_db(x) -> float:
+    """Room-tone floor: the 10th percentile of 50 ms RMS, ignoring muted (digital-silence) blocks."""
+    import numpy as np
+    hop = int(0.05 * SR)
+    n = len(x) // hop
+    if n == 0:
+        return -120.0
+    r = np.sqrt(np.mean(x[:n * hop].reshape(n, hop, -1).astype(np.float64) ** 2, axis=(1, 2)))
+    r = r[r > 1e-7]
+    return float(20 * np.log10(np.percentile(r, 10))) if len(r) else -120.0
+
+
+def floor_trims(floors: dict, peaks: dict, scenes: dict, limit_db: float = FLOOR_MATCH_DB,
+                peak_ceiling_db: float = -4.0) -> dict:
+    """Per-take dB trims toward the scene's median floor, clamped to +/-limit and never lifting a peak past the
+    ceiling. floors and peaks are in dBFS after the loudness match; scenes maps take -> scene."""
+    import statistics
+    out = {}
+    for sc in set(scenes.values()):
+        takes = [t for t in floors if scenes[t] == sc and floors[t] > -119]
+        if not takes:
+            continue
+        med = statistics.median(floors[t] for t in takes)
+        for t in takes:
+            trim = max(-limit_db, min(limit_db, med - floors[t]))
+            out[t] = round(min(trim, peak_ceiling_db - peaks[t]), 2)
+    return out
+
+
+LAST_FX: dict = {}
+
+
 def build_fx(ep: Path, edl: dict):
-    """FX bed in the timeline: per-clip loudness matched, policy spans muted, 10 ms edit fades, dissolve crossfade."""
+    """FX bed in the timeline: per-clip loudness matched, room-tone floors matched per scene, policy spans muted, 10 ms
+    edit fades, dissolve crossfade."""
     import numpy as np
     total = int(round(edl["picture_frames"] / FPS * SR))
     bed = np.zeros((total, 2), np.float32)
@@ -373,8 +421,20 @@ def build_fx(ep: Path, edl: dict):
             cache[take] = x * gain
         return cache[take]
 
-    rec = 0
     rows = edl["rows"]
+    scenes = {}
+    for r in rows:
+        for take, _, _ in r["segments"]:
+            scenes.setdefault(take, scene_of(r["seq"]))
+    floors = {t: floor_db(src(t)) for t in scenes}
+    peaks = {t: float(20 * np.log10(np.abs(src(t)).max() + 1e-9)) for t in scenes}
+    trims = floor_trims(floors, peaks, scenes)
+    for t, d in trims.items():
+        cache[t] = cache[t] * np.float32(10 ** (d / 20))
+    LAST_FX.clear()
+    LAST_FX.update({"floor_match_db": FLOOR_MATCH_DB, "takes": {t: {"scene": scenes[t], "floor_dbfs": round(floors[t], 1),
+                    "trim_db": trims.get(t, 0.0)} for t in scenes}})
+    rec = 0
     for k, r in enumerate(rows):
         for take, a, b in r["segments"]:
             x = src(take)
@@ -439,6 +499,7 @@ def render_audio(ep: Path, edl: dict, out: Path) -> dict:
     bed_d *= g[:, None]
     _write_wav(stems / "narration.wav", nar)
     _write_wav(stems / "fx_bed.wav", bed_d)
+    (stems / "fx_room_tone.json").write_text(json.dumps(LAST_FX, indent=1))
     mix = nar + bed_d
     _write_wav(stems / "mix_prenorm.wav", mix)
     pre = _lufs(stems / "mix_prenorm.wav")

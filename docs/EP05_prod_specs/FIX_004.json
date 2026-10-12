@@ -15,7 +15,7 @@
   "emotional_guidance": "Valence: curious, innocent, then uncertain. Arousal: low, rising slightly at the question.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 a crayon set down softly; P02 a chair creak as the boy leans over; P03 a crayon tapped lightly on paper; P04 the crayon stops, a small breath",
+   "sounds": "P01 a soft paper rustle; P02 a chair creak as the boy leans over; P03 a crayon tapped lightly on paper; P04 the crayon stops, the hall's quiet air",
    "room": "the big hall in warm afternoon air, close soft table sounds, distant children drawing"
   },
   "panels": [
@@ -26,7 +26,7 @@
     "video_beat": "the boy leans over from his seat and points his green crayon at the robot in her drawing"
    },
    {
-    "video_beat": "the boy waits, eyebrows up, curious; the camera pushes in slowly"
+    "video_beat": "the boy waits, eyebrows up, curious, his green crayon still pointing at the drawn robot; the camera pushes in slowly"
    },
    {
     "video_beat": "Maria's smile fades and she turns toward him, lips parted, no words"
@@ -42,5 +42,6 @@
   ],
   "one_shot": true
  },
- "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take",
+ "gate": "docs/EP05_reviews/J23_gate.md: PASS with the recommended P03 and P01-sound wording"
 }

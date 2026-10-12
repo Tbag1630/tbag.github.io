@@ -1,0 +1,48 @@
+{
+ "tid": "FIX_036",
+ "seq": "SEQ_036",
+ "kind": "flf",
+ "first": "out:K_035_B",
+ "last": "out:K_036_B",
+ "seconds": 15,
+ "segment": 14.96,
+ "splice": {
+  "side": "whole",
+  "shared_start": true
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall the next morning: one long wooden table covered with a long paper of children's family drawings, brown chairs both sides, children drawing at the long table, a tiled counter with a cooking pot on the right, morning light from the left windows",
+  "emotional_guidance": "Valence: tender, proud, joyful. Arousal: gentle, rising softly to Maria's grin.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 the quiet morning hall, crayons scratching at the long table; P02 a soft servo whirr and a gentle metal settle as MACA kneels on the tiled floor; P03 a soft paper rustle from the drawing on MACA's chest",
+   "room": "the morning hall, bright and calm, children drawing at the long table at a little distance"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA stands on the right of frame wearing Maria's drawing glowing on her chest and looks down at Maria; Maria stands on the left, hands behind her back, smiling up; Chico sits against MACA's screen-left boot"
+   },
+   {
+    "video_beat": "MACA slowly bends her knees and kneels down on the floor until her smiling blue face screen is level with Maria's face, tilting her head gently toward her"
+   },
+   {
+    "video_beat": "Maria grins up at MACA; the camera pushes in slowly and steadily until their two faces fill the frame, the glowing drawing on MACA's chest between them"
+   },
+   {
+    "video_beat": "hold close on the two of them, warm and still, Maria's grin and MACA's smiling eyes"
+   }
+  ],
+  "continuity": "Maria standing on the screen-left, hands behind her back; MACA on the screen-right with the drawing of a girl, a dog and a robot glowing on her chest, standing at first and then kneeling; Chico sitting against MACA's screen-left boot until he leaves the frame in the push-in; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
+  "preventions": [
+   "one long table of drawings, never small square tables",
+   "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
+   "MACA kneels once and stays kneeling",
+   "Maria's lips never form words",
+   "no cut"
+  ],
+  "one_shot": true
+ },
+ "design": "whole-sequence FLF replacing V41 (its head flips Maria to screen-right); first frame shared with FIX_035_B's end (K_035_B), last frame K_036_B",
+ "gate": "docs/EP05_reviews/J23_gate.md option (a), chosen by the lead under the user's 'select the best remedy per defect'"
+}

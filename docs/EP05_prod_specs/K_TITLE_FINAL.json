@@ -1,0 +1,16 @@
+{
+ "tid": "K_TITLE_FINAL",
+ "kind": "keyframe",
+ "size": "2048x1152",
+ "out_size": [
+  1920,
+  1080
+ ],
+ "refs": [
+  [
+   "REF1 background plate",
+   "8c9951a47a3e40285d21641cbaa56a27684f3d5c030ab78064ccd300ca7bc21f.png"
+  ]
+ ],
+ "prompt": "Image 1 is the background plate: keep its room, perspective and colours, but render it softly out of focus and slightly darker, as a shallow depth-of-field backdrop. In front of it, a finished 3D animated film title card. The title text, spelled exactly, with these exact line breaks and capitals: line 1: \"THE\" / line 2: \"SHEET METAL\" / line 3: \"GIRL STORY\". Beneath the title, smaller, the episode name in the same face filled with a waxy crayon orange colour like crayon on its front faces: \"The Family Drawing\". Lettering style, locked for the series: a super-bold slab-serif display face with tight tracking, every letter a thick three-dimensional piece cut from sheet metal with a deep extrusion about a tenth of the letter height and a rounded bevel about an eighth of the stroke width. Procedural material that works for any text: brushed stainless steel with a faint grunge in the recesses, small rivet dots along the bevels, and a warm crayon orange edge light tracing the bevels. The whole title block is centred and fits inside the middle 85 percent of the frame width; longer titles get smaller, never cropped. At most four dominant colours: brushed steel, crayon orange, cool blue and the background's own tones. The lettering is solid brushed metal, facing the camera squarely at full size. Lighting rig, locked for the series: one warm crayon orange key light from the upper left, like a candle, and one cool blue rim light from behind on the right that outlines every letter; fine dust motes drifting in the light at low opacity; the background softly out of focus and a little darker than the lettering. No other text, letters, captions, logos or watermarks anywhere. Every letter is crisp, correctly spelled and evenly spaced. Output one 16:9 full-colour production frame."
+}
