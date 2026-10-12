@@ -37,8 +37,11 @@ def prep(seq: str, start: str) -> None:
 
 
 IDENTITY = "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"  # colour identity board on cloud
-OPENING = ("Open exactly on @image3, the last frame of the previous shot, and continue from it without a cut; keep the "
-           "full-colour finished animation look of @image3 and @image2 for the whole clip, never a pencil sketch.")
+# SEQ_012 and SEQ_014 held one two-shot for the whole clip under "continue from it without a cut": the opening frame
+# is only the first frame; after it the clip follows each panel's framing and the cuts the storyboard draws.
+OPENING = ("Open exactly on @image3, the last frame of the previous shot, as the very first frame; after that opening, "
+           "follow each storyboard panel's own framing, shot scale and camera move, cutting between panels as drawn; keep "
+           "the full-colour finished animation look of @image3 and @image2 for the whole clip, never a pencil sketch.")
 # Scene boundary (the ENVIRONMENT line changes): the previous last frame still rides along as @image3, but the clip
 # opens with a clean cut into the new room so the old location is never carried over.
 CUT = ("@image3 is the last frame of the previous shot in a different location: use it only for character look, "
