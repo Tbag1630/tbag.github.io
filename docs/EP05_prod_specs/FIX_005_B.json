@@ -10,10 +10,11 @@
   "side": "head",
   "at": 72,
   "shared": false,
-  "hard_cut": true
+  "hard_cut": true,
+  "shared_start": true
  },
  "plan": {
-  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "environment": "the shelter dining hall seen toward the tall barred windows with warm low sun behind the children, a grey wainscot wall, the long wooden table with a white paper runner and a metal crayon bucket",
   "emotional_guidance": "Valence: stuck, quiet. Arousal: low.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
@@ -25,15 +26,16 @@
     "video_beat": "Maria, turned to the boy, opens her mouth and nothing comes out"
    },
    {
-    "video_beat": "the camera pushes in slowly on Maria as her eyes drop away from him"
+    "video_beat": "the camera pushes in slowly; Maria stays turned to him, lips parted, silent"
    }
   ],
   "continuity": "Maria in her window-side seat at the long table; the crayon boy beside her on her screen-right",
   "preventions": [
-   "one long table only",
+   "one continuous shot, no cut",
    "Maria's lips never form words",
-   "no cut"
-  ]
+   "exactly two children in frame"
+  ],
+  "one_shot": true
  },
  "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
 }

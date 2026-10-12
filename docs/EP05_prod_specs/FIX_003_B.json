@@ -12,7 +12,7 @@
   "hard_cut": true
  },
  "plan": {
-  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "environment": "the shelter dining hall seen toward the tall barred windows with warm low sun behind the children, a grey wainscot wall, the long wooden table with a white paper runner and a metal crayon bucket",
   "emotional_guidance": "Valence: proud, warm, careful. Arousal: calm.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
@@ -30,13 +30,14 @@
     "video_beat": "the boy beside her glances over at her drawing"
    }
   ],
-  "continuity": "Maria in her window-side seat at the long table; the crayon boy in the next seat on her screen-right; a girl with braids at the far right edge behind the crayon bucket",
+  "continuity": "Maria in her window-side seat at the long table; the crayon boy in the next seat on her screen-right holding a green crayon; no other children in frame",
   "preventions": [
+   "one continuous shot, no cut",
+   "exactly two children in frame: Maria and the crayon boy",
    "one long table with the white paper runner, never small separate tables",
-   "no sink or kitchen counter",
-   "the camera stays still or drifts gently; no cut",
    "the drawing keeps the girl, the dog and the robot"
-  ]
+  ],
+  "one_shot": true
  },
  "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
 }

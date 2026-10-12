@@ -21,23 +21,26 @@
   },
   "panels": [
    {
-    "video_beat": "Maria sits very still with her rolled drawing in her lap while the children around her keep drawing"
+    "video_beat": "Maria sits very still with her rolled drawing in her lap while the other children keep drawing"
    },
    {
-    "video_beat": "the camera cranes slowly up and back along the same line, revealing more of the long table"
+    "video_beat": "a slow zoom out from the same camera position, revealing more of the long table"
    },
    {
-    "video_beat": "the camera settles on the high wide: the long table running to the far doorway, MACA standing in the doorway"
+    "video_beat": "the frame settles on the high wide: the long table running to the far doorway, MACA standing in the doorway"
    }
   ],
   "continuity": "Maria in the near seat on the window side of the long table with her rolled drawing; the crayon boy in the next seat up on her side; across the table the jersey boy in the near seat and the braids girl beyond him; MACA standing in the far doorway",
   "preventions": [
+   "one continuous shot, no cut",
+   "exactly four children, one of each",
    "one long table only",
-   "no other children and no adults",
+   "no adults",
    "every child stays in the same seat",
    "MACA stays still in the doorway",
    "Maria keeps the white roll in her lap"
-  ]
+  ],
+  "one_shot": true
  },
  "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
 }

@@ -1,19 +1,27 @@
 {
  "tid": "K_035_A",
  "kind": "keyframe",
+ "attempt_note": "a2: reviewer FAIL a1 (Chico on the wrong side, screen direction, wrong child)",
  "base_frame": "V41_f72",
- "chain_from": null,
  "size": "1280x720",
  "quality": "high",
  "refs": [
   [
-   "REF1 accepted frame of this shot (look, room, lens)",
+   "REF1 V41_f72 morning hall (room, light, camera, the children at the table)",
    "bde7766ed6698582e74e6ae26d20a8ef049971f80377db5c2bfbdb5b32d4e2e2.png"
   ],
   [
    "REF2 identity board",
    "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ],
+  [
+   "REF3 V40_f248 accepted shot: Chico sits on MACA's boot nearest Maria, Maria to the left",
+   "a08b060b352d7df964230c32d6264df53033ff914817535216fb7e776bd311aa.png"
+  ],
+  [
+   "REF4 V41_f258 accepted shot: Maria on the left, MACA on the right",
+   "2eb8c1186c488e1b6f45ff8590fc08a7a444bc40cf9f3e3f7f3e0bae6450d946.png"
   ]
  ],
- "prompt": "Edit image 1: MACA now stands upright beside the long table with Maria's drawing of a girl, a dog and a robot fixed flat on her chest panel, glowing softly; Maria stands beside MACA smiling up at her; Chico sits on MACA's metal foot looking up. A full shot like a family photo, the three of them in the middle of the frame. Keep this room exactly: the one long wooden table covered with a long paper of children's family drawings running to the far doorway, brown chairs both sides, children drawing at the long table, the tiled counter on the right, the windows and the morning light; same camera side as image 1. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
+ "prompt": "Edit image 1. Keep its room, morning light, camera position and the long table of family drawings with the children drawing at it exactly as they are. On the open floor beside the table, stage this moment with Maria on the LEFT and MACA on the RIGHT, as images 3 and 4 show them: Maria stands on the left smiling up at MACA; MACA stands upright on the right with Maria's crayon drawing of a girl, a small dog and a robot fixed flat on her pink chest panel, glowing softly; Chico sits on MACA's left metal boot, the boot nearest Maria, looking up. A full shot like a family photo. Exactly one of each child at the table: one crayon boy with ginger hair and a green dinosaur T-shirt, one braids girl, one jersey boy, no duplicates; no small square tables. Images 3 and 4 are references for who stands on which side only; image 1 is the room. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
 }

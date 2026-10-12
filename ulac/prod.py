@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import comfy, firewall, storyboard, video
+from . import audio, comfy, firewall, storyboard, video
 
 ROOT = Path("project/EP05")
 RATE = 639.0 / 14                      # measured Seedance 2.0 720p audio-on credits per second on this account
@@ -92,6 +92,35 @@ def got(tid: str, ref: str, path: str) -> None:
         firewall.record(ROOT, "ingested", target=tid, kind="keyframe", attempt=int(ref), path=path, sha256=sha)
 
 
+def sound(tid: str, spec_path: str) -> dict:
+    """Reserve one paid (or GPU-only) score cue or sound effect. spec: provider ace15|sonilo|sfx, prompt, seconds, and for
+    ace15 bpm and key. Music is instrumental only; sound effects are never music or voice (ulac.audio refuses both)."""
+    spec = json.loads(Path(spec_path).read_text())
+    prov, secs = spec["provider"], float(spec["seconds"])
+    attempt = firewall.next_attempt(ROOT, tid)
+    prefix = f"ULAC/EP05/AUDIO/{tid}_a{attempt}"
+    if prov == "ace15":
+        g = audio.ace_step_15(spec["prompt"], seconds=secs, bpm=int(spec["bpm"]), keyscale=spec["key"], prefix=prefix,
+                              seed=int(spec.get("seed", 0)))
+    elif prov == "sonilo":
+        g = audio.sonilo(spec["prompt"], seconds=int(round(secs)), prefix=prefix, seed=int(spec.get("seed", 0)))
+    elif prov == "sfx":
+        g = audio.eleven_sfx(spec["prompt"], seconds=secs, prefix=prefix, loop=bool(spec.get("loop", False)))
+    else:
+        raise SystemExit(f"unknown audio provider {prov!r}")
+    kind = "sfx" if prov == "sfx" else "music"
+    est = audio.estimate(prov, secs)
+    rec = firewall.reserve(ROOT, tid=tid, kind=kind, attempt=attempt,
+                           prompt_sha=hashlib.sha256(spec["prompt"].encode()).hexdigest(), ref_hashes={},
+                           config_hash=video.graph_sha256(g), seed=int(spec.get("seed", 0)), model=prov,
+                           workflow=f"{prov} {kind}", closed=False, est_credits=est)
+    if not rec.get("authorized"):
+        raise SystemExit(f"FIREWALL: {kind} {tid} attempt {attempt} is not authorized")
+    out = _dir(tid) / f"graph_a{attempt}.json"
+    out.write_text(json.dumps(g, indent=1))
+    return {"tid": tid, "attempt": attempt, "graph": str(out), "est_credits": est, "kind": kind}
+
+
 def crop(tid: str, source: str, x: str, y: str, w: str, h: str) -> dict:
     """Zero-cost derived keyframe: a crop of a locked keyframe (out:<TID>) or a verified cloud frame, model-upscaled to
     1280x720 on the cloud. Recorded with its source and box for provenance; it still needs the reviewer before LOCK."""
@@ -161,7 +190,7 @@ def inspect(tid: str, rid: str, first: str = "", last: str = "") -> dict:
 
 if __name__ == "__main__":
     cmd, *a = sys.argv[1:]
-    res = {"img": img, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop,
+    res = {"img": img, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop, "sound": sound,
            "lock": lock}[cmd](*a)
     if res is not None:
         print(json.dumps(res))

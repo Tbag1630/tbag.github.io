@@ -1,19 +1,19 @@
 {
  "tid": "K_003_A",
  "kind": "keyframe",
- "base_frame": "K_004_START",
- "chain_from": "K_004_START",
+ "attempt_note": "a2: reviewer FAIL a1 (boy's own drawing and pink crayon vanish against K_004_START)",
+ "base_frame": "K_004_START a2",
  "size": "1280x720",
  "quality": "high",
  "refs": [
   [
-   "REF1 K_004_START (look, room, lens)",
-   "f3e7de4853c3fef56769bf77ee4de5cc02b8230efbdb874aa953c99ef40f8d4c.png"
+   "REF1 K_004_START a2 (edit this frame)",
+   "531ce4d08d2e29daa3dbf80f3deed999c6cb9266a823bbbcaf69ba1c996c8b0c.png"
   ],
   [
    "REF2 identity board",
    "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
   ]
  ],
- "prompt": "Edit image 1 to a few seconds earlier in the same shot: same camera, room, light, table, paper runner and crayon bucket. Maria leans over her paper, concentrating, pressing a crayon carefully onto the chest lights of the robot in her drawing of a girl, a small dog and a robot; the crayon boy in the next seat on her screen-right is drawing his own picture, not looking at her yet. Maria sits at the long table in her seat by the windows; the crayon boy sits in the next seat on her screen-right; the long white paper runner runs down the table; no other children close to camera. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
+ "prompt": "Edit image 1 to a few seconds earlier in the same shot and change only Maria: she leans forward over her drawing, concentrating, pressing a crayon carefully onto the robot's chest lights in her drawing of a girl, a small dog and a robot. Keep the crayon boy exactly as he is in image 1 (same pose, holding his green crayon, no paper of his own), and keep the drawing, the bucket, the table, the windows, the light and the camera identical. Exactly two children in the frame: Maria and the crayon boy. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines."
 }

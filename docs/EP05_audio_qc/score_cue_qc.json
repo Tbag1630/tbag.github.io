@@ -1,0 +1,260 @@
+{
+ "MUS_M00_son_a1.flac": {
+  "dur": 6.06,
+  "I": -11.8,
+  "LRA": 2.9,
+  "peak": -1.8,
+  "key": [
+   [
+    0.96,
+    "C maj"
+   ],
+   [
+    0.7,
+    "G maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -42.2,
+  "rms_max": -11.0
+ },
+ "MUS_M01_ace_a1.flac": {
+  "dur": 38.48,
+  "I": -19.3,
+  "LRA": 12.9,
+  "peak": -0.9,
+  "key": [
+   [
+    0.72,
+    "F maj"
+   ],
+   [
+    0.67,
+    "C maj"
+   ]
+  ],
+  "silent_seconds": [
+   9,
+   10,
+   30,
+   31,
+   32,
+   33,
+   34,
+   35,
+   36,
+   37
+  ],
+  "rms_min": -63.2,
+  "rms_max": -15.1
+ },
+ "MUS_M01_son_a1.flac": {
+  "dur": 39.03,
+  "I": -10.9,
+  "LRA": 3.0,
+  "peak": -1.6,
+  "key": [
+   [
+    0.93,
+    "C maj"
+   ],
+   [
+    0.59,
+    "A min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -29.6,
+  "rms_max": -8.6
+ },
+ "MUS_M02_son_a1.flac": {
+  "dur": 30.02,
+  "I": -11.7,
+  "LRA": 7.8,
+  "peak": -1.8,
+  "key": [
+   [
+    0.78,
+    "A min"
+   ],
+   [
+    0.61,
+    "E min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -43.8,
+  "rms_max": -10.3
+ },
+ "MUS_M03_son_a1.flac": {
+  "dur": 10.05,
+  "I": -9.9,
+  "LRA": 4.8,
+  "peak": -1.1,
+  "key": [
+   [
+    0.96,
+    "C maj"
+   ],
+   [
+    0.59,
+    "E min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -27.8,
+  "rms_max": -7.6
+ },
+ "MUS_M04_ace_a1.flac": {
+  "dur": 2.0,
+  "I": -17.4,
+  "LRA": 0.0,
+  "peak": -1.7,
+  "key": [
+   [
+    0.72,
+    "G min"
+   ],
+   [
+    0.54,
+    "Bb maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -21.1,
+  "rms_max": -16.9
+ },
+ "MUS_M05_son_a1.flac": {
+  "dur": 64.02,
+  "I": -11.3,
+  "LRA": 11.0,
+  "peak": -1.0,
+  "key": [
+   [
+    0.92,
+    "F maj"
+   ],
+   [
+    0.79,
+    "D min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -39.3,
+  "rms_max": -9.2
+ },
+ "MUS_M06_son_a1.flac": {
+  "dur": 29.0,
+  "I": -11.1,
+  "LRA": 3.2,
+  "peak": -0.4,
+  "key": [
+   [
+    0.92,
+    "G maj"
+   ],
+   [
+    0.82,
+    "D maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -34.7,
+  "rms_max": -8.9
+ },
+ "MUS_M07_son_a1.flac": {
+  "dur": 87.98,
+  "I": -11.3,
+  "LRA": 6.2,
+  "peak": -1.2,
+  "key": [
+   [
+    0.92,
+    "C maj"
+   ],
+   [
+    0.7,
+    "A min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -24.5,
+  "rms_max": -8.4
+ },
+ "MUS_M08_son_a1.flac": {
+  "dur": 39.03,
+  "I": -11.3,
+  "LRA": 6.4,
+  "peak": -0.5,
+  "key": [
+   [
+    0.89,
+    "C maj"
+   ],
+   [
+    0.84,
+    "G maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -42.6,
+  "rms_max": -8.8
+ },
+ "MUS_M09_son_a1.flac": {
+  "dur": 16.0,
+  "I": -9.4,
+  "LRA": 4.6,
+  "peak": -0.6,
+  "key": [
+   [
+    0.94,
+    "G maj"
+   ],
+   [
+    0.66,
+    "E min"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -24.1,
+  "rms_max": -9.6
+ },
+ "MUS_M10_son_a1.flac": {
+  "dur": 43.03,
+  "I": -11.0,
+  "LRA": 7.9,
+  "peak": -0.9,
+  "key": [
+   [
+    0.88,
+    "G maj"
+   ],
+   [
+    0.83,
+    "C maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -44.1,
+  "rms_max": -9.1
+ },
+ "MUS_M11_son_a1.flac": {
+  "dur": 6.06,
+  "I": -9.8,
+  "LRA": 1.1,
+  "peak": -1.4,
+  "key": [
+   [
+    0.95,
+    "C maj"
+   ],
+   [
+    0.7,
+    "G maj"
+   ]
+  ],
+  "silent_seconds": [],
+  "rms_min": -19.9,
+  "rms_max": -9.3
+ }
+}

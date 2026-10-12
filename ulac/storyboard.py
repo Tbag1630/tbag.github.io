@@ -183,10 +183,16 @@ def video_text_start(plan: dict) -> str:
     return video_text_flf(plan).replace(FLF_BLUEPRINT, START_BLUEPRINT, 1)
 
 
+FLF_ONE_SHOT = ("Animate from the first frame image, the exact starting frame, to the last frame image, the exact ending "
+                "lock. This is one continuous shot with no cut: the same camera, room and characters from the first frame "
+                "to the last; only the framing and the characters' small movements change.")
+
+
 def video_text_flf(plan: dict) -> str:
     """The first-last-frame handoff: the same policy, audio and panel beats as video_text, with the start and end images
-    in place of the storyboard and identity references."""
-    lines = [FLF_BLUEPRINT,
+    in place of the storyboard and identity references. plan["one_shot"] (both ends in one view) asks for one continuous
+    shot instead of a sequence of shots."""
+    lines = [FLF_ONE_SHOT if plan.get("one_shot") else FLF_BLUEPRINT,
              "The first frame image is the character and room reference for the whole clip.",
              f"ENVIRONMENT: {_c(plan['environment'])}.",
              f"EMOTIONAL GUIDANCE: {_c(plan['emotional_guidance'])}.",

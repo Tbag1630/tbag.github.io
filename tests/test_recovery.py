@@ -293,3 +293,12 @@ def test_hard_cut_head_splice_keeps_every_repair_frame_and_crop_zoom_keeps_aspec
     assert g["5"]["inputs"]["width"] == 1280 and g["2"]["inputs"]["crop_region"]["width"] == 914
     with pytest.raises(ValueError):
         comfy.crop_zoom("k.png", (0, 0, 900, 600), prefix="X")
+
+
+def test_one_shot_flf_prompt_and_shared_start_frame_plays_once():
+    p = storyboard.video_text_flf({**FLF_PLAN, "one_shot": True})
+    assert "one continuous shot with no cut" in p and "consecutive shots" not in p
+    assert video.prompt_problems(p, authored=False) == []
+    seqs = _seqs([(10.0, 10.0)])
+    rows = edit.solve(seqs, {}, splices={"S001": {"repair": "R", "side": "whole", "frames": 241, "shared_start": True}})
+    assert rows[0]["segments"][0][1] >= 1                      # frame 0 duplicates the previous clip's last frame

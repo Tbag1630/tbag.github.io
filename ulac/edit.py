@@ -96,6 +96,8 @@ def _pieces(s: dict, lock_f: int, sp: dict | None) -> list[tuple]:
     n, at = sp["frames"], sp.get("at", 0)
     end = min(s["frames"], sp.get("take_end") or s["frames"])
     rep = [(sp["repair"], a, min(b, n)) for a, b in sp.get("ranges", [(0, n)])]    # QC-cleared spans of the repair
+    if sp.get("shared_start") and rep and rep[0][1] == 0:   # it opens on the previous row's last frame: play that once
+        rep[0] = (rep[0][0], 1, rep[0][2])
     if sp["side"] == "tail":
         return [(s["take"], lock_f, at)] + rep
     if sp["side"] == "head":

@@ -3,9 +3,9 @@
  "fps": 24,
  "clock": "narration time (narration.wav 462.922 s); title and end card are separate 6 s reels",
  "identity": {
-  "motif_A": "rising C-F-G-A, the built-family idea",
+  "motif_A": "rising G-C-D-E (four notes), the built-family idea",
   "palette": "felt piano, celesta/glockenspiel, pizzicato and warm strings, clarinet; Chico: bassoon/pizzicato walk",
-  "keys": "F major home; D minor isolation; B-flat parent build"
+  "keys": "C major home (Sonilo's reliable key, see EP05_MUSIC_BAKEOFF.md); A minor for the isolation beat; F major for the parent build"
  },
  "silences": [
   {
@@ -352,5 +352,6 @@
    "actual_cost": null,
    "status": "PLANNED"
   }
- ]
+ ],
+ "provider": "Sonilo text-to-music for beds; ACE-Step 1.5 for short buttons where key control matters"
 }

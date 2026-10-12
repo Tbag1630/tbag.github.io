@@ -33,7 +33,8 @@
    "one Maria, one MACA, one Chico",
    "MACA stays standing",
    "no cut"
-  ]
+  ],
+  "one_shot": true
  },
  "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
 }
