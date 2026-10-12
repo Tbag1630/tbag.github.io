@@ -116,7 +116,10 @@ def test_end_card_starts_on_the_last_locked_frame(tmp_path):
     clip = json.loads((out / "END_FLF.json").read_text())
     assert clip["first"] == "out:K_037_W" and clip["last"] == "out:K_END_MESSAGE"
     msg = json.loads((out / "K_END_MESSAGE.json").read_text())
-    assert '"Love is the thing you do."' in msg["prompt"] and msg["refs"][0][1] == "out:K_037_W"
+    assert '"Love is the thing you do."' in msg["prompt"] and msg["refs"][0][1] == "out:K_END_PLATE"
+    plate = json.loads((out / "K_END_PLATE.json").read_text())
+    kinds = [n["class_type"] for n in plate["graph"].values()]
+    assert plate["from"] == "out:K_037_W" and kinds.count("ImageBlur") == 2 and "ImageBlend" in kinds
     pr = storyboard.video_text_flf(clip["plan"])
     assert video.prompt_problems(pr) == [] and "Love is" not in pr
 

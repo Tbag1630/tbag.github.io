@@ -102,14 +102,43 @@ def open_frame_prompt(card: dict, accent: str) -> str:
 
 
 def message_frame_prompt(card: dict, accent: str) -> str:
+    """The end card's last frame: an edit of the defocused plate that only adds the message. The plate is made in code
+    from the episode's last locked frame (end_plate_graph), so the backdrop cannot move: asking an image model to keep a
+    sharp scene and also fit text over it made it re-compose the scene (EP05 end gate, 2026-10-12)."""
     style = STYLE.format(accent=accent)
     light = CAMERA_LIGHT.format(accent=accent)
-    return (f"Edit image 1, the final frame of the episode. Keep the room, the characters, their poses and the light "
-            f"exactly, but soften the whole scene into a gentle shallow depth-of-field blur and dim it slightly, so it "
-            f"becomes a warm backdrop. In front of it, centred in the upper half of the frame, a finished 3D animated "
-            f"film message card. The message, spelled exactly, with its final full stop: {text_block(card['lines'])}. "
-            f"{style} {REVEAL['final']}. {light} No other text, captions, logos or watermarks. Every letter crisp and "
-            f"correctly spelled. Output one 16:9 full-colour production frame.")
+    return ("Image 1 is a finished, deliberately out-of-focus backdrop. Keep it exactly as it is: do not move, resize, "
+            "sharpen, redraw or recompose anything in it, and every soft shape and colour stays where it is. Only add, in "
+            "front of it, a finished 3D animated film message card. The message, spelled exactly, with its final full "
+            f"stop: {text_block(card['lines'])}. Place it centred left to right, with the middle of the lettering about one "
+            f"third of the way down the frame. {style} {REVEAL['final']}. {light} No other text, captions, logos or "
+            "watermarks. Every letter crisp and correctly spelled. Output one 16:9 full-colour production frame.")
+
+
+PLATE_BLUR = (31, 8.0, 2)              # ImageBlur radius, sigma, passes at 1920x1080
+PLATE_DIM = 0.15                       # blend toward black
+
+
+def end_plate_graph(first_cloud: str, prefix: str) -> dict:
+    """Zero-cost, deterministic: the episode's last frame scaled to KEY_OUT, defocused and dimmed on the cloud."""
+    w, h = KEY_OUT
+    r, sigma, passes = PLATE_BLUR
+    g = {"1": {"class_type": "LoadImage", "inputs": {"image": first_cloud}, "_meta": {"title": "episode's last locked frame"}},
+         "2": {"class_type": "ImageScale", "inputs": {"image": ["1", 0], "upscale_method": "lanczos", "width": w, "height": h,
+                                                     "crop": "disabled"}, "_meta": {"title": f"to {w}x{h}"}}}
+    src = "2"
+    for k in range(passes):
+        nid = str(3 + k)
+        g[nid] = {"class_type": "ImageBlur", "inputs": {"image": [src, 0], "blur_radius": r, "sigma": sigma},
+                  "_meta": {"title": f"defocus pass {k + 1}"}}
+        src = nid
+    g["8"] = {"class_type": "EmptyImage", "inputs": {"width": w, "height": h, "batch_size": 1, "color": 0},
+              "_meta": {"title": "black"}}
+    g["9"] = {"class_type": "ImageBlend", "inputs": {"image1": [src, 0], "image2": ["8", 0], "blend_factor": PLATE_DIM,
+                                                      "blend_mode": "normal"}, "_meta": {"title": "dim"}}
+    g["10"] = {"class_type": "SaveImage", "inputs": {"images": ["9", 0], "filename_prefix": prefix},
+               "_meta": {"title": "save plate"}}
+    return g
 
 
 def _audio(sounds: str, room: str) -> dict:
@@ -150,13 +179,14 @@ def clip_plan(kind: str, card: dict, accent: str) -> dict:
         "panels": [
             {"video_beat": "hold on the final wide of the morning dining hall: Maria and MACA holding hands beside the "
                            "long table of drawings, Chico at MACA's knee, the children drawing"},
-            {"video_beat": "the scene softens into a gentle blur and dims slightly while the message lettering rises "
+            {"video_beat": "a slow rack focus: the camera stays still while the focus pulls away from the family, the "
+                           "whole scene softening into a warm blur and dimming slightly, and the message lettering rises "
                            "gently into view in front of it as solid brushed sheet metal and settles, catching a warm "
                            "edge light"},
             {"video_beat": "hold on the message with gentle micro-movement: a soft warm flicker, a cool blue rim glow and "
                            "dust motes drifting in the morning light"}],
-        "continuity": ("Maria, MACA and Chico stay exactly where they are in the first frame, holding hands, as the scene "
-                       "behind softens; once the message appears, " + keep),
+        "continuity": ("the camera does not move: Maria, MACA and Chico stay exactly where they are in the first frame, "
+                       "holding hands, only going out of focus; once the message appears, " + keep),
         "preventions": prevent + ["one Maria, one MACA, one Chico", "Maria stays on MACA's screen-left",
                                   "Maria's lips never form words"],
         "one_shot": True}
@@ -183,9 +213,13 @@ def plan(ep: Path, kind: str, out_dir: Path | None = None) -> list[Path]:
                                   "after": f"K_{tag}_FINAL is reviewer-passed and locked"}
         first, last = f"out:K_{tag}_OPEN", f"out:K_{tag}_FINAL"
     else:
+        specs[f"K_{tag}_PLATE"] = {"tid": f"K_{tag}_PLATE", "kind": "derived", "from": card["first_frame"],
+                                   "graph": end_plate_graph("<resolved from %s>" % card["first_frame"],
+                                                            f"ULAC/{ep.name}/PROD/K_{tag}_PLATE"),
+                                   "note": "zero cost; lock it as a deterministic derivative of the locked last frame"}
         specs[f"K_{tag}_MESSAGE"] = {"tid": f"K_{tag}_MESSAGE", "kind": "keyframe", "size": KEY_SIZE,
                                      "out_size": list(KEY_OUT),
-                                     "refs": [["REF1 the episode's final locked frame (edit this frame)", card["first_frame"]]],
+                                     "refs": [["REF1 the defocused end plate (keep it unchanged)", f"out:K_{tag}_PLATE"]],
                                      "prompt": message_frame_prompt(card, accent)}
         first, last = card["first_frame"], f"out:K_{tag}_MESSAGE"
     specs[f"{tag}_FLF"] = {"tid": f"{tag}_FLF", "seq": card["target"], "kind": "flf", "first": first, "last": last,

@@ -1,0 +1,104 @@
+{
+ "tid": "K_END_PLATE",
+ "kind": "derived",
+ "from": "out:K_037_W",
+ "graph": {
+  "1": {
+   "class_type": "LoadImage",
+   "inputs": {
+    "image": "<resolved from out:K_037_W>"
+   },
+   "_meta": {
+    "title": "episode's last locked frame"
+   }
+  },
+  "2": {
+   "class_type": "ImageScale",
+   "inputs": {
+    "image": [
+     "1",
+     0
+    ],
+    "upscale_method": "lanczos",
+    "width": 1920,
+    "height": 1080,
+    "crop": "disabled"
+   },
+   "_meta": {
+    "title": "to 1920x1080"
+   }
+  },
+  "3": {
+   "class_type": "ImageBlur",
+   "inputs": {
+    "image": [
+     "2",
+     0
+    ],
+    "blur_radius": 31,
+    "sigma": 8.0
+   },
+   "_meta": {
+    "title": "defocus pass 1"
+   }
+  },
+  "4": {
+   "class_type": "ImageBlur",
+   "inputs": {
+    "image": [
+     "3",
+     0
+    ],
+    "blur_radius": 31,
+    "sigma": 8.0
+   },
+   "_meta": {
+    "title": "defocus pass 2"
+   }
+  },
+  "8": {
+   "class_type": "EmptyImage",
+   "inputs": {
+    "width": 1920,
+    "height": 1080,
+    "batch_size": 1,
+    "color": 0
+   },
+   "_meta": {
+    "title": "black"
+   }
+  },
+  "9": {
+   "class_type": "ImageBlend",
+   "inputs": {
+    "image1": [
+     "4",
+     0
+    ],
+    "image2": [
+     "8",
+     0
+    ],
+    "blend_factor": 0.15,
+    "blend_mode": "normal"
+   },
+   "_meta": {
+    "title": "dim"
+   }
+  },
+  "10": {
+   "class_type": "SaveImage",
+   "inputs": {
+    "images": [
+     "9",
+     0
+    ],
+    "filename_prefix": "ULAC/EP05/PROD/K_END_PLATE"
+   },
+   "_meta": {
+    "title": "save plate"
+   }
+  }
+ },
+ "note": "zero cost; lock it as a deterministic derivative of the locked last frame"
+}

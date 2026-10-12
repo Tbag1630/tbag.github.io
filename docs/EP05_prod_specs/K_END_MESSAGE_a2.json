@@ -1,0 +1,17 @@
+{
+ "tid": "K_END_MESSAGE",
+ "kind": "keyframe",
+ "size": "2048x1152",
+ "out_size": [
+  1920,
+  1080
+ ],
+ "refs": [
+  [
+   "REF1 K_END_PLATE (K_037_W defocused in-graph; keep it unchanged)",
+   "67cb623ff94ffc3c27ae11d1cb432e6f1ce334954df69f2c61f317508e5e3222.png"
+  ]
+ ],
+ "reason": "end gate 2026-10-12: a1 re-composed the scene to fit the text (heads moved 7-11% W); the plate is now made in code from K_037_W so the FLF is a rack focus with zero displacement",
+ "prompt": "Image 1 is a finished, deliberately out-of-focus backdrop. Keep it exactly as it is: do not move, resize, sharpen, redraw or recompose anything in it, and every soft shape and colour stays where it is. Only add, in front of it, a finished 3D animated film message card. The message, spelled exactly, with its final full stop: line 1: \"Love is the thing you do.\". Place it centred left to right, with the middle of the lettering about one third of the way down the frame. Lettering style, locked for the series: a super-bold slab-serif display face with tight tracking, every letter a thick three-dimensional piece cut from sheet metal with a deep extrusion about a tenth of the letter height and a rounded bevel about an eighth of the stroke width. Procedural material that works for any text: brushed stainless steel with a faint grunge in the recesses, small rivet dots along the bevels, and a warm crayon orange edge light tracing the bevels. The whole title block is centred and fits inside the middle 85 percent of the frame width; longer titles get smaller, never cropped. At most four dominant colours: brushed steel, crayon orange, cool blue and the background's own tones. The lettering is solid brushed metal, facing the camera squarely at full size. Lighting rig, locked for the series: one warm crayon orange key light from the upper left, like a candle, and one cool blue rim light from behind on the right that outlines every letter; fine dust motes drifting in the light at low opacity; the background softly out of focus and a little darker than the lettering. No other text, captions, logos or watermarks. Every letter crisp and correctly spelled. Output one 16:9 full-colour production frame."
+}
