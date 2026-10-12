@@ -51,11 +51,18 @@
    "relationship": "No narration; hits sync to THUNK (f14) and CLINK in the 6 s reel",
    "transition_tail": "stops on the cut into SEQ_001 (no tail)",
    "level": "featured",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M00_son",
+    "job_id": "6e7697aa-dcb7-461b-9f20-1cdb3f72a34e",
+    "file": "project/EP05/AUDIO/score/MUS_M00_son_a1.flac",
+    "sha256": "a839fd6bdec961f0a388c2cbc6d22b93150770ef0f88be6258c788fa8277d3c9",
+    "spec": "docs/EP05_audio_specs/MUS_M00_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 4.75,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M01",
@@ -78,11 +85,18 @@
    "relationship": "Under continuous narration; sparse, low-mid register, clear of the 1-4 kHz voice band",
    "transition_tail": "thins to one held note and ends at 38.5 s, before the boy speaks",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M01_son",
+    "job_id": "880b4b2e-d260-4ce4-89cd-a13492099964",
+    "file": "project/EP05/AUDIO/score/MUS_M01_son_a1.flac",
+    "sha256": "8c7a8f5949c33fcc69de166dd05934a74fe25fe5745de36c377af4eea3ba7016",
+    "spec": "docs/EP05_audio_specs/MUS_M01_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 18.53,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M02",
@@ -105,11 +119,18 @@
    "relationship": "Enters under 'She looked down the long table', after the silent 'Nothing came out'; very quiet",
    "transition_tail": "fades through the 0.5 s dip into bedtime",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M02_son",
+    "job_id": "9ee29198-2c30-45ff-8e3e-16b6a86bf7c7",
+    "file": "project/EP05/AUDIO/score/MUS_M02_son_a1.flac",
+    "sha256": "45ddf2b346de7ec39937653018482670ee6d17dd1382c87b3815a5ddef3e06f8",
+    "spec": "docs/EP05_audio_specs/MUS_M02_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 14.24,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M03",
@@ -130,11 +151,18 @@
    "relationship": "Stops before 'Why are you my mom?' so the question lands in room tone",
    "transition_tail": "ends at 97.5 s",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M03_son",
+    "job_id": "f979a0e3-8e2e-4c98-be68-88ea4eb54403",
+    "file": "project/EP05/AUDIO/score/MUS_M03_son_a1.flac",
+    "sha256": "d0bf2950745dad0bad8f5bdc4c1fee8a057c998f44d6b7ea5744efe3b9f24bcc",
+    "spec": "docs/EP05_audio_specs/MUS_M03_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 4.75,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M04",
@@ -155,11 +183,15 @@
    "relationship": "After the line ends, before 'Maria almost smiled'",
    "transition_tail": "dry, no tail",
    "level": "short button between lines",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "ACE-Step 1.5 turbo (Comfy Cloud GPU)",
+   "provenance": {
+    "tid": "MUS_M04_ace",
+    "job_id": "b52bb800-b996-4d57-aef1-55640e5990a5",
+    "file": "project/EP05/AUDIO/score/MUS_M04_ace_a1.flac"
+   },
+   "version": "a1",
+   "actual_cost": "GPU seconds only (no API credits)",
+   "status": "REJECTED: G minor and flat against the C major home key (EP05_MUSIC_BAKEOFF.md); the window stays silent"
   },
   {
    "cue": "M05",
@@ -184,11 +216,18 @@
    "relationship": "Under narration, ducked; swells only between sentences",
    "transition_tail": "resolves and fades by 234.5 s as the door bumps open",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M05_son",
+    "job_id": "b2052aff-8624-45b1-820f-7c02d6634512",
+    "file": "project/EP05/AUDIO/score/MUS_M05_son_a1.flac",
+    "sha256": "2030fd595bf501ee3abc3535f54ecbd8ba8fa4ee055cd15102e9c8a89d2ca399",
+    "spec": "docs/EP05_audio_specs/MUS_M05_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 30.38,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M06",
@@ -210,11 +249,18 @@
    "relationship": "Walking figure on his entrance, thins under MACA's lines",
    "transition_tail": "ends by 263.4 s; silence for Maria's serious question",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M06_son",
+    "job_id": "22c1c126-5f12-4b98-bc78-f1b18687d410",
+    "file": "project/EP05/AUDIO/score/MUS_M06_son_a1.flac",
+    "sha256": "e0f29a32550e458ca7b4f38985d234b3dbf2934975ccc5e35eb1d51b93d698cc",
+    "spec": "docs/EP05_audio_specs/MUS_M06_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 13.78,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M07",
@@ -241,11 +287,18 @@
    "relationship": "Leaves room for the diegetic hard-drive hum (SFX) in SEQ_027-029; never covers 'Warm,' she whispered",
    "transition_tail": "one chord through 'A robot does not have to'; fades in the dip to morning",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M07_son",
+    "job_id": "1b430f65-670e-4803-87b1-6f6198789900",
+    "file": "project/EP05/AUDIO/score/MUS_M07_son_a1.flac",
+    "sha256": "6b1259e184b648bb7b2bf9093ed62bcbf3b8805e08564364072535e0b87a6ee9",
+    "spec": "docs/EP05_audio_specs/MUS_M07_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 41.78,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M08",
@@ -268,11 +321,18 @@
    "relationship": "Under narration; small button after 'Cool,' said the boy (~391 s)",
    "transition_tail": "flows into M09",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M08_son",
+    "job_id": "d319c772-ee9f-4ebf-9d61-61fe1f6ca1f3",
+    "file": "project/EP05/AUDIO/score/MUS_M08_son_a1.flac",
+    "sha256": "669e0eec63d96bdfc2848db6590f58e2b8b057019852be3eaee4df0ae46e9807",
+    "spec": "docs/EP05_audio_specs/MUS_M08_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 18.53,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M09",
@@ -294,11 +354,18 @@
    "relationship": "Swell between lines; drops under 'Hoo-hoo, ha-ha'",
    "transition_tail": "settles into M10",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M09_son",
+    "job_id": "14c24e97-a8a7-46c5-8c2e-596c6bbe222b",
+    "file": "project/EP05/AUDIO/score/MUS_M09_son_a1.flac",
+    "sha256": "06330ab05b6b68474fe633526b8114dd1dce9b3c9573a2db028ceb45d4d788f3",
+    "spec": "docs/EP05_audio_specs/MUS_M09_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 7.6,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M10",
@@ -321,11 +388,18 @@
    "relationship": "Drops to near silence under 'Love is not the thing you are made of. It is the thing you do'",
    "transition_tail": "cadence lands on the end card",
    "level": "under narration, ducked",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M10_son",
+    "job_id": "ed8ffd59-fd6b-464b-aa38-9415edc9bc37",
+    "file": "project/EP05/AUDIO/score/MUS_M10_son_a1.flac",
+    "sha256": "a306635666e371a9755e0a4b5143c8529c30dedfe82a414e70a119a8d82d517f",
+    "spec": "docs/EP05_audio_specs/MUS_M10_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 20.42,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   },
   {
    "cue": "M11",
@@ -346,12 +420,20 @@
    "relationship": "Over the end card, no narration",
    "transition_tail": "about 3 s natural decay to silence",
    "level": "featured",
-   "source": null,
-   "provenance": null,
-   "version": null,
-   "actual_cost": null,
-   "status": "PLANNED"
+   "source": "Sonilo text-to-music (Comfy Cloud partner node), instrumental, no vocals",
+   "provenance": {
+    "tid": "MUS_M11_son",
+    "job_id": "108e2847-9db2-4436-af4e-84d807525c3d",
+    "file": "project/EP05/AUDIO/score/MUS_M11_son_a1.flac",
+    "sha256": "f1b15f2231e04dc3dc746aaee64758acc22a608d84f93df99a091907be4d10a5",
+    "spec": "docs/EP05_audio_specs/MUS_M11_son.json",
+    "licence": "generated for this production on the user's Comfy Cloud account (provider terms apply)"
+   },
+   "version": "a1",
+   "actual_cost": 4.75,
+   "status": "ACCEPTED pending human audition (machine QC: docs/EP05_audio_qc/score_cue_qc.json)"
   }
  ],
- "provider": "Sonilo text-to-music for beds; ACE-Step 1.5 for short buttons where key control matters"
+ "provider": "Sonilo text-to-music for beds; ACE-Step 1.5 for short buttons where key control matters",
+ "actual_cost_total": 179.51
 }

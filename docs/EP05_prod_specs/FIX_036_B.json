@@ -21,17 +21,18 @@
   },
   "panels": [
    {
-    "video_beat": "MACA kneels eye to eye with Maria at the long table, the drawing glowing on her chest"
+    "video_beat": "MACA kneels on the right of frame, eye to eye with Maria, the drawing glowing on her chest; she tilts her head gently"
    },
    {
-    "video_beat": "Maria grins up at her; a slow push in on their two faces"
+    "video_beat": "Maria, standing on the left with her hands behind her back, grins up at her; a slow push in on their two faces"
    }
   ],
-  "continuity": "MACA kneeling beside the long table of drawings, the drawing on her chest; Maria facing her; Chico at MACA's foot",
+  "continuity": "MACA kneeling on the screen-right with the drawing of a girl, a dog and a robot glowing on her chest; Maria standing on the screen-left facing her, hands behind her back; Chico sitting between MACA's knees; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
   "preventions": [
    "one long table of drawings, never small square tables",
-   "MACA stays kneeling",
    "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
+   "MACA stays kneeling",
    "no cut"
   ],
   "one_shot": true

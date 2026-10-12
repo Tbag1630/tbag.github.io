@@ -21,17 +21,19 @@
   },
   "panels": [
    {
-    "video_beat": "MACA kneels holding Maria's hand, Chico sitting on MACA's foot"
+    "video_beat": "MACA kneels on the right of frame holding Maria's hand, Maria standing on the left, Chico sitting between MACA's knees"
    },
    {
     "video_beat": "a slow final pull back to the whole morning dining hall: the long table of family drawings, the children drawing, MACA, Maria and Chico together"
    }
   ],
-  "continuity": "MACA kneeling holding Maria's hand at the long table of drawings; Chico on MACA's foot; children drawing on both sides",
+  "continuity": "Maria standing on the screen-left holding MACA's hand; MACA kneeling on the screen-right with the drawing glowing on her chest; Chico sitting between MACA's knees; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
   "preventions": [
    "one long table of drawings, never small square tables",
-   "MACA stays kneeling",
    "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
+   "Maria and MACA keep holding hands",
+   "MACA stays kneeling",
    "no cut"
   ],
   "one_shot": true

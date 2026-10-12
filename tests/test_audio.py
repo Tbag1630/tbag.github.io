@@ -19,4 +19,4 @@ def test_ace_graph_is_instrumental_flac_and_sfx_refuses_music_and_voice():
     assert audio.sfx_problems("a cheerful melody") and audio.sfx_problems("a child humming")
     with pytest.raises(ValueError):
         audio.eleven_sfx("background music", seconds=3, prefix="x")
-    assert audio.estimate("sonilo", 40) == 16.0 and audio.estimate("ace15", 40) == 0.0 and audio.estimate("sfx", 4) == 2.0
+    assert audio.estimate("sonilo", 40) == 19.0 and audio.estimate("sonilo", 6) == 4.75 and audio.estimate("ace15", 40) == 0.0 and audio.estimate("sfx", 4) == 2.0

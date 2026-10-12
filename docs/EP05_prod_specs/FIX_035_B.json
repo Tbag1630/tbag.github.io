@@ -21,16 +21,17 @@
   },
   "panels": [
    {
-    "video_beat": "MACA stands at the long table wearing Maria's drawing glowing on her chest panel, Maria beside her smiling up, Chico sitting on MACA's foot"
+    "video_beat": "MACA stands on the right of frame wearing Maria's drawing of a girl, a dog and a robot glowing on her chest panel; Maria stands on the left smiling up at her; Chico sits on MACA's boot nearest Maria"
    },
    {
     "video_beat": "a slow gentle push in on the three of them, like a family photo"
    }
   ],
-  "continuity": "MACA standing beside the long table of drawings with the drawing on her chest; Maria beside her; Chico at MACA's foot",
+  "continuity": "Maria standing on the screen-left smiling up at MACA; MACA standing upright on the screen-right with the drawing glowing on her pink chest panel; Chico sitting on MACA's screen-left boot, nearest Maria; at the long table on the left the crayon boy, the braids girl and the jersey boy keep drawing, exactly one of each",
   "preventions": [
    "one long table of drawings, never small square tables",
    "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
    "MACA stays standing",
    "no cut"
   ],

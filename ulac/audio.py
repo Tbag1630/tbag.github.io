@@ -10,7 +10,8 @@ import re
 
 ACE_UNET, ACE_CLIP1, ACE_CLIP2, ACE_VAE = ("acestep_v1.5_turbo.safetensors", "qwen_0.6b_ace15.safetensors",
                                           "qwen_4b_ace15.safetensors", "ace_1.5_vae.safetensors")
-SONILO_CREDITS = 16.0            # estimate_credits, 2026-10-12, per run up to 360 s
+SONILO_PER_S = 0.475             # billed 2026-10-12: 0.475 credits per second (11 cues; the catalog quote of 16 per run was low)
+SONILO_MIN_S = 10.0              # billed: a 6 s cue cost the same as a 10 s cue (4.75)
 SFX_CREDITS_PER_S = 0.5          # estimate_credits: about 30 credits per minute (eleven_sfx_v2)
 VOCAL = re.compile(r"\b(vocals?|voice|voices|singing|singer|sung|choir|lyrics?|rap|spoken|speech|narration|humming)\b", re.I)
 MUSICAL = re.compile(r"\b(music|melody|melodic|song|chord|chords|tune|jingle|score|instrumental)\b", re.I)
@@ -99,4 +100,8 @@ def eleven_sfx(text: str, *, seconds: float, prefix: str, loop: bool = False, in
 
 
 def estimate(provider: str, seconds: float) -> float:
-    return {"ace15": 0.0, "sonilo": SONILO_CREDITS}.get(provider, round(SFX_CREDITS_PER_S * max(1.0, seconds), 2))
+    if provider == "ace15":
+        return 0.0
+    if provider == "sonilo":
+        return round(SONILO_PER_S * max(SONILO_MIN_S, seconds), 2)
+    return round(SFX_CREDITS_PER_S * max(1.0, seconds), 2)
