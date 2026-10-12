@@ -57,7 +57,14 @@ def board_output(seq: str) -> str:
     return [r["output"] for r in led if r.get("target") == seq and r.get("attempt") == acc and r.get("output")][-1]
 
 
-def prep_r2v(seq: str, opening: str, mode: str = "open") -> None:
+# SEQ_023 V25: the provider rejected the generated audio as a possible copyright match (the picture was fine). The
+# repair keeps embedded sound on, drops wording that invites a musical swell and asks for unpitched sound only.
+AUDIO_FIX = ("SOUND TEXTURE: every sound is unpitched and mechanical or natural: servo noise, fabric, bedding and room "
+             "tone only; no tones, chimes, sparkles, hums with a pitch, swells, melody or rhythm of any kind.")
+AUDIO_SWAPS = (("magical, moving", "hushed, moving"), ("a soft rising servo whir", "a low mechanical servo whir"))
+
+
+def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
     alone loses identity and room when the previous clip ends on an insert."""
@@ -67,6 +74,10 @@ def prep_r2v(seq: str, opening: str, mode: str = "open") -> None:
     secs, seg = int(pj["render_seconds"]), float(pj["duration"])
     base = storyboard.video_text(plan)
     head, rest = base.split("\n", 2)[:2], base.split("\n", 2)[2]
+    if fix == "audio":
+        for a, b in AUDIO_SWAPS:
+            rest = rest.replace(a, b)
+        rest = rest.replace("\nTIMING:", "\n" + AUDIO_FIX + "\nTIMING:", 1)
     prompt = "\n".join(head + [CUT if mode == "cut" else OPENING, rest])
     (d / "video_start").mkdir(exist_ok=True)
     (d / "video_start" / "prompt_video_r2v_open.txt").write_text(prompt)
