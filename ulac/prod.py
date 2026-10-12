@@ -45,8 +45,20 @@ def img(tid: str, spec_path: str) -> dict:
     return {"tid": tid, "attempt": attempt, "graph": str(out), "est_credits": IMG_EST}
 
 
+def frame(name: str | None) -> str | None:
+    """A spec frame is a Comfy Cloud filename, or out:<KEYFRAME> naming a reviewer-passed keyframe. An unlocked keyframe is
+    a release-blocking gate (CLAUDE.md section 5): the clip is refused, never built from an unreviewed frame."""
+    if not name or not name.startswith("out:"):
+        return name
+    lock = ROOT / "PROD" / name[4:] / "LOCK.json"
+    if not lock.exists():
+        raise SystemExit(f"GATE: keyframe {name[4:]} is not locked (no reviewer pass recorded at {lock})")
+    return json.loads(lock.read_text())["cloud"]
+
+
 def flf(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
+    spec["first"], spec["last"] = frame(spec["first"]), frame(spec.get("last"))
     prompt = storyboard.video_text_flf(spec["plan"])
     secs = int(spec["seconds"])
     seq = spec["seq"]                  # attempts and scope count against the real sequence, never the repair's own id
@@ -80,8 +92,76 @@ def got(tid: str, ref: str, path: str) -> None:
         firewall.record(ROOT, "ingested", target=tid, kind="keyframe", attempt=int(ref), path=path, sha256=sha)
 
 
+def crop(tid: str, source: str, x: str, y: str, w: str, h: str) -> dict:
+    """Zero-cost derived keyframe: a crop of a locked keyframe (out:<TID>) or a verified cloud frame, model-upscaled to
+    1280x720 on the cloud. Recorded with its source and box for provenance; it still needs the reviewer before LOCK."""
+    src = frame(source)
+    g = comfy.crop_zoom(src, (int(x), int(y), int(w), int(h)), prefix=f"ULAC/EP05/PROD/{tid}_crop")
+    out = _dir(tid) / "graph_crop.json"
+    out.write_text(json.dumps(g, indent=1))
+    firewall.record(ROOT, "derived_planned", target=tid, kind="crop", source=source, source_cloud=src,
+                    box=[int(x), int(y), int(w), int(h)], graph_sha256=video.graph_sha256(g))
+    return {"tid": tid, "graph": str(out), "source": src}
+
+
+def lock(tid: str, cloud: str, path: str, review: str) -> dict:
+    """Lock a reviewer-passed keyframe: hash it, name its cloud file, and record the review. Locked frames are immutable."""
+    lk = _dir(tid) / "LOCK.json"
+    if lk.exists():
+        raise SystemExit(f"{tid} is already locked; locked keyframes are immutable")
+    rec = {"target": tid, "file": path, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(), "cloud": cloud,
+           "review": review}
+    lk.write_text(json.dumps(rec, indent=1))
+    firewall.record(ROOT, "accepted", target=tid, kind="keyframe", sha256=rec["sha256"], cloud=cloud, review=review)
+    return rec
+
+
+def inspect(tid: str, rid: str, first: str = "", last: str = "") -> dict:
+    """Evidence for the reviewer (never a verdict): a 4 fps labelled contact sheet, the clip's real first and last frames
+    against the pinned start/end images (dHash bits), the audio screen and a spectrogram. Writes PROD/<tid>/<rid>_*."""
+    import subprocess
+    import cv2
+    from PIL import Image, ImageDraw
+    d = _dir(tid)
+    mp4 = ROOT / "VIDEO" / f"{rid}.output.mp4"
+    cap = cv2.VideoCapture(str(mp4))
+    n, fps = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), cap.get(cv2.CAP_PROP_FPS) or 24.0
+    frames = []
+    ok, fr = cap.read()
+    while ok:
+        frames.append(fr)
+        ok, fr = cap.read()
+    n = len(frames)
+    cv2.imwrite(str(d / f"{rid}_first.png"), frames[0])
+    cv2.imwrite(str(d / f"{rid}_last.png"), frames[-1])
+    step = max(1, int(round(fps / 4)))
+    idx = list(range(0, n, step)) + ([n - 1] if (n - 1) % step else [])
+    tw, th, cols = 320, 180, 6
+    rows = (len(idx) + cols - 1) // cols
+    sheet = Image.new("RGB", (cols * tw, rows * (th + 14)), "white")
+    for k, i in enumerate(idx):
+        im = Image.fromarray(cv2.cvtColor(frames[i], cv2.COLOR_BGR2RGB)).resize((tw, th))
+        x, y = (k % cols) * tw, (k // cols) * (th + 14)
+        sheet.paste(im, (x, y + 14))
+        ImageDraw.Draw(sheet).text((x + 3, y + 1), f"f{i} {i / fps:.2f}s", fill="black")
+    sheet.save(d / f"{rid}_sheet_4fps.jpg", quality=88)
+    ends = {}
+    for name, ref, mine in (("first", first, d / f"{rid}_first.png"), ("last", last, d / f"{rid}_last.png")):
+        if ref:
+            ends[name] = bin(video.dhash(str(mine)) ^ video.dhash(ref)).count("1")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(mp4), "-lavfi", "showspectrumpic=s=1024x400:legend=1",
+                    str(d / f"{rid}_spectrum.png")], check=False)
+    rep = {"tid": tid, "rid": rid, "file": str(mp4), "sha256": hashlib.sha256(mp4.read_bytes()).hexdigest(),
+           "frames": n, "fps": fps, "seconds": round(n / fps, 3), "endpoint_dhash_bits": ends,
+           "audio": video.audio_screen(mp4), "sheet": str(d / f"{rid}_sheet_4fps.jpg"),
+           "spectrum": str(d / f"{rid}_spectrum.png")}
+    (d / f"{rid}_inspect.json").write_text(json.dumps(rep, indent=1))
+    return rep
+
+
 if __name__ == "__main__":
     cmd, *a = sys.argv[1:]
-    res = {"img": img, "flf": flf, "sent": sent, "got": got}[cmd](*a)
+    res = {"img": img, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop,
+           "lock": lock}[cmd](*a)
     if res is not None:
         print(json.dumps(res))

@@ -1,0 +1,39 @@
+{
+ "tid": "FIX_036_B",
+ "seq": "SEQ_036",
+ "kind": "flf",
+ "first": "out:K_036_A",
+ "last": "out:K_036_B",
+ "seconds": 4,
+ "segment": 4.0,
+ "splice": {
+  "side": "tail",
+  "at": 261,
+  "hard_cut": true
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall the next morning: one long wooden table covered with a long paper of children's family drawings, brown chairs both sides, children drawing at the long table, a tiled counter with a cooking pot on the right, morning light from the left windows",
+  "emotional_guidance": "Valence: joyful, tender. Arousal: gentle.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft servo whirr as MACA tilts her head; P02 a gentle paper rustle",
+   "room": "the morning hall, children drawing at a distance, soft and bright"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA kneels eye to eye with Maria at the long table, the drawing glowing on her chest"
+   },
+   {
+    "video_beat": "Maria grins up at her; a slow push in on their two faces"
+   }
+  ],
+  "continuity": "MACA kneeling beside the long table of drawings, the drawing on her chest; Maria facing her; Chico at MACA's foot",
+  "preventions": [
+   "one long table of drawings, never small square tables",
+   "MACA stays kneeling",
+   "one Maria, one MACA, one Chico",
+   "no cut"
+  ]
+ },
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+}

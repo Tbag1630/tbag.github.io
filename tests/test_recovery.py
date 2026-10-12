@@ -265,3 +265,31 @@ def test_flf_prompt_carries_continuity_and_preventions_and_stays_policy_clean():
     assert "CONTINUITY: Maria in the near window-side seat" in p and "PREVENT: no second table; no other children" in p
     assert video.prompt_problems(p, authored=False) == []
     assert "CONTINUITY" not in storyboard.video_text_flf(FLF_PLAN)          # optional: old plans are unchanged
+
+
+def test_head_splice_honours_take_end_so_a_cut_back_never_plays():
+    seqs = _seqs([(10.0, 14.0)])
+    sp = {"S001": {"repair": "R", "side": "head", "at": 108, "frames": 120, "take_end": 285}}
+    rows = edit.solve(seqs, {}, splices=sp)
+    take = [x for x in rows[0]["segments"] if x[0] == "T1"]
+    assert take and take[0][1] == 108 and take[-1][2] <= 285          # the cut-back after frame 284 never plays
+    assert rows[0]["segments"][0][0] == "R"
+
+
+def test_tail_splice_ranges_cut_out_a_failed_span():
+    seqs = _seqs([(10.0, 10.0)])
+    sp = {"S001": {"repair": "R", "side": "tail", "at": 132, "frames": 121, "ranges": [(0, 24), (72, 121)]}}
+    rows = edit.solve(seqs, {}, splices=sp)
+    reps = [x for x in rows[0]["segments"] if x[0] == "R"]
+    assert reps[-1][2] == 121 and all(not (a < 72 and b > 24) for _, a, b in reps)   # nothing from the failed 24-72 span
+
+
+def test_hard_cut_head_splice_keeps_every_repair_frame_and_crop_zoom_keeps_aspect():
+    seqs = _seqs([(10.0, 13.0)])
+    sp = {"S001": {"repair": "R", "side": "head", "at": 72, "frames": 96, "shared": False}}
+    rows = edit.solve(seqs, {}, splices=sp)
+    assert ("R", 0, 96) in rows[0]["segments"] or rows[0]["segments"][0][2] == 96
+    g = comfy.crop_zoom("k.png", (0, 206, 914, 514), prefix="X")
+    assert g["5"]["inputs"]["width"] == 1280 and g["2"]["inputs"]["crop_region"]["width"] == 914
+    with pytest.raises(ValueError):
+        comfy.crop_zoom("k.png", (0, 0, 900, 600), prefix="X")

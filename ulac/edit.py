@@ -88,17 +88,34 @@ def frames_of(path: Path) -> int:
 def _pieces(s: dict, lock_f: int, sp: dict | None) -> list[tuple]:
     """Source pieces of one row before head and tail trims. A splice swaps part of the take for a repair clip that shares
     one frame with it (the FLF clip was pinned to that exact frame): tail = take[lock, at) + repair[0, n);
-    head = repair[0, n - 1) + take[at, end); whole = repair[0, n)."""
+    head = repair[0, n - 1) + take[at, end); whole = repair[0, n). take_end, when set, is the take's last usable frame
+    plus one (an internal model cut-back after it must never play). ranges, when set, lists the repair's QC-cleared spans
+    [(a, b), ...]; a span that fails review is cut out and the cut between spans is an edit."""
     if not sp:
         return [(s["take"], lock_f, s["frames"])]
     n, at = sp["frames"], sp.get("at", 0)
+    end = min(s["frames"], sp.get("take_end") or s["frames"])
+    rep = [(sp["repair"], a, min(b, n)) for a, b in sp.get("ranges", [(0, n)])]    # QC-cleared spans of the repair
     if sp["side"] == "tail":
-        return [(s["take"], lock_f, at), (sp["repair"], 0, n)]
+        return [(s["take"], lock_f, at)] + rep
     if sp["side"] == "head":
-        return [(sp["repair"], 0, n - 1), (s["take"], max(at, lock_f), s["frames"])]
+        if sp.get("shared", True):             # the repair ends on the take's frame `at`: play that frame once
+            last = rep[-1]
+            rep[-1] = (last[0], last[1], min(last[2], n - 1))
+        return rep + [(s["take"], max(at, lock_f), end)]
     if sp["side"] == "whole":
-        return [(sp["repair"], 0, n)]
+        return rep
     raise ValueError(f"unknown splice side {sp['side']!r}")
+
+
+def _room(s: dict, lock_f: int, sp: dict | None, end: int) -> int:
+    """Frames a head (end=0) or tail (end=-1) trim may remove: the original take's piece at that end. A repair clip is
+    never trimmed unless its splice sets trim_ok (e.g. a tail repair whose last frames may go)."""
+    pcs = _pieces(s, lock_f, sp)
+    if sp and sp.get("trim_ok"):
+        return sum(b - a for _, a, b in pcs)
+    t_, a, b = pcs[end]
+    return b - a if not sp or t_ != sp["repair"] else 0
 
 
 def _trim(pieces: list[tuple], h: int, t: int) -> list[tuple]:
@@ -149,6 +166,8 @@ def solve(seqs: list[dict], joins: dict, head_lock: dict | None = None, composit
         E = d_start + sum(e)
         H = 0 if seqs[a]["seq"] in composite else mat[a] - FPS               # keep at least 1 s of the first clip
         T = 0 if seqs[b]["seq"] in composite else mat[b] - FPS
+        H = min(H, _room(seqs[a], lock[a], splices.get(seqs[a]["seq"]), 0))   # trims bite original takes, not repairs
+        T = min(T, _room(seqs[b], lock[b], splices.get(seqs[b]["seq"]), -1))
         if len(run) == 1:
             H = T = min(H, T)
         lo, hi = max(0, E - T), min(H, E)
@@ -204,22 +223,24 @@ def load_splices(ep: Path) -> dict:
     sp = {}
     for seq, x in acc.get("splices", {}).items():
         sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
-    return {"splices": sp, "joins": acc.get("joins", {})}
+    mutes = {k: [tuple(x) for x in v] for k, v in acc.get("audio_mutes", {}).items()}
+    return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes}
 
 
 def plan(ep: Path, variant: str | None = None) -> dict:
     seqs = load_ep(ep)
-    joins, splices, tail_first = dict(JOINS_EP05), {}, set(TAIL_FIRST_EP05)
+    joins, splices, tail_first, mutes = dict(JOINS_EP05), {}, set(TAIL_FIRST_EP05), dict(AUDIO_MUTES_EP05)
     if variant:
         acc = load_splices(ep)
         splices = acc["splices"]
         joins.update(acc["joins"])
+        mutes.update(acc["audio_mutes"])          # policy spans found in the repair clips' own audio
         tail_first -= set(splices)              # the tail defect is repaired: surplus no longer has to land on it
     rows = solve(seqs, joins, HEAD_LOCK_EP05, COMPOSITE_EP05, tail_first, splices)
     total = rows[-1]["rec_out_f"]
     edl = {"episode": ep.name, "variant": variant, "fps": FPS, "narration_frames": f(seqs[-1]["end"]),
            "picture_frames": total, "transitions": {k: list(v) for k, v in TRANSITIONS_EP05.items()},
-           "head_fade": HEAD_FADE, "tail_fade": TAIL_FADE, "audio_mutes": AUDIO_MUTES_EP05, "splices": splices,
+           "head_fade": HEAD_FADE, "tail_fade": TAIL_FADE, "audio_mutes": mutes, "splices": splices,
            "rows": rows}
     out, _ = _paths(ep, variant)
     out.parent.mkdir(parents=True, exist_ok=True)

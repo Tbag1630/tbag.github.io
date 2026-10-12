@@ -1,0 +1,129 @@
+{
+ "quote_n": 9,
+ "quote_early": 4,
+ "other_n": 257,
+ "other_early": 0,
+ "beats_total": 136,
+ "beats_bad": [
+  [
+   "SEQ_004",
+   "S004B003",
+   44.44,
+   45.1,
+   -0.66,
+   "\"Why is your mom a robot?\""
+  ],
+  [
+   "SEQ_008",
+   "S008B003",
+   97.72,
+   98.36,
+   -0.64,
+   "\"Always.\""
+  ],
+  [
+   "SEQ_014",
+   "S014B002",
+   161.06,
+   161.68,
+   -0.62,
+   "\"That is the kind part,\" I said."
+  ],
+  [
+   "SEQ_015",
+   "S015B003",
+   175.6,
+   176.22,
+   -0.62,
+   "\"Let's figure out what a parent even is."
+  ],
+  [
+   "SEQ_017",
+   "S017B003",
+   210.16,
+   210.76,
+   -0.6,
+   "\"You.\""
+  ],
+  [
+   "SEQ_023",
+   "S023B003",
+   285.78,
+   286.14,
+   -0.36,
+   "\"Here is the secret nobody tells you."
+  ],
+  [
+   "SEQ_025",
+   "S025B003",
+   308.76,
+   309.54,
+   -0.78,
+   "\"But the loving part,\" Maria said, \"the "
+  ],
+  [
+   "SEQ_029",
+   "S029B001",
+   352.64,
+   353.5,
+   -0.86,
+   "\"Warm,\" she whispered."
+  ],
+  [
+   "SEQ_029",
+   "S029B002",
+   355.04,
+   355.68,
+   -0.64,
+   "\"Since the fruit box,\" I said."
+  ],
+  [
+   "SEQ_031",
+   "S031B002",
+   381.6,
+   382.4,
+   -0.8,
+   "\"Your mom glows?\""
+  ],
+  [
+   "SEQ_031",
+   "S031B004",
+   384.2,
+   385.1,
+   -0.9,
+   "\"Yeah,\" Maria said, and she said it prou"
+  ],
+  [
+   "SEQ_031",
+   "S031B005",
+   387.86,
+   388.22,
+   -0.36,
+   "\"She glows.\""
+  ],
+  [
+   "SEQ_032",
+   "S032B001",
+   389.0,
+   389.78,
+   -0.78,
+   "\"Cool,\" said the boy, and went back to h"
+  ],
+  [
+   "SEQ_032",
+   "S032B003",
+   400.88,
+   401.42,
+   -0.54,
+   "\"It's for you."
+  ],
+  [
+   "SEQ_034",
+   "S034B001",
+   411.12,
+   411.7,
+   -0.58,
+   "\"Hoo-hoo, ha-ha,\" I said."
+  ]
+ ]
+}

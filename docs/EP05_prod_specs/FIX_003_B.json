@@ -1,0 +1,42 @@
+{
+ "tid": "FIX_003_B",
+ "seq": "SEQ_003",
+ "kind": "flf",
+ "first": "out:K_003_A",
+ "last": "out:K_004_START",
+ "seconds": 5,
+ "segment": 5.0,
+ "splice": {
+  "side": "tail",
+  "at": 138,
+  "hard_cut": true
+ },
+ "plan": {
+  "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
+  "emotional_guidance": "Valence: proud, warm, careful. Arousal: calm.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a crayon pressed onto paper in small careful dabs; P02 a soft chair creak as Maria sits back; P03 a light paper rustle",
+   "room": "the big hall in warm afternoon air, close soft table sounds"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria colours the chest lights of the robot in her drawing carefully, one by one"
+   },
+   {
+    "video_beat": "she lifts her crayon and sits back a little, admiring her drawing with a small proud smile"
+   },
+   {
+    "video_beat": "the boy beside her glances over at her drawing"
+   }
+  ],
+  "continuity": "Maria in her window-side seat at the long table; the crayon boy in the next seat on her screen-right; a girl with braids at the far right edge behind the crayon bucket",
+  "preventions": [
+   "one long table with the white paper runner, never small separate tables",
+   "no sink or kitchen counter",
+   "the camera stays still or drifts gently; no cut",
+   "the drawing keeps the girl, the dog and the robot"
+  ]
+ },
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
+}

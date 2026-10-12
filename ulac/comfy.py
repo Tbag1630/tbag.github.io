@@ -155,3 +155,25 @@ def seedance_r2v_720p(prompt: str, storyboard: str, identity: str | None, *, sec
                                                      "format.codec": "auto", "codec": "auto"},
                "_meta": {"title": "save"}}
     return g
+
+
+def crop_zoom(name: str, box: tuple[int, int, int, int], *, prefix: str, size: tuple[int, int] = (1280, 720),
+              upscaler: str = "4x-UltraSharp.pth") -> dict:
+    """A push-in or pull-back partner frame: crop box=(x, y, w, h) of a cloud image, model-upscale, Lanczos back to `size`.
+    The content is the same pixels as the source, so an FLF clip between the two stays inside one view. No paid nodes."""
+    x, y, w, h = (int(v) for v in box)
+    if w <= 0 or h <= 0 or abs(w / h - size[0] / size[1]) > 0.01:
+        raise ValueError(f"crop {box} must keep the {size[0]}:{size[1]} aspect")
+    return {"1": _load(name, "source keyframe"),
+            "2": {"class_type": "ImageCropV2", "inputs": {"image": ["1", 0], "crop_region": {"x": x, "y": y, "width": w,
+                                                                                             "height": h}},
+                  "_meta": {"title": "crop"}},
+            "3": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": upscaler}, "_meta": {"title": "upscaler"}},
+            "4": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["3", 0], "image": ["2", 0]},
+                  "_meta": {"title": "model upscale"}},
+            "5": {"class_type": "ImageScale", "inputs": {"image": ["4", 0], "upscale_method": "lanczos",
+                                                         "width": size[0], "height": size[1], "crop": "disabled"},
+                  "_meta": {"title": "to frame size"}},
+            "6": {"class_type": "SaveImage", "inputs": {"images": ["5", 0], "filename_prefix": prefix},
+                  "_meta": {"title": "save"}}}
+

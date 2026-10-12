@@ -222,3 +222,42 @@ def test_per_sequence_ceiling_counts_repairs_and_needs_explicit_approval(tmp_pat
     conf["approvals"] = [{"target": "SEQ_001", "attempt": 3, "by": "user", "quote": "approve a third SEQ_001 render"}]
     (tmp_path / firewall.CONF).write_text(json.dumps(conf))
     assert _reserve(tmp_path, graph=g3)["rid"].startswith("V03-")
+
+
+def test_contingency_attempt_needs_a_recorded_qc_failure(tmp_path):
+    _pilot(tmp_path, max_attempts=10, cap_credits=10_000)
+    graphs = []
+    for k in range(3):
+        g = json.loads(json.dumps(GRAPH))
+        g["10"]["inputs"]["seed"] = k
+        graphs.append(g)
+        _quote(tmp_path, graph=g)
+    rids = []
+    for g in graphs[:2]:
+        _accept(tmp_path, graph=g)
+        rids.append(_reserve(tmp_path, graph=g)["rid"])
+    r2 = {"rid": rids[1]}
+    firewall.approve_extra(tmp_path, "SEQ_001", 3, by="user", quote="one extra attempt only after a material fail",
+                           requires_fail=True)
+    _accept(tmp_path, graph=graphs[2])
+    with pytest.raises(firewall.FirewallError, match="contingency"):
+        _reserve(tmp_path, graph=graphs[2])
+    firewall.record(tmp_path, "video_qc", rid=r2["rid"], target="SEQ_001", verdict="FAIL_MATERIAL")
+    assert _reserve(tmp_path, graph=graphs[2])["rid"].startswith("V03-")
+
+
+def test_one_production_budget_counts_images_and_audio_and_audio_needs_its_own_authorization(tmp_path):
+    _pilot(tmp_path, cap_credits=700)
+    conf = json.loads((tmp_path / firewall.CONF).read_text())
+    conf["authorization"] = {"sequence_boards": True}
+    (tmp_path / firewall.CONF).write_text(json.dumps(conf))
+    kw = dict(prompt_sha="p", ref_hashes={}, config_hash="c", seed=0, model="m", workflow="w", closed=False)
+    firewall.reserve(tmp_path, tid="K_1", kind="keyframe", attempt=1, est_credits=80, **kw)
+    m = firewall.reserve(tmp_path, tid="MUS_1", kind="music", attempt=1, est_credits=20, **kw)
+    assert m["authorized"] is False                                   # no audio authorization recorded yet
+    _quote(tmp_path)
+    _accept(tmp_path)
+    with pytest.raises(firewall.FirewallError, match="exceed the 700-credit cap"):
+        _reserve(tmp_path)                                            # 100 already committed + 639 > 700
+    with pytest.raises(firewall.FirewallError, match="production cap"):
+        firewall.reserve(tmp_path, tid="K_2", kind="keyframe", attempt=1, est_credits=650, **kw)

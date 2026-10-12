@@ -117,7 +117,7 @@ def approved(root: Path, tid: str, attempt: int) -> dict | None:
     return next((a for a in load_conf(root)["approvals"] if a["target"] == tid and a["attempt"] == attempt), None)
 
 
-def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str) -> dict:
+def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str, requires_fail: bool = False) -> dict:
     """Record the user's explicit approval of one attempt beyond the ceiling. The quote must be their own words;
     the worker, a reviewer or an automated check never approves its own overspend."""
     who = by.strip().lower()
@@ -129,6 +129,8 @@ def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str) -> di
     if attempt <= conf["max_attempts"]:
         raise FirewallError(f"attempt {attempt} is within the ceiling of {conf['max_attempts']}; nothing to approve")
     entry = {"target": tid, "attempt": attempt, "by": by, "quote": quote.strip(), "utc": utc_iso()}
+    if requires_fail:                  # contingency: usable only after a recorded MATERIAL QC failure of this sequence
+        entry["requires_fail"] = True
     conf["approvals"].append(entry)
     save_conf(root, conf)
     record(root, "approved_extra", target=tid, attempt=attempt, by=by, quote=quote.strip())
@@ -163,8 +165,31 @@ def validate_repair_extra(rep: dict) -> list[str]:
 
 
 # ---- reservations --------------------------------------------------------------------------------------------------
+AUDIO_KINDS = ("music", "sfx")
+
+
+def other_committed(root: Path) -> float:
+    """Non-video paid reservations (keyframes, music, sfx) still live: billed credits when recorded, else the estimate."""
+    live: dict = {}
+    for r in read_ledger(root):
+        key = (r.get("target"), r.get("attempt"))
+        if r["event"] == "reserved" and r.get("kind") != "video":
+            live[key] = float(r.get("est_credits") or 0.0)
+        elif r["event"] == "released":
+            live.pop(key, None)
+        elif r["event"] == "billed" and key in live:
+            live[key] = float(r["credits"])
+    return round(sum(live.values()), 2)
+
+
+def global_committed(root: Path) -> float:
+    """One budget for the whole production (CLAUDE.md): video plus every other paid reservation."""
+    return round(video_state(root)["committed"] + other_committed(root), 2)
+
+
 def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, ref_hashes: dict, config_hash: str,
-            seed, model: str, workflow: str, closed: bool, parent_job: str | None = None) -> dict:
+            seed, model: str, workflow: str, closed: bool, parent_job: str | None = None,
+            est_credits: float | None = None) -> dict:
     """Commit to one paid attempt at compile time. Idempotent for the same prompt; refuses duplicate spend."""
     conf = load_conf(root)
     if closed:
@@ -188,12 +213,19 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
     if open_:
         raise FirewallError(f"{tid} attempt {open_[0]} is reserved/submitted but not yet ingested: collect it before "
                             "compiling the next attempt")
-    est = conf["budget"].get("estimate_per_board")
+    est = est_credits if est_credits is not None else conf["budget"].get("estimate_per_board")
+    cap = (conf.get("video_pilot") or {}).get("cap_credits")
+    if isinstance(cap, (int, float)) and not isinstance(cap, bool) and cap > 0 and est is not None:
+        if global_committed(root) + float(est) > cap:
+            raise FirewallError(f"{tid}: {global_committed(root)} committed + {est} would exceed the {cap}-credit "
+                                "production cap")
+    ok = (bool(conf["authorization"].get("sequence_boards")) and attempt <= conf["max_attempts"]
+          or bool(approved(root, tid, attempt)))
+    if kind in AUDIO_KINDS and str(conf["authorization"].get("audio", "")).upper() != "AUTHORIZED":
+        ok = False                     # paid music and sound effects need their own recorded user authorization
     rec = record(root, "reserved", target=tid, kind=kind, attempt=attempt, prompt_sha256=prompt_sha,
                  ref_hashes=ref_hashes, config_hash=config_hash, seed=seed, model=model, workflow=workflow,
-                 est_credits=est, parent_job=parent_job,
-                 authorized=bool(conf["authorization"].get("sequence_boards")) and attempt <= conf["max_attempts"]
-                 or bool(approved(root, tid, attempt)))
+                 est_credits=est, parent_job=parent_job, authorized=ok)
     return rec
 
 
@@ -292,9 +324,16 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
         why.append(f"{st['attempts']} paid video attempt(s) already reserved; the pilot allows {limit}")
     used = sum(1 for x in st["reservations"] if x["seq"] == seq)       # per-sequence ceiling, repairs included
     ceiling = int(load_conf(root)["max_attempts"])
-    if used >= ceiling and not approved(root, seq, used + 1):
+    ok = approved(root, seq, used + 1)
+    if used >= ceiling and not ok:
         why.append(f"{seq} has used {used} of {ceiling} paid video attempts; attempt {used + 1} needs the user's "
                    "explicit approval (approve_extra)")
+    elif used >= ceiling and ok.get("requires_fail"):
+        last = [x["rid"] for x in st["reservations"] if x["seq"] == seq][-1:]
+        fails = [e for e in read_ledger(root) if e.get("event") == "video_qc" and e.get("rid") in last
+                 and str(e.get("verdict", "")).upper().startswith("FAIL")]
+        if not fails:
+            why.append(f"{seq} attempt {used + 1} is a contingency: it needs a recorded MATERIAL QC failure of {last}")
     why += video.preflight(graph, prompt, seconds=seconds, segment_seconds=segment_seconds)
     gsha = video.graph_sha256(graph)
     quotes = [e for e in read_ledger(root) if e.get("event") == "video_quoted" and e.get("graph_sha256") == gsha]
@@ -302,8 +341,9 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
     if credits is None:
         why.append("no pre-submission quote is recorded for this exact graph")
     else:
-        if capped and st["committed"] + credits > cap:
-            why.append(f"{st['committed']} committed + {credits} would exceed the {cap}-credit cap")
+        allc = st["committed"] + other_committed(root)               # one production budget, not a video-only one
+        if capped and allc + credits > cap:
+            why.append(f"{round(allc, 2)} committed + {credits} would exceed the {cap}-credit cap")
         acc = pilot.get("price_acceptance") or {}
         if not (acc.get("graph_sha256") == gsha and abs(float(acc.get("credits", -1)) - credits) <= 0.005):
             why.append("the estimate is not verified by a billed job, and no user acceptance covers this exact graph")

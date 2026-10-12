@@ -5,40 +5,40 @@
  "first": "out:K_004_START",
  "last": "out:K_005_START",
  "seconds": 15,
- "segment": 14.958,
+ "segment": 15.0,
  "splice": {
-  "take": "V06-3f58e4dd348a",
-  "replace_from_f": 0,
-  "replace_to_f": 361
+  "side": "whole"
  },
  "plan": {
   "environment": "the shelter dining hall exactly as rendered in this episode: grey institutional walls, one long wooden table running to a single far doorway, brown chairs on both sides, a blue-tiled counter on the right, tall windows on the left with warm afternoon light",
   "emotional_guidance": "Valence: curious, innocent, then uncertain. Arousal: low, rising slightly at the question.",
   "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
   "audio": {
-   "sounds": "P01 crayon scratches; P02 a chair creak as the boy leans over; P03 a crayon tapping softly on paper; P04 the crayon stops, a small breath",
+   "sounds": "P01 a crayon set down softly; P02 a chair creak as the boy leans over; P03 a crayon tapped lightly on paper; P04 the crayon stops, a small breath",
    "room": "the big hall in warm afternoon air, close soft table sounds, distant children drawing"
   },
   "panels": [
    {
-    "video_beat": "Maria admires her drawing; the crayon boy sits in the next seat on her screen-right"
+    "video_beat": "one continuous two-shot: Maria admires her drawing while the boy beside her looks over"
    },
    {
-    "video_beat": "the boy leans over from his seat and points his green crayon at the drawn robot"
+    "video_beat": "the boy leans over from his seat and points his green crayon at the robot in her drawing"
    },
    {
-    "video_beat": "close on the boy's face, eyebrows up, waiting; Maria's crayon stops"
+    "video_beat": "the boy waits, eyebrows up, curious; the camera pushes in slowly"
    },
    {
-    "video_beat": "the boy leaning in, crayon on the robot; Maria turning toward him"
+    "video_beat": "Maria's smile fades and she turns toward him, lips parted, no words"
    }
   ],
-  "continuity": "Maria in her window-side seat at the long table; the crayon boy in the next seat on her screen-right; the braids girl and the jersey boy across the table",
+  "continuity": "Maria in her window-side seat at the long table; the crayon boy in the next seat on her screen-right",
   "preventions": [
    "one long table with the white paper runner, never small separate tables",
-   "the boy stays on Maria's screen-right for the whole clip",
+   "one continuous shot with no cuts",
+   "the boy stays on Maria's screen-right",
    "no adults and no extra children close to camera",
    "Maria's lips never form words"
   ]
- }
+ },
+ "design": "same-view FLF between two keyframes of one shot; hard cut from the original take"
 }
