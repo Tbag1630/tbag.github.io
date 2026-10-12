@@ -82,7 +82,8 @@ def render(ep: dict, layout: str) -> tuple[Image.Image, dict]:
     pad = int(base * 0.42)
     plate_w, plate_h = text_w + 2 * pad, block_h + 2 * pad
     g = ep["tag"]
-    tag_lines = [(g["part_label"], g["part_scale"])] + [(ln["text"], ln["scale"]) for ln in g["title_lines"]]
+    tag_lines = ([(g["part_label"], g["part_scale"])] if g.get("part_label") else []) + \
+        [(ln["text"], ln["scale"]) for ln in g["title_lines"]]
     if " ".join(ln["text"] for ln in g["title_lines"]) != ep["episode_title"]:
         raise ValueError("tag title lines must join to the exact episode title")
     tag_w = int(W * g["width_frac"])

@@ -14,7 +14,7 @@ HAVE_FONT = Path("/usr/share/fonts/opentype/inter/InterDisplay-Black.otf").exist
 def test_ep05_title_strings_are_exact():
     ep = json.loads(EP.read_text())
     assert ep["series_title"] == "THE SHEET METAL GIRL STORY"
-    assert ep["part_label"] == "PART No. 05" and ep["tag"]["part_label"] == "PART No. 05"
+    assert "part_label" not in ep and "part_label" not in ep["tag"]           # user: PART No. is not necessary
     assert ep["episode_title"] == "The Family Drawing"
     assert " ".join(x["text"] for x in ep["tag"]["title_lines"]) == ep["episode_title"]
     for name in ep["layouts_to_test"]:
@@ -40,7 +40,7 @@ def test_proofs_pick_a_readable_layout_and_are_deterministic(tmp_path):
     m = a[chosen]
     assert m["thumb"]["series"]["min_stroke_px"] >= 2.0
     lines = m["thumb"]["tag_lines"]
-    assert set(lines) == {"PART No. 05", "The Family", "Drawing"}
+    assert set(lines) == {"The Family", "Drawing"}
     assert min(v["cap_px"] for v in lines.values()) >= 8                          # the smallest line, not a median
     assert min(v["min_stroke_px"] for v in lines.values()) >= 1.5
     assert m["letters_vs_field"] >= 7 and m["field_vs_sky"] >= 4.5

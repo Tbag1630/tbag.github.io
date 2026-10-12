@@ -2,12 +2,11 @@
  "schema": "sheet-metal-title/1",
  "episode_id": "EP05",
  "series_title": "THE SHEET METAL GIRL STORY",
- "part_label": "PART No. 05",
  "episode_title": "The Family Drawing",
  "episode_title_source": "Drive: The-Family-Drawing.docx (id 1c5-vYEVsOZf1pQw047qLfcphfOa7emJu), first line “The Family Drawing”; corroborated by the narration master c5346f9d-EP05_The_Family_Drawing_NARRATION_MASTER.mp3. Typographic quotation marks dropped on the tag (overridable).",
  "tag_back_text": "Love is the thing you do.",
  "tag_back_source": "Script, final line: “Love is not the thing you are made of. It is the thing you do.” (6-word reduction)",
- "kid_vo_line": "Part number five. The Family Drawing.",
+ "kid_vo_line": "The Family Drawing.",
  "fps": 24,
  "frame": [
   1280,
@@ -109,14 +108,12 @@
   "dent": {
    "letter": "Y",
    "word": "STORY",
-   "shape": "outer corner of the Y's plate curled up into a 1.5-turn roll, like the end of the paper roll",
+   "shape": "the plate's lower-right corner, directly under the Y of STORY, curled up into a rolled lip like the end of the paper roll",
    "why": "EP05's physical gag is a paper roll that will not lie flat; the dent rhymes with it"
   },
   "block_y_bias": 0.35
  },
  "tag": {
-  "part_label": "PART No. 05",
-  "part_scale": 0.6,
   "width_frac": 0.35,
   "gap_frac": 0.03,
   "field": "#C9D1D9",
@@ -135,7 +132,8 @@
     "text": "Drawing",
     "scale": 1.0
    }
-  ]
+  ],
+  "note": "User 2026-10-12: PART No. is not necessary; the tag carries the episode title only."
  },
  "animation": {
   "sign_drop": {
@@ -177,5 +175,13 @@
    "series": 4.75,
    "tag": 2.25
   }
- }
+ },
+ "end_card": {
+  "flip_start_s": 0.75,
+  "flip_s": 0.9,
+  "hold_s": 3.6,
+  "fade_s": 0.75,
+  "message": "tag flips to its back face: Love is the thing you do. (6 words from the script's last line)"
+ },
+ "layout": "three_line"
 }
