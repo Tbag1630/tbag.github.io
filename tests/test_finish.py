@@ -460,3 +460,23 @@ def test_end_reel_fades_to_black(tmp_path):
                          capture_output=True, check=True).stdout
     fr = np.frombuffer(raw, np.uint8).reshape(60, 720, 1280)
     assert fr[0].mean() > 200 and fr[-1].mean() < 30 and fr[40].mean() > 200
+
+
+@needs_ffmpeg
+def test_title_push_in_zooms_without_changing_length(tmp_path):
+    src = tmp_path / "title.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=1920x1080:r=24:d=2",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", str(src)], check=True, timeout=120)
+    info = finish.probe_reel(src)
+    got = finish.conform_reel(src, tmp_path / "pushed.mkv", info, push_in=0.06)
+    assert got["frames"] == info["frames"] and (got["width"], got["height"]) == (1280, 720)
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", got["path"], "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+                         capture_output=True, check=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(-1, 720, 1280).astype(np.float32)
+    plain = finish.conform_reel(src, tmp_path / "plain.mkv", info)
+    raw2 = subprocess.run(["ffmpeg", "-v", "error", "-i", plain["path"], "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+                          capture_output=True, check=True).stdout
+    fr2 = np.frombuffer(raw2, np.uint8).reshape(-1, 720, 1280).astype(np.float32)
+    assert np.abs(fr[0] - fr2[0]).mean() < 6            # starts unzoomed
+    assert np.abs(fr[-1] - fr2[-1]).mean() > 6          # ends zoomed in

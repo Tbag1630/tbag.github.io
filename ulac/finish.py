@@ -529,13 +529,20 @@ def needs_conform(info: dict) -> bool:
             or info["sar"] not in ("1:1", "N/A", "0:1") or info["pix_fmt"] != "yuv420p")
 
 
-def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float = 0.0) -> dict:
+def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float = 0.0, push_in: float = 0.0) -> dict:
     """Lanczos scale to 1280x720 and constant 24 fps into a lossless intermediate; the original is only read. Refuses a reel that is not
     16:9 rather than cropping or padding it. hold_frames clones the last frame (a still hold); fade_out_s fades the reel's
     last seconds to black (the film's last picture)."""
     if abs(info["width"] / info["height"] - 16 / 9) > 0.005:
         raise FinishError(f"{src}: {info['width']}x{info['height']} is not 16:9; the reel is not conformed by cropping or padding")
     vf = "scale=1280:720:flags=lanczos,fps=24,setsar=1,format=yuv420p"
+    if push_in > 0:
+        # the series rig's camera dolly, done deterministically so generated lettering never has to move: a linear zoom
+        # from 1.0 to 1+push_in, computed at 4K so each zoom step is a third of an output pixel (no stair-step jitter)
+        n = max(2, int(info["frames"]))
+        z = f"(1+{push_in}*n/{n - 1})"
+        vf = (f"scale=w='trunc(3840*{z}/2)*2':h='trunc(2160*{z}/2)*2':eval=frame:flags=lanczos,"
+              f"crop=3840:2160:(iw-3840)/2:(ih-2160)/2,scale=1280:720:flags=lanczos,fps=24,setsar=1,format=yuv420p")
     if hold_frames:
         vf += f",tpad=stop_mode=clone:stop={hold_frames}"
     if fade_out_s > 0:
@@ -814,8 +821,8 @@ def _log(msg: str) -> None:
 
 def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: str | None = None, title: str | None = None,
            end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False,
-           end_fade_s: float = 0.0) -> dict:
-    ep = Path(ep)
+           end_fade_s: float = 0.0, title_push: float = 0.0) -> dict:
+    ep = Path(ep).resolve()                                 # protected folders are absolute; compare like with like
     root = ep.parent.parent
     ep_name = ep.name
     out_dir = _resolve_out(ep, out or f"EDIT/{variant}_final")
@@ -912,13 +919,14 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         hf = hold_f if dom == "end" else 0
         reg(f"reel_{dom}", src, **{k: info[k] for k in ("width", "height", "fps", "frames", "has_audio")})
         ff = end_fade_s if dom == "end" else 0.0
-        conformed = needs_conform(info) or hf > 0 or ff > 0
+        pu = title_push if dom == "title" else 0.0
+        conformed = needs_conform(info) or hf > 0 or ff > 0 or pu > 0
         use = info
         if conformed:
             _log(f"conforming {dom} reel {info['width']}x{info['height']} @ {info['fps']} fps -> {SIZE[0]}x{SIZE[1]} @ {FPS}"
                  + (f" + {hf} hold frames" if hf else "") + (f" + {ff} s fade to black" if ff else ""))
             dst = sink.path(f"reels/{dom}_{SIZE[1]}p{FPS}.mkv")
-            use = conform_reel(src, dst, info, hf, ff)
+            use = conform_reel(src, dst, info, hf, ff, pu)
         reel_media[dom] = Path(use["path"])
         frames = use["frames"]
         reel_frames[dom] = frames
@@ -1235,12 +1243,14 @@ def main(argv=None) -> int:
                     help="clone the end reel's last frame for this long (a still hold), pad its SFX with silence and extend M11 to match")
     ap.add_argument("--end-fade", type=float, default=0.0, metavar="SECONDS",
                     help="fade the end reel's last seconds (picture and sound) to black: the film's final fade")
+    ap.add_argument("--title-push", type=float, default=0.0, metavar="FRACTION",
+                    help="deterministic camera push-in across the title reel, e.g. 0.06 zooms 1.00 -> 1.06 (the rig's dolly)")
     ap.add_argument("--no-review", action="store_true", help="skip the review proxy and the contact sheet")
     ap.add_argument("--keep-work", action="store_true", help="keep the work/ scratch folder")
     a = ap.parse_args(argv)
     try:
         res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work,
-                     a.end_fade)
+                     a.end_fade, a.title_push)
     except ProtectedPathError as e:
         print(f"FINISH REFUSED: {e}", file=sys.stderr)
         return 2

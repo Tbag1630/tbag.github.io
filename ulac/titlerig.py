@@ -42,9 +42,12 @@ CAMERA_LIGHT = ("Lighting rig, locked for the series: one warm {accent} key ligh
                 "light at low opacity; the background softly out of focus and a little darker than the lettering.")
 REVEAL = {
     "final": "The lettering is solid brushed metal, facing the camera squarely at full size",
-    "open": ("the same lettering is a little smaller (about 88 percent) and turned about eight degrees away on its "
-             "vertical axis, and every letter is a clear window, like a double exposure, through which we see one "
-             "picture: {character}; outside the letters the dimmed background remains"),
+    # Same size and position as the final frame: the image model does not reliably apply a scale or turn, and two pinned
+    # frames with different text geometry invite the video model to warp letters mid-clip (EP05 title gate). The dolly
+    # in the rig's timing is added afterwards as a deterministic push-in on the rendered clip.
+    "open": ("the same lettering at exactly the same size and position, and every letter is a clear window, like a "
+             "double exposure, through which we see one picture: {character}; outside the letters the dimmed "
+             "background remains"),
 }
 
 ROOT_INPUTS = "TITLE_INPUTS/rig_inputs.json"
@@ -155,27 +158,28 @@ def clip_plan(kind: str, card: dict, accent: str) -> dict:
             "environment": card["background"]["desc"] + ", softly out of focus behind the title",
             "emotional_guidance": "Valence: warm, curious, inviting. Arousal: gentle lift, then settled.",
             "visual_style": "finished full-colour 3D animated title, identical in look, lighting and lettering to the first and last frames; never a sketch",
-            "audio": _audio("P01 a soft airy whoosh as the lettering turns toward the camera; P02 a gentle metallic "
-                            "shimmer as the letters become solid steel; P03 a faint warm room tone with dust in the air",
+            "audio": _audio("P01 a soft airy shimmer as the picture fades from the letters; P02 a gentle metallic "
+                            "ring as the letters become solid steel; P03 a faint warm room tone with dust in the air",
                             "a large quiet hall, soft and warm"),
             "panels": [
-                {"video_beat": f"the lettering starts a little smaller and turned slightly away, its letters like windows "
-                               f"showing {card['character']['desc']}; that picture fades out of the letters as the "
-                               f"lettering eases forward and turns to face the camera"},
-                {"video_beat": "the letters become solid brushed sheet metal and catch the warm edge light as they settle"},
-                {"video_beat": "hold on the finished title with gentle micro-movement: the warm key flickers softly like a "
-                               "candle, the cool blue rim glows, dust motes drift slowly, and the camera dollies in very "
-                               "slowly"}],
-            "continuity": keep + "; the background stays softly out of focus",
+                {"video_beat": f"the lettering holds its size and position while the picture inside it, "
+                               f"{card['character']['desc']}, glows warmly and then gently fades out of the letters"},
+                {"video_beat": "the letters become solid brushed sheet metal and catch the warm edge light"},
+                {"video_beat": "hold on the finished title with gentle micro-movement only: the warm key flickers softly "
+                               "like a candle, the cool blue rim glows, and dust motes drift slowly; the camera holds "
+                               "still"}],
+            "continuity": keep + "; the camera holds still; the background stays softly out of focus",
             "preventions": prevent + ["no people walking through the frame"],
             "one_shot": True}
     return {
         "environment": card["background"]["desc"],
         "emotional_guidance": "Valence: warm, resolved, tender. Arousal: calm, settling.",
         "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
-        "audio": _audio("P01 the morning hall's gentle air, crayons at the long table; P02 a soft airy whoosh as the "
-                        "lettering rises into view; P03 a gentle metallic shimmer as it settles",
-                        "the morning hall, bright and calm"),
+        # ambience only: the first EP05 end clip's whoosh-and-shimmer cue was rejected by the provider as a possible
+        # copyright match (a sting-like sound), so the end card carries plain room sound and the score does the rest
+        "audio": _audio("P01 the morning hall's quiet air with faint crayon scratching at the long table; P02 the same "
+                        "soft room tone as the scene goes out of focus; P03 the quiet room tone continues",
+                        "the morning hall, bright, calm and quiet"),
         "panels": [
             {"video_beat": "hold on the final wide of the morning dining hall: Maria and MACA holding hands beside the "
                            "long table of drawings, Chico at MACA's knee, the children drawing"},
