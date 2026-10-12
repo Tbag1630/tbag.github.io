@@ -59,8 +59,8 @@ def board_output(seq: str) -> str:
 
 # SEQ_023 V25: the provider rejected the generated audio as a possible copyright match (the picture was fine). The
 # repair keeps embedded sound on, drops wording that invites a musical swell and asks for unpitched sound only.
-AUDIO_FIX = ("SOUND TEXTURE: every sound is unpitched and mechanical or natural: servo noise, fabric, bedding and room "
-             "tone only; no tones, chimes, sparkles, hums with a pitch, swells, melody or rhythm of any kind.")
+AUDIO_FIX = ("SOUND TEXTURE: every sound is unpitched physical foley: the actions named in the sound cues plus room tone; "
+             "no tones, chimes, sparkles, hums with a pitch, swells, melody or rhythm of any kind.")
 AUDIO_SWAPS = (("magical, moving", "hushed, moving"), ("a soft rising servo whir", "a low mechanical servo whir"))
 
 
