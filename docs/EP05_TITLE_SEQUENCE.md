@@ -1,6 +1,6 @@
 # EP05 opening title sequence: design package (no generation, no spend)
 
-2026-10-12. Series: **THE SHEET METAL GIRL STORY**. Episode: **PART No. 05, The Family Drawing**. Everything here was made on paper or deterministically. Paid generation is frozen in `project/EP05/FIREWALL.json`, and nothing below may be submitted until you approve the concept, the missing references, the workflow and the cost in section 10.
+2026-10-12. Series: **THE SHEET METAL GIRL STORY**. Episode: **PART No. 05, The Family Drawing**. Everything here was made on paper or deterministically. Paid generation is frozen in `project/EP05/FIREWALL.json`, and nothing below may be submitted until you approve the concept, the missing references, the workflow and the cost in section 11.
 
 Files:
 - **Storyboard boards** (storyboard skill format; each passes the skill's `validate.py` with 0 errors and 0 warnings):
@@ -254,6 +254,7 @@ So the exterior clip is generated at 4 s. The 30 % landing contains near-static 
 - The boards were split by beat, not by arithmetic, because one 21 s board exceeds Seedance's 15 s maximum. That is the validator's own error, now resolved.
 - **All four characters** are in P01 and P05; each also leads a shot: Maria P02, Chico P03/P08, MACA P04, Montes P06/P07.
 - No sheet image was generated (zero spend).
+- **Which video prompt is authoritative.** The `prompt_video.txt` files in the board folders are storyboard-skill format, for review only. They are reference-to-video handoffs that attach the storyboard as @image1 and carry no environment master, so the new preflight refuses them by design. The submission path is the first-last-frame drafts in section 8. Those are also **not yet preflight-ready**: the authored SOUND CUES, TIMING, DISTANCE AND ROOM and ENDING blocks that `video.prompt_problems` requires get written after the references are approved.
 
 ## 6. `shot_manifest.yaml`
 
@@ -315,10 +316,12 @@ All text below is exact and copied character for character.
 
 **Layout test, measured by `python3 -m ulac.title` at 320 px wide:**
 
-| Layout | Series letter height | Thinnest stroke | Tag letter height | Fits 90 % title-safe |
+| Layout | Series letter height | Thinnest stroke | Smallest tag line | Fits 90 % title-safe |
 |---|---|---|---|---|
-| **2-line** `THE SHEET METAL` / `GIRL STORY` | 15 px | 3.49 px | 11 px | **yes** (block bottom 584 px of 648 px) |
-| 3-line `THE` / `SHEET METAL` / `GIRL STORY` | 20 px | 4.30 px | 11 px | **no** (673 px) |
+| **2-line** `THE SHEET METAL` / `GIRL STORY` | 15 px | 3.49 px | `PART No. 05`: 10 px, stroke 2.05 px | **yes** (block bottom 584 px of 648 px) |
+| 3-line `THE` / `SHEET METAL` / `GIRL STORY` | 20 px | 4.30 px | `PART No. 05`: 10 px, stroke 2.05 px | **no** (673 px) |
+
+Each tag line is measured on its own, and the floor applies to the smallest. `The Family` measures 16 px and `Drawing` 12 px.
 
 - **Chosen: 2-line.**
 - Contrast: letters against the navy field 10.96:1; navy field against the sky 6.85:1; tag letters 7.99:1. All are high-contrast for projectors.
@@ -417,7 +420,11 @@ Never PASS for generated results; nothing has been generated.
 | Title readable at 320 px; high contrast | **WARN** | Measured with the proxy font; re-test with Rubik |
 | Typography deterministic, never generated | PASS | `ulac/title.py` and `ep05.json` |
 | Physics ledger with start/end states and a single stylisation rule | PASS | Section 3 |
-| Nobody hurt, no trapping distress | PASS (on paper) | Section 3 |
+| Nobody hurt, no trapping distress | **WARN** | No falls or harm (section 3). But the comfort expressions in the P05 freeze (Maria's grin, Chico dozing, MACA's flat-line visor) are too small to read in a high wide. Reframe P05 as a table-height MWS, or rely on P03 and P08 for comfort |
+| Faces large in frame (kids 4-8) | **WARN** | P01 (WS), P05 (high WS) and P07 (top-down) are geography shots, kept for spatial clarity as the brief asks. Faces are large in P02, P03, P04, P06 and P08 |
+| ≤ 4 dominant colours per interior shot | **UNKNOWN** | Needs generated frames; the rendered hall is grey/brown/white with pink and teal costume accents |
+| Same shirt, hair, wardrobe and voice in every shot | **UNKNOWN** | Needs frames and the approved references |
+| 768p projector safety, no thin strokes | **WARN** | Measured with the proxy font: series stroke 3.49 px and the smallest tag stroke 2.05 px at 320 px wide (about 8 px and 5 px at 768p). Re-test with Rubik |
 | Room matches the episode at the hard cut | PASS (on paper) | Rendered-hall lock in the manifests |
 | Continuity into SEQ_001 | **WARN** | 1.8 m sheet vs the full-length runner |
 | Generation risk of paper curl | **WARN** | Mitigation and fallback in sections 2 and 7 |

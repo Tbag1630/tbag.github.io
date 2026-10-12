@@ -38,7 +38,11 @@ def test_proofs_pick_a_readable_layout_and_are_deterministic(tmp_path):
     chosen = a["chosen"]
     assert chosen is not None and a[chosen]["meets_floor"]
     m = a[chosen]
-    assert m["thumb"]["series"]["min_stroke_px"] >= 2.0 and m["thumb"]["tag"]["cap_px"] >= 8
+    assert m["thumb"]["series"]["min_stroke_px"] >= 2.0
+    lines = m["thumb"]["tag_lines"]
+    assert set(lines) == {"PART No. 05", "The Family", "Drawing"}
+    assert min(v["cap_px"] for v in lines.values()) >= 8                          # the smallest line, not a median
+    assert min(v["min_stroke_px"] for v in lines.values()) >= 1.5
     assert m["letters_vs_field"] >= 7 and m["field_vs_sky"] >= 4.5
     assert abs(m["series_width_frac"] - 0.60) < 0.01 and abs(m["tag_width_frac"] - 0.35) < 0.01
 

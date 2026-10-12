@@ -127,10 +127,14 @@ def render(ep: dict, layout: str) -> tuple[Image.Image, dict]:
                                           fill=_rgb(g["field"]), outline=_rgb(s["edge"]), width=max(3, tbase // 14))
     yy = tpad
     tag_letters = Image.new("L", tag.size, 0)
+    line_masks = []
     for (tx, f), h in zip(tf, th):
         x = (tag.size[0] - f.getlength(tx)) / 2
         ImageDraw.Draw(tag).text((x, yy - f.getbbox(tx)[1]), tx, font=f, fill=_rgb(g["letters"]))
         ImageDraw.Draw(tag_letters).text((x, yy - f.getbbox(tx)[1]), tx, font=f, fill=255)
+        lm = Image.new("L", tag.size, 0)
+        ImageDraw.Draw(lm).text((x, yy - f.getbbox(tx)[1]), tx, font=f, fill=255)
+        line_masks.append((tx, lm))
         yy += h + tlead
     ImageDraw.Draw(sky).line([(W // 2, py + plate_h), (W // 2, ty0)], fill=_rgb(s["edge"]), width=4)   # ring
     sky.paste(tag, (tx0, ty0), tag)
@@ -142,7 +146,10 @@ def render(ep: dict, layout: str) -> tuple[Image.Image, dict]:
            "rim_vs_sky": contrast(_rgb(s["rim"]), _rgb(ep["plate"]["sky_top"])),
            "tag_letters_vs_field": contrast(_rgb(g["letters"]), _rgb(g["field"]))}
     k = THUMB / W
-    out["thumb"] = {"series": _thumb_metrics(letters, k), "tag": _thumb_metrics(tag_letters, k)}
+    out["thumb"] = {"series": _thumb_metrics(letters, k), "tag": _thumb_metrics(tag_letters, k),
+                    "tag_lines": {tx: _thumb_metrics(lm, k) for tx, lm in line_masks}}
+    out["thumb"]["tag_min_cap_px"] = min(v["cap_px"] for v in out["thumb"]["tag_lines"].values())
+    out["thumb"]["tag_min_stroke_px"] = min(v["min_stroke_px"] for v in out["thumb"]["tag_lines"].values())
     return sky, out
 
 
@@ -162,7 +169,7 @@ def _thumb_metrics(mask: Image.Image, k: float) -> dict:
                                 key=cv2.contourArea), True)
         strokes.append(2 * area / max(per, 1))
         caps.append(h)
-    return {"cap_px": int(np.median(caps)) if caps else 0,
+    return {"cap_px": int(np.percentile(caps, 75)) if caps else 0,                # capitals, not dots or x-height
             "min_stroke_px": round(float(np.percentile(strokes, 10)), 2) if strokes else 0.0}
 
 
@@ -177,7 +184,8 @@ def proofs(ep_path: Path, out: Path) -> dict:
         floors = ep["readability_floor_320"]
         m["meets_floor"] = (m["thumb"]["series"]["min_stroke_px"] >= floors["min_stroke_px"]
                             and m["thumb"]["series"]["cap_px"] >= floors["series_cap_px"]
-                            and m["thumb"]["tag"]["cap_px"] >= floors["tag_cap_px"]
+                            and m["thumb"]["tag_min_cap_px"] >= floors["tag_cap_px"]
+                            and m["thumb"]["tag_min_stroke_px"] >= floors["tag_min_stroke_px"]
                             and m["bottom_px"] <= H * 0.9)
         rep[layout] = m
     ok = [k for k, v in rep.items() if v["meets_floor"]]

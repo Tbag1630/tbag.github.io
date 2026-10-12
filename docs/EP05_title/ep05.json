@@ -46,7 +46,8 @@
  "readability_floor_320": {
   "min_stroke_px": 2.0,
   "series_cap_px": 14,
-  "tag_cap_px": 8
+  "tag_cap_px": 8,
+  "tag_min_stroke_px": 1.5
  },
  "typography": {
   "series": {

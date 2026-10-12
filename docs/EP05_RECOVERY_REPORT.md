@@ -83,7 +83,7 @@ Companion files:
 4. **Tests cannot submit:** an autouse `no_network` fixture fails any outbound connection in the suite.
 5. **Results:**
    - `python3 -m pytest -q tests` gives **157 passed, 2 skipped**. The two live project-state checks are opt-in: `ULAC_PROJECT_STATE=1` gives 15 of 15 in `tests/test_recovery.py`.
-   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `5a131fd4...`.
+   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `58846409...`.
 6. **Not closed:** the MCP `submit_workflow` tool is outside the firewall, so submission discipline is still a process control (L34).
 
 ## 5. Editorial decision list
