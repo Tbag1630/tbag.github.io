@@ -8,6 +8,7 @@
 No test here touches the network; conftest.no_network fails any outbound connection.
 """
 import json
+import os
 import socket
 from pathlib import Path
 
@@ -157,6 +158,12 @@ def test_frozen_video_pilot_refuses_and_writes_nothing(tmp_path):
     assert not list((root).glob("VIDEO/*.graph.json"))
 
 
+# Live project-state checks are opt-in (ULAC_PROJECT_STATE=1): an authorized unfreeze or a repaired EDL must not make
+# tooling-check fail. Enforcement itself is covered by test_frozen_video_pilot_refuses_and_writes_nothing.
+PROJECT_STATE = pytest.mark.skipif(os.environ.get("ULAC_PROJECT_STATE") != "1", reason="set ULAC_PROJECT_STATE=1")
+
+
+@PROJECT_STATE
 @pytest.mark.skipif(not (EP / "FIREWALL.json").exists(), reason="EP05 project state not present")
 def test_ep05_is_frozen_for_video_and_images():
     conf = firewall.load_conf(EP)
@@ -218,6 +225,7 @@ def test_solver_head_lock_composite_and_tail_first():
     assert rows[-1]["rec_out_f"] == 30 * 24
 
 
+@PROJECT_STATE
 @pytest.mark.skipif(not (EP / "EDIT" / "edl.json").exists(), reason="EP05 EDL not built")
 def test_ep05_edl_matches_narration_and_policy():
     edl = json.loads((EP / "EDIT" / "edl.json").read_text())

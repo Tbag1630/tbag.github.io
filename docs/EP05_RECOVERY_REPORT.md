@@ -16,13 +16,13 @@ Companion files:
 | 1 | Verified production inventory | COMPLETE AND VERIFIED | section 1; `project/EP05/EDIT/analysis/baseline_inventory.json` |
 | 2 | Full-content audit and timestamped defect ledger | COMPLETE AND VERIFIED (visual); COMPLETE BUT NOT FULLY VERIFIED (audio: spectrogram reading, no human listen) | `docs/EP05_DEFECT_LEDGER.md` |
 | 3 | Hall and environment findings | COMPLETE AND VERIFIED | section 3 |
-| 4 | Root cause and pipeline corrections | COMPLETE AND VERIFIED (155 tests pass, tooling restamped) | section 4 |
+| 4 | Root cause and pipeline corrections | COMPLETE AND VERIFIED (153 tests pass, 2 opt-in; tooling restamped) | section 4 |
 | 5 | Editorial decision list | COMPLETE AND VERIFIED | section 5; `docs/EP05_EDL.json` |
 | 6 | Inter-sequence transition map | COMPLETE AND VERIFIED | section 6 |
 | 7 | Music cue sheet and music-asset status | Cue sheet PARTIALLY COMPLETE (spotting only); music BLOCKED (no approved music exists; generation is frozen) | section 7 |
 | 8 | Sound-edit/mix plan plus stems | COMPLETE BUT NOT FULLY VERIFIED (measured, not auditioned by a human) | section 8; `project/EP05/EDIT/master/stems/` |
 | 9 | Reproducible timeline | COMPLETE AND VERIFIED (deterministic solver, unit-tested) | section 9 |
-| 10 | Final master | COMPLETE BUT NOT FULLY VERIFIED: it exists and passed technical QC, but carries the unresolved MATERIAL defects and no music | section 10 |
+| 10 | Final master | COMPLETE BUT NOT FULLY VERIFIED: it exists and passed technical QC, but carries **one BLOCKING defect (L06, duplicate Maria and boy in SEQ_006)**, the unresolved MATERIAL defects, and no music | section 10 |
 | 11 | Full-playback and QC report | COMPLETE BUT NOT FULLY VERIFIED: every cut was checked frame by frame and the master sampled at 0.5 fps; no real-time human viewing | section 11 |
 | 12 | Unresolved defects and blockers | COMPLETE AND VERIFIED | section 12 |
 | 13 | Exact future paid operations | COMPLETE (estimates; nothing quoted on the platform, nothing reserved) | section 13 |
@@ -62,7 +62,7 @@ Companion files:
   - It mirrors Maria's side ponytail and the "AOT" shirt lettering, and moves the window wall.
   - It still shows the wrong room and still hides nobody it should show.
   - It would also force SEQ_003 and SEQ_005 to be flopped.
-- **SEQ_006-007 (L06, L07):** Maria and the boy are duplicated for 0.8 s as look-alikes in grey and olive. Those costumes persist in the long-table wides. This is new; the prior audit missed it.
+- **SEQ_006-007 (L06, L07):** Maria and the boy are duplicated as look-alikes in grey and olive, both in frame from 6.2 s to 8.75 s. **BLOCKING**, with no zero-cost fix: 61 frames of duplication against 22 frames of surplus. Those costumes persist in the long-table wides. This is new; the prior audit missed it.
 - **SEQ_035-037 (L21-L23):** each ends in the same small-table wide with MACA standing. Surplus now goes to these tails first, which cuts SEQ_035's exposure from 3.2 s to 2.5 s.
 - **SEQ_032 (L18-L19):** the duplicate Maria and the cut-back are **fixed** with same-sequence alternate footage.
 - **Bedroom (L02):** dressing drifts between camera setups. MINOR.
@@ -81,8 +81,8 @@ Companion files:
 3. **Freeze:** `video_pilot.status = FROZEN` and `authorization.sequence_boards = false`, with backups in `project/EP05/backups/`. Tests prove a frozen reserve refuses and writes nothing.
 4. **Tests cannot submit:** an autouse `no_network` fixture fails any outbound connection in the suite.
 5. **Results:**
-   - `python3 -m pytest -q tests` gives **155 passed**.
-   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `b40a3ced...`.
+   - `python3 -m pytest -q tests` gives **153 passed, 2 skipped**. The two live project-state checks are opt-in: `ULAC_PROJECT_STATE=1` gives 15 of 15 in `tests/test_recovery.py`.
+   - `python3 -m ulac tooling-check project/EP05` stamped sha256 `2ad7291d...`.
 6. **Not closed:** the MCP `submit_workflow` tool is outside the firewall, so submission discipline is still a process control (L34).
 
 ## 5. Editorial decision list
@@ -276,7 +276,7 @@ bdf5689f4feb71b20101e0244a830d6ca92d9a1db109fcb6575a705a920ee03c  EDIT/master/st
 - **L03** SEQ_003 (00:32.67-00:36.71): MATERIAL. From the wide at 6 s: separate small tables, a sink counter at right, many extra children, and the boy on Maria's screen-left (in SEQ_002 he sits screen-right behind her at the long table). **UNRESOLVED (kept, flagged)**.
 - **L04** SEQ_004 (00:36.71-00:51.75): MATERIAL. Whole clip: small separate table, sink counter, boy on Maria's screen-left, braids girl and jersey boy absent, 8+ extra children and an adult in the background. The action (boy leans in, points the green crayon at the robot, Maria turns) does match the narration. **UNRESOLVED (kept, flagged)**.
 - **L05** SEQ_005 (00:51.75-00:54.15): MATERIAL. Opening continues the SEQ_004 small-table wide; from 3 s the long paper-covered table returns and the overhead at 9-12.5 s shows the canonical long table with chairs both sides. **UNRESOLVED (rides with L04)**.
-- **L06** SEQ_006 (01:11.08-01:11.88): MATERIAL. Maria (pink, scrunchie) and the boy (green) are in the foreground while two look-alikes sit at the table: a headband girl in a grey dress and a blond boy in olive. Both are duplicated in one frame. **UNRESOLVED**.
+- **L06** SEQ_006 (01:10.78-01:13.33): BLOCKING. Maria (pink, scrunchie) and the boy (green) sit in the foreground while look-alikes (a headband girl in a grey dress, a blond boy in olive) sit at the table behind them. Both characters appear twice in one frame, breaking the one-instance rule as in L18. **UNRESOLVED**.
 - **L07** SEQ_006-007 (01:12.08-01:14.62): MATERIAL. In the long-table wides Maria reads as a grey-dressed girl and the boy as an olive-shirted boy (costume colour drift). The braids girl wears her hair down. **UNRESOLVED**.
 - **L07b** SEQ_007 (01:14.62-01:18.83): MATERIAL. Same costume drift as L07 (opening and closing wides of SEQ_007). **UNRESOLVED**.
 - **L13** SEQ_021 (04:12.50-04:15.90): UNCERTAIN. Insert of Chico asleep on a different round rug by a star chest, while he lies on the bed before and after. **FLAGGED**.
@@ -306,8 +306,8 @@ If the grey hall is kept, the repairs must match the grey hall:
 
 | Priority | Operation | Sequence | Seconds | Credits | Fixes |
 |---|---|---|---|---|---|
-| 1 | One FLF render between SEQ_003 at 5.5 s and SEQ_005 at 3 s, with keyframes built with the long table and four children | SEQ_004 | 15 | 684.6 (+ 2 keyframe images, about 55 each if built) | L04 |
-| 2 | R2V repair of the crane-up with a costume-locked identity board | SEQ_006 | 10 | 456.4 | L06, L07 |
+| 1 | R2V repair of the crane-up with a costume-locked identity board, ending on Maria and the boy seated at the table (no foreground pair) | SEQ_006 | 10 | 456.4 | L06 (BLOCKING), L07 |
+| 2 | One FLF render between SEQ_003 at 5.5 s and SEQ_005 at 3 s, with keyframes built with the long table and four children | SEQ_004 | 15 | 684.6 (+ 2 keyframe images, about 55 each if built) | L04 |
 | 3 | R2V repair of the opening and closing wides | SEQ_007 | 14 | 639.0 | L07b |
 | 4 | Re-render the ending, long table, MACA kneeling | SEQ_037 | 15 | 684.6 | L23 |
 | 5 | Re-render the tail | SEQ_036 | 15 | 684.6 | L22 |

@@ -89,18 +89,18 @@
   "seq": "SEQ_006",
   "take": "V08-076797ef641b",
   "source_span_s": [
-   6.5,
-   7.3
+   6.2,
+   8.75
   ],
   "master_span": [
-   "01:11.08-01:11.88"
+   "01:10.78-01:13.33"
   ],
-  "severity": "MATERIAL",
+  "severity": "BLOCKING",
   "expected": "one instance of each named character",
-  "observed": "Maria (pink, scrunchie) and the boy (green) are in the foreground while two look-alikes sit at the table: a headband girl in a grey dress and a blond boy in olive. Both are duplicated in one frame.",
-  "evidence": "docs/EP05_recovery/v08_duplicates.jpg (frames 6.9 s and 9.9 s)",
+  "observed": "Maria (pink, scrunchie) and the boy (green) sit in the foreground while look-alikes (a headband girl in a grey dress, a blond boy in olive) sit at the table behind them. Both characters appear twice in one frame, breaking the one-instance rule as in L18.",
+  "evidence": "docs/EP05_recovery/v08_duplicates.jpg; v08_cutpoints.jpg (frames 156-190); v08_tail.jpg (frames 190-238)",
   "root_cause": "The crane-up resolved to a 4-child table without placing Maria and the boy in it.",
-  "fix": "Paid repair only. No same-sequence alternate exists, and the move is one continuous shot with no internal cut.",
+  "fix": "No zero-cost fix. The look-alikes are in frame behind the real pair from about frame 149 (6.2 s), and the real pair's head tops stay at the bottom edge until about frame 210 (8.75 s): 61 frames against 22 frames (0.92 s) of run surplus. Every excision within the surplus leaves duplicates on screen and adds a jump inside a continuous crane move. Substituting SEQ_007's opening wide (V09) would leave the picture about 2.5 s short, pulling the bedroom scene change into the line 'That is just how it works' (86.02-87.38 s). Paid repair is priority 1.",
   "status": "UNRESOLVED"
  },
  {
