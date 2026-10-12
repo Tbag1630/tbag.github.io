@@ -71,7 +71,9 @@ Hard constraints are separated from preferences. Results are judged against the 
    - the storyboard END_LOCK of sequence i, as layout and blocking only
    - `state_after.json` of sequence i (seats, facing, props)
    - K(i-1), for colour and lighting continuity within the same room
-3. **Scene boundaries:** at a room change, K(i) belongs to the new room and is built from that room's master. The cut sits in sequence i+1's first panel.
+3. **Scene boundaries:** at a room change, the shared-frame rule does not apply, because a hard cut needs no pixel match. Build two keyframes:
+   - K(i)_end, in the old room, ends sequence i.
+   - K(i)_start, in the new room and built from that room's master, opens sequence i+1.
 4. **Gate:** each keyframe passes the reviewer before it is locked. Checks: character count, identity, seats, facing, furniture, palette match to the environment master, no sketch look, 16:9 at 1280x720. Locked keyframes get a hash and are immutable.
 5. **Cost:** keyframes are image jobs. Quote each with `estimate_credits` before spending. No price is assumed.
 

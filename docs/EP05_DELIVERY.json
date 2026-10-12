@@ -35,8 +35,8 @@
    "credits": 456.4,
    "seconds": 10.08,
    "cloud_file": "f4a59c3ff266f5e47af6bfc2bac4bac67fcc7c7930149999e9e94e3f43fbdcdd.mp4",
-   "verdict": "PASS",
-   "notes": "repair of V04 (identity and room drift)",
+   "verdict": "PASS WITH TRIM",
+   "notes": "repair of V04 (identity drift); keep 0-5 s, separate tables appear from 6 s (audit D2)",
    "audio_screen_flags": [
     "steady tone: possible music or whine, listen"
    ]
@@ -48,8 +48,8 @@
    "credits": 684.6,
    "seconds": 15.07,
    "cloud_file": "d92353aacf1140ed80bb3f681a159f4c62051c2dbbbda1f7ebdff221b2833713.mp4",
-   "verdict": "PASS",
-   "notes": "",
+   "verdict": "FAIL: LAYOUT",
+   "notes": "not at the long table: small separate table, boy on Maria's screen-left, braids girl and jersey boy missing (audit D3); paid FLF repair candidate 684.6",
    "audio_screen_flags": [
     "steady tone: possible music or whine, listen"
    ]
@@ -61,8 +61,8 @@
    "credits": 593.4,
    "seconds": 13.06,
    "cloud_file": "3edac1cbff99f909e1bd67a2d63b072d86ec3ae0d155c9d7c93e1467081c3240.mp4",
-   "verdict": "PASS",
-   "notes": "near-silent audio",
+   "verdict": "PASS WITH TRIM",
+   "notes": "near-silent audio; start at 2 s, small-table layout before that (audit D4)",
    "audio_screen_flags": [
     "no audible sound"
    ]
@@ -442,8 +442,8 @@
    "credits": 639.0,
    "seconds": 14.08,
    "cloud_file": "55f3fde58d7f715058b8fb766d1adef2d8b426d4a9bc20c383e3dd640f40ff51.mp4",
-   "verdict": "PASS",
-   "notes": "the final wide shows small tables instead of the long table",
+   "verdict": "PASS WITH TRIM",
+   "notes": "keep 0-11 s; the final wide shows small tables (audit D6)",
    "audio_screen_flags": [
     "steady tone: possible music or whine, listen"
    ]
@@ -456,7 +456,7 @@
    "seconds": 15.07,
    "cloud_file": "06668a3c713acadf81d4128546b94c031ecdf0e115bb2eed7823954f071a8e28.mp4",
    "verdict": "PASS WITH TRIM",
-   "notes": "P04 cuts back to the standing wide: end the clip after the P03 push, about 11 s",
+   "notes": "keep 0-11 s; it cuts back to the small-table wide after the P03 push (audit D7)",
    "audio_screen_flags": []
   },
   {
@@ -466,8 +466,8 @@
    "credits": 684.6,
    "seconds": 15.07,
    "cloud_file": "f100f0eb80a643f1410d7e8b460db98387cb4f75b0a5026c766b410bae878519.mp4",
-   "verdict": "PASS",
-   "notes": "MACA stands, not kneels, in the final wide; small tables",
+   "verdict": "PASS WITH NOTE",
+   "notes": "11-15 s final wide: small tables, MACA standing (audit D8); free option: end at 11 s on the hand-over-hand insert",
    "audio_screen_flags": [
     "no audible sound",
     "steady tone: possible music or whine, listen"
@@ -489,5 +489,6 @@
   "V04-307c43d3c84b": "SEQ_003 identity drift",
   "V25-7cd431761bc2": "SEQ_023 provider audio rejection (no output)",
   "V37-a56cd4f9aadc": "SEQ_032 three Chicos"
- }
+ },
+ "hall_look": "All hall clips render a grey institutional hall, not PENV_HALL_DRESSED_MASTER (audit D1); accepted as the episode look."
 }

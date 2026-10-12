@@ -13,9 +13,9 @@ Each clip is on Comfy Cloud under the file name below; local copies are in `proj
 |---|---|---|---|---|---|---|---|
 | SEQ_001 | V01-fa24309c5dd0 | 14.08 | 639.0 | PILOT | pilot clip from before the standing budget; never approved, kept as the opening | steady tone: possible music or whine, listen | `db26b135575a2e7860b3e577380fb6a6de3421456120ed3e7fa9f1648017be37.mp4` |
 | SEQ_002 | V03-35c2d1e8d341 | 14.08 | 639.0 | PASS | repair of V02 (pencil-sketch drift) | no audible sound, steady tone: possible music or whine, listen | `5ddc1f0202259c7b59ca2171d644d08aa07d0a30d356fc09a93d69a097deb47d.mp4` |
-| SEQ_003 | V05-bc46c7731c5d | 10.08 | 456.4 | PASS | repair of V04 (identity and room drift) | steady tone: possible music or whine, listen | `f4a59c3ff266f5e47af6bfc2bac4bac67fcc7c7930149999e9e94e3f43fbdcdd.mp4` |
-| SEQ_004 | V06-3f58e4dd348a | 15.07 | 684.6 | PASS | - | steady tone: possible music or whine, listen | `d92353aacf1140ed80bb3f681a159f4c62051c2dbbbda1f7ebdff221b2833713.mp4` |
-| SEQ_005 | V07-6aaee2ed215d | 13.06 | 593.4 | PASS | near-silent audio | no audible sound | `3edac1cbff99f909e1bd67a2d63b072d86ec3ae0d155c9d7c93e1467081c3240.mp4` |
+| SEQ_003 | V05-bc46c7731c5d | 10.08 | 456.4 | PASS WITH TRIM | repair of V04 (identity drift); keep 0-5 s, separate tables appear from 6 s (audit D2) | steady tone: possible music or whine, listen | `f4a59c3ff266f5e47af6bfc2bac4bac67fcc7c7930149999e9e94e3f43fbdcdd.mp4` |
+| SEQ_004 | V06-3f58e4dd348a | 15.07 | 684.6 | FAIL: LAYOUT | not at the long table: small separate table, boy on Maria's screen-left, braids girl and jersey boy missing (audit D3); paid FLF repair candidate 684.6 | steady tone: possible music or whine, listen | `d92353aacf1140ed80bb3f681a159f4c62051c2dbbbda1f7ebdff221b2833713.mp4` |
+| SEQ_005 | V07-6aaee2ed215d | 13.06 | 593.4 | PASS WITH TRIM | near-silent audio; start at 2 s, small-table layout before that (audit D4) | no audible sound | `3edac1cbff99f909e1bd67a2d63b072d86ec3ae0d155c9d7c93e1467081c3240.mp4` |
 | SEQ_006 | V08-076797ef641b | 10.08 | 456.4 | PASS | - | - | `8924369d664778896747facfccdf4bd5f1b3ae05679aa1ce6f75fd624f4e699d.mp4` |
 | SEQ_007 | V09-cfc563cb4317 | 14.08 | 639.0 | PASS | - | no audible sound, steady tone: possible music or whine, listen | `3104e8aa9c186b2bb6a78e4351611f5f51b472f61690f7fd23c65cd22ce4d178.mp4` |
 | SEQ_008 | V10-4aac6a91e690 | 14.08 | 639.0 | PASS | scene cut hall -> bedroom | no audible sound | `55da2c9df09c025dce7d051f2495e350a5193a1ac82955db1f7a8adbb6a08ab0.mp4` |
@@ -45,15 +45,22 @@ Each clip is on Comfy Cloud under the file name below; local copies are in `proj
 | SEQ_032 | V36-0e99e41911a2 | 15.07 | 684.6 | PASS WITH TRIM | a second Maria appears in the walk at about 5-8 s: cut from P01 to P03; repair V37 failed (three Chicos in the end beat) | steady tone: possible music or whine, listen | `eba4168a8c31c2399ccce90863ccbbe32cb7630f45ba86b479307ef215231a01.mp4` |
 | SEQ_033 | V38-38e96cbfc516 | 8.06 | 365.1 | PASS | - | steady tone: possible music or whine, listen | `ac4febdb80f50b9822021c58828e268d4d8edafb81499b14c6d169fb606b0ea7.mp4` |
 | SEQ_034 | V39-a67a4b9420bb | 9.06 | 410.8 | PASS | the crayon boy stands beside Maria in the mediums | steady tone: possible music or whine, listen | `173914754435a85908661afba2f2c99415d5e8bf1e0d57ef06e7e9f554dbdf6a.mp4` |
-| SEQ_035 | V40-1a6760c68f9e | 14.08 | 639.0 | PASS | the final wide shows small tables instead of the long table | steady tone: possible music or whine, listen | `55f3fde58d7f715058b8fb766d1adef2d8b426d4a9bc20c383e3dd640f40ff51.mp4` |
-| SEQ_036 | V41-35d7bed2f778 | 15.07 | 684.6 | PASS WITH TRIM | P04 cuts back to the standing wide: end the clip after the P03 push, about 11 s | - | `06668a3c713acadf81d4128546b94c031ecdf0e115bb2eed7823954f071a8e28.mp4` |
-| SEQ_037 | V42-d673f2cfebf1 | 15.07 | 684.6 | PASS | MACA stands, not kneels, in the final wide; small tables | no audible sound, steady tone: possible music or whine, listen | `f100f0eb80a643f1410d7e8b460db98387cb4f75b0a5026c766b410bae878519.mp4` |
+| SEQ_035 | V40-1a6760c68f9e | 14.08 | 639.0 | PASS WITH TRIM | keep 0-11 s; the final wide shows small tables (audit D6) | steady tone: possible music or whine, listen | `55f3fde58d7f715058b8fb766d1adef2d8b426d4a9bc20c383e3dd640f40ff51.mp4` |
+| SEQ_036 | V41-35d7bed2f778 | 15.07 | 684.6 | PASS WITH TRIM | keep 0-11 s; it cuts back to the small-table wide after the P03 push (audit D7) | - | `06668a3c713acadf81d4128546b94c031ecdf0e115bb2eed7823954f071a8e28.mp4` |
+| SEQ_037 | V42-d673f2cfebf1 | 15.07 | 684.6 | PASS WITH NOTE | 11-15 s final wide: small tables, MACA standing (audit D8); free option: end at 11 s on the hand-over-hand insert | no audible sound, steady tone: possible music or whine, listen | `f100f0eb80a643f1410d7e8b460db98387cb4f75b0a5026c766b410bae878519.mp4` |
 
 ## Edit actions
 
-- SEQ_032: a second Maria appears in the walk (about 5-8 s). Cut from the P01 boy shot straight to P03 (Maria holding the drawing up to MACA).
-- SEQ_036: the clip cuts back to its opening wide for P04. End it after the P03 push on Maria's grin (about 11 s).
-- SEQ_012 and SEQ_014 hold one two-shot instead of the board's pushes. They read correctly but play static.
+All of these are free trims. Exact seconds are in the table above and in `EP05_CONTINUITY_AUDIT.md`.
+
+- **SEQ_003:** keep 0-5 s.
+- **SEQ_005:** start at 2 s.
+- **SEQ_032:** cut from the P01 boy shot straight to P03 (a second Maria appears in the walk at about 5-8 s).
+- **SEQ_035:** keep 0-11 s.
+- **SEQ_036:** keep 0-11 s.
+- **SEQ_037:** optionally end at 11 s on the hand-over-hand insert.
+- **SEQ_004:** does not match the long-table layout and can't be trimmed into it. The repair is your decision; see the audit.
+- **Look:** the hall renders as a grey institutional room, not the dressed master. This is consistent across all hall clips and accepted.
 
 ## Waiting on the user (the firewall accepts these only from you)
 

@@ -31,13 +31,13 @@ No.
 | # | Where | Expected | Observed | Severity | Lowest-cost fix |
 |---|---|---|---|---|---|
 | D1 | All 15 hall clips | Dressed master look | Grey institutional hall, plain wood table, brown chairs, white door, grey counter. Consistent from clip to clip. | Systemic, off-model | Accept as the episode look. Re-rendering 15 clips (about 8,700 credits) exceeds the 5,215 headroom. |
-| D2 | SEQ_003, last ~3 s | Long table | Separate small tables and a sink counter | Material | Trim the clip end (free) |
+| D2 | SEQ_003, from 6 s | Long table | Separate small tables and a sink counter | Material | Keep 0-5 s (free) |
 | D3 | SEQ_004, whole clip | Long table, boy on Maria's screen-right, braids girl and jersey boy across | Small separate table, sides swapped, extra children | Material, can't be trimmed | Paid repair candidate: 684.6 |
-| D4 | SEQ_005, first ~3 s | Long table | Small-table layout carried in from SEQ_004 | Material | Trim the clip start (free) |
+| D4 | SEQ_005, 0-2 s | Long table | Small-table layout carried in from SEQ_004 | Material | Start at 2 s (free) |
 | D5 | SEQ_001, 003-007 wides | 4 children | 8+ children seated | Occupancy drift | Accept; the beat and identity still read |
-| D6 | SEQ_035, final wide | One long table (board P04) | Several small square tables | Material | Trim P04 (free) |
-| D7 | SEQ_036, end | Eye-level two-shot | Cut back to the small-table wide | Material | Trim after the P03 push, about 11 s (free) |
-| D8 | SEQ_037, final wide (the episode's closing image) | Long table, MACA kneeling | Small tables, MACA standing | Material | Paid repair candidate: 684.6 |
+| D6 | SEQ_035, from 11 s | One long table (board P04) | Several small square tables | Material | Keep 0-11 s (free) |
+| D7 | SEQ_036, from 11 s | Eye-level two-shot | Cut back to the small-table wide | Material | Keep 0-11 s (free) |
+| D8 | SEQ_037, 11-15 s (the episode's closing image) | Long table, MACA kneeling | Small tables, MACA standing | Material | Free: end at 11 s on the hand-over-hand insert. Paid: see below |
 
 ## Root cause (pipeline, not the boards)
 
@@ -47,14 +47,18 @@ No.
 
 ## Repair plan (needs your go; nothing has been spent)
 
-- **Free trims:** apply D2, D4, D6 and D7 in the edit. No credits.
-- **Paid repairs (optional), 1,369.2 credits total:**
-  - SEQ_004 (684.6) and SEQ_037 (684.6), against 5,215 of headroom.
-  - Each repair is anchored at both ends, so its neighbours do not change:
-    1. Build full-colour start and end keyframes from `PENV_HALL_DRESSED_MASTER`, the identity board and the board panel layout (image generation, quoted before spend).
-    2. Run a first+last-frame video between those keyframes.
-  - SEQ_004 joins the trimmed SEQ_003 end and the trimmed SEQ_005 start.
-- **D1:** keep the grey hall. All 15 hall clips agree with each other, and matching the dressed master would mean re-rendering every hall clip.
+Every repair matches the hall as rendered (the grey hall of D1), never the dressed master. A warm, floral room between grey neighbours would be a new break.
+
+- **Free trims:** D2 (SEQ_003 keep 0-5 s), D4 (SEQ_005 start at 2 s), D6 (SEQ_035 keep 0-11 s), D7 (SEQ_036 keep 0-11 s). Optionally D8 (end SEQ_037 at 11 s on the hands).
+- **SEQ_004, recommended, 684.6 credits:**
+  - Render one first-last-frame (FLF) video between two real frames: SEQ_003 at 5 s, and SEQ_005 at 2 s (Maria close, with the long paper-covered table behind her).
+  - Both frames come from a free frame-extract graph. There are no keyframe image costs, and the neighbouring clips do not change.
+  - Board beats go in the prompt as text. The prompt also carries the canonical seats: the boy on Maria's screen-right, the braids girl and the jersey boy across the table, four children only.
+- **SEQ_037, optional, 684.6 credits:**
+  - Re-render with reference-to-video, opening on SEQ_036 at 11 s, with a grey long-table frame (SEQ_030 opening) as a fourth environment reference.
+  - This needs a small code change (a fourth reference slot, plus tests and the tooling check) before quoting.
+  - The free alternative is the 11 s trim.
+- **D1 (grey hall):** stays. Matching the dressed master would mean re-rendering all 15 hall clips, about 8,700 credits, which is more than the 5,215 of headroom.
 
 ## Readiness for the keyframe-first method (zero spend)
 
