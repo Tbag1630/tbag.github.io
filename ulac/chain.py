@@ -39,6 +39,12 @@ def prep(seq: str, start: str) -> None:
 IDENTITY = "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"  # colour identity board on cloud
 OPENING = ("Open exactly on @image3, the last frame of the previous shot, and continue from it without a cut; keep the "
            "full-colour finished animation look of @image3 and @image2 for the whole clip, never a pencil sketch.")
+# Scene boundary (the ENVIRONMENT line changes): the previous last frame still rides along as @image3, but the clip
+# opens with a clean cut into the new room so the old location is never carried over.
+CUT = ("@image3 is the last frame of the previous shot in a different location: use it only for character look, "
+       "colour and rendering continuity, then open with a clean cut into the ENVIRONMENT below and do not show the "
+       "room of @image3; keep the full-colour finished animation look of @image3 and @image2 for the whole clip, "
+       "never a pencil sketch.")
 
 
 def board_output(seq: str) -> str:
@@ -48,7 +54,7 @@ def board_output(seq: str) -> str:
     return [r["output"] for r in led if r.get("target") == seq and r.get("attempt") == acc and r.get("output")][-1]
 
 
-def prep_r2v(seq: str, opening: str) -> None:
+def prep_r2v(seq: str, opening: str, mode: str = "open") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
     alone loses identity and room when the previous clip ends on an insert."""
@@ -58,7 +64,7 @@ def prep_r2v(seq: str, opening: str) -> None:
     secs, seg = int(pj["render_seconds"]), float(pj["duration"])
     base = storyboard.video_text(plan)
     head, rest = base.split("\n", 2)[:2], base.split("\n", 2)[2]
-    prompt = "\n".join(head + [OPENING, rest])
+    prompt = "\n".join(head + [CUT if mode == "cut" else OPENING, rest])
     (d / "video_start").mkdir(exist_ok=True)
     (d / "video_start" / "prompt_video_r2v_open.txt").write_text(prompt)
     g = comfy.seedance_r2v_720p(prompt, board_output(seq), IDENTITY, seconds=secs,
