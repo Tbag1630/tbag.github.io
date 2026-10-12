@@ -37,6 +37,22 @@ def test_dissolve_keeps_length_and_blends(tmp_path):
     assert fr[30].mean(axis=(0, 1))[0] > 150 and fr[60].mean(axis=(0, 1))[2] > 150
 
 
+@needs_ffmpeg
+def test_push_in_on_the_incoming_side_of_a_dissolve(tmp_path):
+    """A still segment entered by a dissolve: the handle before its first frame holds 1x zoom instead of shrinking
+    below the crop (the v4 render failure)."""
+    ep = tmp_path / "EP99"
+    (ep / "VIDEO").mkdir(parents=True)
+    _clip(ep / "VIDEO" / "VA.output.mp4", "red")
+    _clip(ep / "VIDEO" / "VB.output.mp4", "blue", seconds=3)
+    edl = {"episode": "EP99", "picture_frames": 96, "transitions": {}, "tail_fade": 0.0,
+           "picture": {"xfade_frames": 8, "push_in": 0.04, "still_frames": 36},
+           "rows": [{"seq": "SEQ_001", "segments": [["VA", 0, 48]], "rec_in_f": 0, "rec_out_f": 48},
+                    {"seq": "SEQ_002", "segments": [["VB", 0, 48]], "rec_in_f": 48, "rec_out_f": 96}]}
+    pic = edit.render_picture_xf(ep, edl, tmp_path / "out")
+    assert edit.frames_of(pic) == 96
+
+
 def test_still_run_detection():
     assert edit.longest_still([0, 0.1, 0.2, 5, 0.1, 0.1, 0.1], 0.6) == 3
     assert edit.longest_still([0, 2, 3, 4], 0.6) == 0

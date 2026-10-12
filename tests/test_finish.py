@@ -480,3 +480,16 @@ def test_title_push_in_zooms_without_changing_length(tmp_path):
     fr2 = np.frombuffer(raw2, np.uint8).reshape(-1, 720, 1280).astype(np.float32)
     assert np.abs(fr[0] - fr2[0]).mean() < 6            # starts unzoomed
     assert np.abs(fr[-1] - fr2[-1]).mean() > 6          # ends zoomed in
+
+
+@needs_ffmpeg
+def test_the_1080p_delivery_keeps_a_1080p_reel_native_and_lifts_a_720p_one(tmp_path, monkeypatch):
+    monkeypatch.setattr(finish, "OUT", [1920, 1080])
+    src = tmp_path / "title.mp4"
+    _lavfi(src, "1920x1080", 24, 1, audio=False)
+    info = finish.probe_reel(src)
+    assert not finish.needs_conform(info)                              # already at the delivery size: used as is
+    small = tmp_path / "end.mp4"
+    _lavfi(small, "1280x720", 24, 1, audio=False)
+    got = finish.conform_reel(small, tmp_path / "end_1080.mkv", finish.probe_reel(small), push_in=0.03)
+    assert (got["width"], got["height"], got["frames"]) == (1920, 1080, 24)

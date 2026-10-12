@@ -38,6 +38,8 @@ FPS = edit.FPS                      # 24
 SR = edit.SR                        # 48000
 SPF = SR // FPS                     # audio samples per picture frame (2000)
 SIZE = (1280, 720)
+OUT = list(SIZE)                     # delivery size; finish(size=...) sets it (1920x1080 for the 1080p export)
+UPSCALE_SHARPEN = "unsharp=5:5:0.45:5:5:0.0"   # light luma sharpening after the lanczos upscale of the 720p body
 
 # Cue levels: integrated loudness of each placed cue, measured on the trimmed material before fades and ducking.
 LEVEL_LUFS = {"featured": -20.0, "under": -28.0, "button": -24.0}   # button: not in the brief, only M04 (excluded) uses it
@@ -525,7 +527,7 @@ def probe_reel(path) -> dict:
 
 
 def needs_conform(info: dict) -> bool:
-    return ((info["width"], info["height"]) != SIZE or abs(info["fps"] - FPS) > 1e-3
+    return ((info["width"], info["height"]) != tuple(OUT) or abs(info["fps"] - FPS) > 1e-3
             or info["sar"] not in ("1:1", "N/A", "0:1") or info["pix_fmt"] != "yuv420p")
 
 
@@ -536,7 +538,7 @@ def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float =
     if abs(info["width"] / info["height"] - 16 / 9) > 0.005:
         raise FinishError(f"{src}: {info['width']}x{info['height']} is not 16:9; the reel is not conformed by cropping or padding")
     hold = f"tpad=stop_mode=clone:stop={hold_frames}," if hold_frames else ""   # held frames, counted at 24 fps
-    vf = "fps=24," + hold + "scale=1280:720:flags=lanczos,setsar=1,format=yuv420p"
+    vf = "fps=24," + hold + f"scale={OUT[0]}:{OUT[1]}:flags=lanczos,setsar=1,format=yuv420p"
     if push_in > 0:
         # the series rig's camera dolly, done deterministically so generated lettering never has to move: a linear zoom
         # from 1.0 to 1+push_in, computed at 4K so each zoom step is a third of an output pixel (no stair-step jitter);
@@ -544,7 +546,7 @@ def conform_reel(src, dst, info: dict, hold_frames: int = 0, fade_out_s: float =
         n = max(2, round(info["frames"] / (info["fps"] or FPS) * FPS) + hold_frames)
         z = f"(1+{push_in}*n/{n - 1})"
         vf = ("fps=24," + hold + f"scale=w='trunc(3840*{z}/2)*2':h='trunc(2160*{z}/2)*2':eval=frame:flags=lanczos,"
-              f"crop=3840:2160:(iw-3840)/2:(ih-2160)/2,scale=1280:720:flags=lanczos,setsar=1,format=yuv420p")
+              f"crop=3840:2160:(iw-3840)/2:(ih-2160)/2,scale={OUT[0]}:{OUT[1]}:flags=lanczos,setsar=1,format=yuv420p")
     if fade_out_s > 0:
         total_s = round(info["frames"] / (info["fps"] or FPS) * FPS) / FPS + hold_frames / FPS   # video length, not the audio's
         vf += f",fade=t=out:st={max(0.0, total_s - fade_out_s):.4f}:d={fade_out_s}"
@@ -791,7 +793,7 @@ def contact_sheet(master: Path, items: list[tuple], dst: Path, work: Path) -> di
 # Orchestration
 # ---------------------------------------------------------------------------------------------------------------------
 def settings() -> dict:
-    keys = ("FPS SR SIZE LEVEL_LUFS LEVEL_TOL_LU FADE_IN_S FADE_IN_SHORT_S FADE_OUT_S NO_TAIL_FADE_S REEL_FADE_OUT_S SHORT_FILE_FADE_S "
+    keys = ("FPS SR SIZE OUT LEVEL_LUFS LEVEL_TOL_LU FADE_IN_S FADE_IN_SHORT_S FADE_OUT_S NO_TAIL_FADE_S REEL_FADE_OUT_S SHORT_FILE_FADE_S "
             "XFADE_S XFADE_PREROLL_S EXCLUDED_CUES SHORTFALL_TOL_S DUCK_DB DUCK_ATTACK_S DUCK_RELEASE_S DUCK_LOOKAHEAD_S DUCK_WIN_S "
             "DUCK_HOP_S DUCK_LOW_DBFS DUCK_HIGH_DBFS EDIT_FADE_S TARGET_LUFS TP_CEILING_DBTP TP_TARGET_DBTP LRA_TARGET "
             "LUFS_PASS_TOL LUFS_WARN_TOL VIDEO_CRF VIDEO_PRESET AUDIO_BITRATE SILENCE_MAX_DBFS MONO_DROP_WARN_DB PHASE_ACTIVE_DBFS "
@@ -821,7 +823,9 @@ def _log(msg: str) -> None:
 
 def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: str | None = None, title: str | None = None,
            end: str | None = None, end_hold_s: float = 0.0, review: bool = True, keep_work: bool = False,
-           end_fade_s: float = 0.0, title_push: float = 0.0, title_fade_s: float = 0.0, end_push: float = 0.0) -> dict:
+           end_fade_s: float = 0.0, title_push: float = 0.0, title_fade_s: float = 0.0, end_push: float = 0.0,
+           size: tuple[int, int] | None = None, review_labels: bool = False) -> dict:
+    OUT[:] = list(size or SIZE)
     ep = Path(ep).resolve()                                 # protected folders are absolute; compare like with like
     root = ep.parent.parent
     ep_name = ep.name
@@ -923,9 +927,9 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         conformed = needs_conform(info) or hf > 0 or ff > 0 or pu > 0
         use = info
         if conformed:
-            _log(f"conforming {dom} reel {info['width']}x{info['height']} @ {info['fps']} fps -> {SIZE[0]}x{SIZE[1]} @ {FPS}"
+            _log(f"conforming {dom} reel {info['width']}x{info['height']} @ {info['fps']} fps -> {OUT[0]}x{OUT[1]} @ {FPS}"
                  + (f" + {hf} hold frames" if hf else "") + (f" + {ff} s fade to black" if ff else ""))
-            dst = sink.path(f"reels/{dom}_{SIZE[1]}p{FPS}.mkv")
+            dst = sink.path(f"reels/{dom}_{OUT[1]}p{FPS}.mkv")
             use = conform_reel(src, dst, info, hf, ff, pu)
         reel_media[dom] = Path(use["path"])
         frames = use["frames"]
@@ -1059,7 +1063,8 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
 
     # ---- master ---------------------------------------------------------------------------------------------------------------
     master = sink.path(f"{ep_name}_{variant}_candidate_master.mp4")
-    flt = ";".join(f"[{i}:v]setsar=1,format=yuv420p[v{i}]" for i in range(3)) + ";[v0][v1][v2]concat=n=3:v=1:a=0[v]"
+    up = "" if tuple(OUT) == SIZE else f"scale={OUT[0]}:{OUT[1]}:flags=lanczos,{UPSCALE_SHARPEN},"   # the 720p body only
+    flt = ";".join(f"[{i}:v]{up if i == 1 else ''}setsar=1,format=yuv420p[v{i}]" for i in range(3)) + ";[v0][v1][v2]concat=n=3:v=1:a=0[v]"
     _log("encoding candidate master")
     _run(["ffmpeg", "-v", "error", "-y", "-i", str(reel_media["title"]), "-i", str(pic), "-i", str(reel_media["end"]), "-i", str(mix_path),
           "-filter_complex", flt, "-map", "[v]", "-map", "3:a", "-c:v", "libx264", "-profile:v", "high", "-preset", VIDEO_PRESET,
@@ -1074,8 +1079,10 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
         ass = sink.path("work/labels.ass")
         write_ass(ass, segs)
         font = _font()
-        vf = (f"scale={REVIEW_SIZE[0]}:{REVIEW_SIZE[1]}:flags=lanczos,ass={ass},"
-              f"drawtext=fontfile={font}:timecode='00\\:00\\:00\\:00':rate={FPS}:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6:x=12:y=10")
+        vf = f"scale={REVIEW_SIZE[0]}:{REVIEW_SIZE[1]}:flags=lanczos"
+        if review_labels:               # internal QC copy only; the delivered review is clean (no timecode, no labels)
+            vf += (f",ass={ass},"
+                   f"drawtext=fontfile={font}:timecode='00\\:00\\:00\\:00':rate={FPS}:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6:x=12:y=10")
         _run(["ffmpeg", "-v", "error", "-y", "-i", str(master), "-vf", vf, "-c:v", "libx264", "-preset", "veryfast", "-crf", "24",
               "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(review_path)])
         items = [("TITLE", title_f // 2)]
@@ -1191,7 +1198,7 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
     checks.append(chk("audition", UNKNOWN, "no listening pass has happened; all numbers above are machine measurements"))
     checks.append(chk("foley", PASS, foley_note))
     spec_ok = (v["codec_name"] == "h264" and v.get("profile") == "High" and v["pix_fmt"] == "yuv420p"
-               and (v["width"], v["height"]) == SIZE and _frac(v["r_frame_rate"]) == FPS and a["codec_name"] == "aac"
+               and (v["width"], v["height"]) == tuple(OUT) and _frac(v["r_frame_rate"]) == FPS and a["codec_name"] == "aac"
                and int(a["sample_rate"]) == SR and a["channels"] == 2)
     fs = mp4_faststart(master)
     head = open(master, "rb").read(4_000_000)
@@ -1248,6 +1255,8 @@ def main(argv=None) -> int:
                     help="fade the end reel's last seconds (picture and sound) to black: the film's final fade")
     ap.add_argument("--title-fade", type=float, default=0.0, metavar="SECONDS",
                     help="fade the title reel's last seconds (picture and sound) to black before the body fades in")
+    ap.add_argument("--size", default="1280x720", help="delivery size, e.g. 1920x1080 (titles native, the 720p body upscaled)")
+    ap.add_argument("--review-labels", action="store_true", help="burn timecode and cue labels into the review copy (QC only)")
     ap.add_argument("--end-push", type=float, default=0.0, metavar="FRACTION",
                     help="deterministic slow push-in across the end reel and its hold, so the hold never freezes")
     ap.add_argument("--title-push", type=float, default=0.0, metavar="FRACTION",
@@ -1257,7 +1266,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         res = finish(Path(a.ep), a.variant, a.out, a.foley, a.title, a.end, a.end_hold, not a.no_review, a.keep_work,
-                     a.end_fade, a.title_push, a.title_fade, a.end_push)
+                     a.end_fade, a.title_push, a.title_fade, a.end_push,
+                     tuple(int(v) for v in a.size.lower().split("x")), a.review_labels)
     except ProtectedPathError as e:
         print(f"FINISH REFUSED: {e}", file=sys.stderr)
         return 2

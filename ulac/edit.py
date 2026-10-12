@@ -488,7 +488,8 @@ def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
             vf.append(f"tpad=stop_mode=clone:stop={post}")
         if it["zoom"]:
             span = max(1, it["b"] - it["a"])
-            z = f"(1+{it['zoom']}*(({lo}+n)-{it['a']})/{span})"
+            # clipped to the segment, so dissolve handles outside [a, b] hold the end zoom and never drop below 1x
+            z = f"(1+{it['zoom']}*clip((({lo}+n)-{it['a']})/{span},0,1))"
             vf += [f"scale=w='trunc(2560*{z}/2)*2':h='trunc(1440*{z}/2)*2':eval=frame:flags=lanczos",
                    "crop=2560:1440:(iw-2560)/2:(ih-1440)/2", "scale=1280:720:flags=lanczos"]
         return vf
