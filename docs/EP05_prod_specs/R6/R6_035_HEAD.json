@@ -1,0 +1,66 @@
+{
+ "tid": "R6_035_HEAD",
+ "seq": "SEQ_035",
+ "kind": "flf",
+ "first": "out:K_R6_034_END",
+ "last": "out:K_035_A",
+ "seconds": 10,
+ "segment": 9.292,
+ "est_credits": 456.4,
+ "splice": {
+  "seq": "SEQ_035",
+  "replace": [
+   "V40-1a6760c68f9e",
+   0,
+   223
+  ],
+  "use": [
+   0,
+   223
+  ],
+  "rec_in_f": 10076,
+  "rec_out_f": 10299,
+  "shared_start": true,
+  "shared_end": false,
+  "note": "OPTIONAL, NOT IN THE USER'S APPROVED LIST. 10 s = 241 frames, 223 used; the last 17 frames approach K_035_A, and V49 (which starts on K_035_A) follows through the existing 8-frame dissolve"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: proud, happy. Arousal: gentle.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 the soft rustle of paper being pressed flat over a metal chest plate; P02 a soft servo whirr as MACA's hands settle; P03 Chico's paws hopping onto a metal boot with a soft tap; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA takes Maria's drawing from her with both hands and presses it flat over her chest panel, where it settles"
+   },
+   {
+    "video_beat": "MACA smooths the drawing with her fingertips and it glows softly through the paper; the camera eases back"
+   },
+   {
+    "video_beat": "Chico hops onto MACA's metal boot and sits looking up; MACA stands wearing the drawing with Maria beside her on the screen-left, a family-photo composition"
+   }
+  ],
+  "continuity": "Maria on the screen-left, MACA on the screen-right, Chico sitting on MACA's screen-left boot at the end; the drawing Maria holds becomes the drawing on MACA's chest; the long table with the children drawing at the left",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps its design: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "one Maria, one MACA, one Chico",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
+   "MACA's hands are white-and-grey robot hands with segmented fingers, never skin-coloured",
+   "no cut"
+  ],
+  "one_shot": true
+ },
+ "design": "OPTIONAL: replaces V40 f0-f222, whose f0-f164 hold the robot-only drawing. Needs the lead to ask the user.",
+ "gate": "SEQ_035 attempt 3 exists but is a contingency (requires a recorded MATERIAL fail of V49) and the user has not listed SEQ_035 for this fix: NOT AUTHORIZED, do not reserve",
+ "variant": "optional",
+ "attempt_needed": 3,
+ "optional": true,
+ "requires_user_approval": true,
+ "keyframes": [
+  "K_R6_034_END"
+ ]
+}

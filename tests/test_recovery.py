@@ -258,6 +258,17 @@ def test_solver_splices_repairs_at_the_shared_frame_and_trims_outside_them():
         assert r["rec_out_f"] - r["rec_in_f"] == sum(b - a for _, a, b in r["segments"])
 
 
+def test_segment_splice_puts_several_repairs_in_one_row_and_trims_only_the_original_take():
+    """R6 D4: two repair clips and one kept take frame inside one row; the head trim bites the take, not a repair."""
+    seqs = _seqs([(10.0, 13.0), (10.0, 12.0)])                           # a CH run: 20 s of slots, 25 s of takes
+    segs = [["T1", 0, 72], ["RA", 1, 120], ["T1", 191, 192], ["RB", 1, 121]]   # 72 + 119 + 1 + 120 = 312
+    rows = edit.solve(seqs, {"S001": "CH"}, splices={"S001": {"side": "segments", "segments": segs}})
+    got = rows[0]["segments"]
+    assert [t for t, _, _ in got if t != "T1"] == ["RA", "RB"]
+    assert ("RA", 1, 120) in got and ("T1", 191, 192) in got and got[-1] == ("RB", 1, 121)   # repairs are never trimmed
+    assert rows[0]["rec_out_f"] == 240 and rows[-1]["rec_out_f"] == 480   # the 72-frame head trim took the take piece
+
+
 def test_flf_prompt_carries_continuity_and_preventions_and_stays_policy_clean():
     plan = {**FLF_PLAN, "continuity": "Maria in the near window-side seat, the crayon boy beside her",
             "preventions": ["no second table", "no other children or adults"]}

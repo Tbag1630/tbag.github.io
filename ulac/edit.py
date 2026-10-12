@@ -103,6 +103,8 @@ def _pieces(s: dict, lock_f: int, sp: dict | None) -> list[tuple]:
     [(a, b), ...]; a span that fails review is cut out and the cut between spans is an edit."""
     if not sp:
         return [(s["take"], lock_f, s["frames"])]
+    if sp["side"] == "segments":               # an explicit piece list over the untrimmed row (several repairs in one row)
+        return [(t_, int(a), int(b)) for t_, a, b in sp["segments"]]
     n, at = sp["frames"], sp.get("at", 0)
     end = min(s["frames"], sp.get("take_end") or s["frames"])
     rep = [(sp["repair"], a, min(b, n)) for a, b in sp.get("ranges", [(0, n)])]    # QC-cleared spans of the repair
@@ -127,7 +129,7 @@ def _room(s: dict, lock_f: int, sp: dict | None, end: int) -> int:
     if sp and sp.get("trim_ok"):
         return sum(b - a for _, a, b in pcs)
     t_, a, b = pcs[end]
-    return b - a if not sp or t_ != sp["repair"] else 0
+    return b - a if not sp or t_ == s["take"] else 0
 
 
 def _trim(pieces: list[tuple], h: int, t: int) -> list[tuple]:
@@ -234,7 +236,13 @@ def load_splices(ep: Path) -> dict:
     acc = json.loads((ep / "PROD" / "ACCEPTED.json").read_text())
     sp = {}
     for seq, x in acc.get("splices", {}).items():
-        sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
+        if x.get("side") == "segments":
+            for t_, a, b in x["segments"]:
+                if not 0 <= a < b <= frames_of(ep / "VIDEO" / f"{t_}.output.mp4"):
+                    raise ValueError(f"{seq}: segment {t_} [{a}, {b}) is outside the take")
+            sp[seq] = dict(x)
+        else:
+            sp[seq] = {**x, "frames": frames_of(ep / "VIDEO" / f"{x['repair']}.output.mp4")}
     mutes = {k: [tuple(x) for x in v] for k, v in acc.get("audio_mutes", {}).items()}
     return {"splices": sp, "joins": acc.get("joins", {}), "audio_mutes": mutes, "tail_fade": acc.get("tail_fade"),
             "picture": acc.get("picture", {})}

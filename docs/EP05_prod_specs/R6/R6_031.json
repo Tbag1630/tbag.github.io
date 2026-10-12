@@ -1,0 +1,81 @@
+{
+ "tid": "R6_031",
+ "seq": "SEQ_031",
+ "kind": "flf",
+ "first": "out:K_R6_030_END",
+ "last": "out:K_R6_031_END",
+ "seconds": 11,
+ "segment": 11.0,
+ "est_credits": 502.0,
+ "splice": {
+  "seq": "SEQ_031",
+  "replace": [
+   "V35-ceca5139a436",
+   0,
+   265
+  ],
+  "use": [
+   0,
+   265
+  ],
+  "rec_in_f": 9110,
+  "rec_out_f": 9375,
+  "shared_start": true,
+  "shared_end": true,
+  "note": "265 frames = 11 s render exactly, used in full. f0 is K_R6_030_END, SEQ_030's last frame too (one doubled frame, invisible); f264 is K_R6_031_END"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: curious, then proud. Arousal: gentle, a small lift at Maria's answer.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a faint chair creak as the crayon boy leans in; P02 crayon scratches slowing and stopping; P03 a soft rustle of paper; P04 a green crayon scratching on the boy's own sheet; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "the crayon boy leans in from his seat beyond Maria to look at her glowing drawing, curious, his hands on the table edge, while Maria scribbles on"
+   },
+   {
+    "video_beat": "he points at the glowing scribbles on the drawing with a wondering look and Maria glances up at him"
+   },
+   {
+    "video_beat": "Maria lifts her chin with a proud smile as she answers him, the boy looking from the drawing to her"
+   },
+   {
+    "video_beat": "the boy gives a small shrug, loses interest, sits back and turns to his own sheet to draw his green dinosaurs; Maria, chin up and smiling proudly, looks toward the open floor where MACA waits; the camera eases back slightly and settles"
+   }
+  ],
+  "continuity": "Maria in the second window-side seat in profile at the left; the crayon boy in the seat beyond her, going back to his own paper at the end; the same drawing on the table throughout; MACA and Chico out of frame on the right",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "the boy never leaves his seat and never moves to a chair beside Maria",
+   "nobody else enters the frame"
+  ],
+  "one_shot": true
+ },
+ "design": "SEQ_031 K30 -> K31, one 11 s FLF. Cues (clip frames = slot frames - 20): 'Your mom glows' f48 the boy points; 'She glows' f199 Maria lifts her chin; the boy's 'Cool' shrug and turn back f226-f254.",
+ "gate": "SEQ_031 attempt 2 is inside the ceiling (V35 is attempt 1); attempt 3 is a contingency",
+ "variant": "A+B",
+ "attempt_needed": 2,
+ "cue_frames": {
+  "Your mom glows": [
+   48,
+   "the boy points at the scribbled glow"
+  ],
+  "She glows": [
+   199,
+   "Maria lifts her chin with a proud smile"
+  ]
+ },
+ "keyframes": [
+  "K_R6_030_END",
+  "K_R6_031_END"
+ ]
+}

@@ -3,8 +3,8 @@
  "seq": "SEQ_028",
  "kind": "flf",
  "fix": "D4",
- "first": "grab:V30_f197",
- "last": "grab:V30_f203",
+ "first": "aac342cdaf25b79edba885e58384cc9e21f51c05f399b43cff3ac9e80f470c57.png",
+ "last": "d91c0907a46253ba85a0e22829cd383fa263ce092a973ae8a0c9325ff4d1f5e9.png",
  "seconds": 7,
  "segment": 7.0,
  "splice": {
@@ -77,5 +77,6 @@
   }
  ],
  "shared_start": true,
- "attempt_attribution": "SEQ_028 attempt 2 (within the ceiling of 2). Counting it under SEQ_027 would take SEQ_027 to attempt 3 (approved) and leave R6_D4_A only the contingency attempt 4."
+ "attempt_attribution": "SEQ_028 attempt 2 (within the ceiling of 2). Counting it under SEQ_027 would take SEQ_027 to attempt 3 (approved) and leave R6_D4_A only the contingency attempt 4.",
+ "contract_deviation": "INTENT.json / qc_contract.json for SEQ_027 list 'a small vent on her side flutters' as an essential visual and in the ending lock. This clip does not show a visible fan or vent: the likely cause of the wing-like rays is that cue, and the user's note forbids lines or rays around MACA's head. The fan stays a sound. Deliberate, reasoned departure; review against the user's note, not that line of the contract."
 }

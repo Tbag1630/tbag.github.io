@@ -2,7 +2,7 @@
 
 Zero spend. Specs only. Nothing here was reserved, quoted or submitted (`ulac.prod img|flf` never run). Every prompt was
 built with `ulac.storyboard.video_text_flf(plan)` and checked with `ulac.video.prompt_problems(prompt) == []` (all seven clips
-pass; prompts are 3,195-3,604 characters, the longest prompt in any reserved graph so far is 3,563).
+pass; prompts are 3,000-3,519 characters, the longest prompt in any reserved graph so far is 3,563). `segment` is the seconds actually used (95 frames = 3.958, 191 frames = 7.958, whole seconds elsewhere), and every clip satisfies the preflight rule `segment <= seconds <= segment + 1`.
 
 Frames below were extracted from the takes by me (24 fps, 1280x720) into
 `/tmp/claude-0/-home-user-tbag-github-io/8ad12c7f-2200-5085-a54d-166a3f66445e/scratchpad/r6/bedroom/` (`V17_f076.png` style, plus contact sheets
@@ -23,7 +23,17 @@ V24 f36|37; V30 f96|97, f191|192; V31 f23|24, f160|161, f253|254; V32 f63|64; V2
 | A8 | SEQ_029 | `R6_A8` | V32 f88, `out:K_R6_A8_WIDE` | 8 | 365.1 | `K_R6_A8_WIDE` | 274 (6 s) |
 
 Totals: **42 video seconds = 1,917.0 credits** (audit 1,554), plus **2 keyframes, reserved at 55.3 each = 110.6** (recent actual bills 17-19 each, about 38).
-Act total reserved: **2,027.6**. Delta against the audit: +363 video, plus the two keyframes (the audit's per-fix figures carried none for this act).
+Act total reserved: **2,027.6**. Delta against the audit: +363 video, plus the two keyframes (the audit's per-fix figures carried none for this act): **+473.6**.
+
+| Act total | Video | Keyframes (reserve) | Total |
+|---|---|---|---|
+| As specced | 1,917.0 | 110.6 | **2,027.6** |
+| Cheaper variant (A2 as 4 s V22 f168 to f264, no keyframe; everything else as specced) | 1,780.1 | 55.3 | **1,835.4** |
+| Audit's figures for this act | 1,554 | none listed | 1,554 |
+
+Cap fit (computed read-only from `CREDIT_LEDGER.jsonl` with `firewall.global_committed`, 2026-10-12): committed **31,111.72** (video 29,336.09 + other 1,775.63) against the 39,500 cap, so **8,388.28** remains. The audit's own
+plan needs 5,844 video + 1,106 keyframe reserves = 6,950, leaving 1,438.28 of retry headroom (the audit assumed about 1,461 at 31,001). This act as specced adds 473.6 to the audit's plan, which leaves **964.7**
+(13.9% of 6,950) for every reviewer-failed retry in the episode; the cheaper variant leaves **1,157.0**. The act itself fits the remaining cap either way; what shrinks is the headroom the other two acts and all retries share.
 
 Where I differ from the audit and why:
 - **A2 grows 4 s to 7 s and needs a keyframe.** The script's last words, "one eye open", sit over take f318-f337, where Chico's eyes are shut (f320, f336
@@ -168,8 +178,13 @@ cream door at right), so no camera change is asked of the model:
 
 **Cloud frame grabs.** (V29-f22ccbb1beb2, 277), (V30-afec35ce58f7, 197), (V30-afec35ce58f7, 203).
 
-**Edit note.** `R6_D4_B` crosses a sequence boundary, so `edit.py` needs one repair take registered for two rows: SEQ_027 `side: whole` for part A, then SEQ_027 `tail` (clip 1-139) and SEQ_028 `head` (clip 140-168, take resumes at f29) for part B.
-The current `_pieces` takes a repair from frame 0, so the second row needs a start offset for the repair (140). Not implemented by me.
+**Edit note (two gaps in `edit.py`, neither implemented by me).** The SEQ_027 row holds two repair takes with one take frame between them: part A (clip 1-191 replaces V30 f6-f196), the take's own f197, then part B (clip 1-139 replaces V30 f198-f336).
+`load_splices` and `_pieces` support exactly one splice dict per seq, so (1) the SEQ_027 row needs a list of splices (A as a head repair ending on take f197, B as a tail repair starting at f198), and (2) part B's second piece is the SEQ_028 head
+(clip 140-168 replaces V31 f0-f28, the take resumes at f29), which needs a repair start offset (140) because `_pieces` always reads a repair from frame 0. The A to B joint at V30 f197 is the take's own frame, so it is seamless.
+
+**Single-clip alternative, for the lead to choose (I did not switch).** One 15 s FLF from V29 f277 to V30 f203 (360 frames): clip frames 1-331 replace V30 f6-f336 and clip frames 332-360 replace V31 f0-f28. Same 684.6 credits; one SEQ_027 attempt (attempt 2 free, 3 free retry,
+4 contingency) and SEQ_028 untouched; one repair take with the SEQ_027 row `side: whole` and the SEQ_028 row a head repair with offset 332, so only gap (2) remains. The cost is losing the mid-pin at V30 f197, so the 15 s run has nothing to hold it to the room between f277 and f203,
+and a failed review re-renders all 15 s instead of 7 or 8. I specced the two-clip version because the retry unit is smaller and the pins hold the middle.
 
 ## 9. Fix A8: SEQ_029, V32 f89-f280 (`R6_A8`, `K_R6_A8_WIDE`)
 
@@ -192,6 +207,9 @@ Known harmless drift: V26's chest is wood with white stars while V28-V31 show a 
 **Cloud frame grabs.** (V32-a554b3a4d301, 88), (V26-d9351a00709c, 288), (V31-8830210c7b44, 28).
 
 ## 10. Cloud frame grabs needed (take, frame), 14 in all
+
+**Do not run any clip or keyframe spec before the `grab:` placeholders are replaced.** `prod.frame()` only resolves `out:` names; a `grab:V17_f76` string would be passed straight into the graph's LoadImage node and a reservation could be recorded on a graph
+that cannot run. Grab first (the `00_cloud_frame_grabs.json` pattern), then substitute each `grab:<Vnn>_f<frame>` in `first`, `last` and `refs` (and `base_frame`, already a key of that file's style) with the cloud PNG name.
 
 | Take | Frame | Used as | Local copy |
 |---|---|---|---|
@@ -223,10 +241,14 @@ The act needs 7 clip attempts of the pilot's 95. Reserved total for the act 2,02
 
 ## 12. Open questions and what I could not solve
 
-1. **A2 scope (user or lead call).** 7 s plus a keyframe (about 320 + 55) honours "one eye open" over the last second; 4 s (183) leaves it wrong. I specced the 7 s. SEQ_020 has only one free attempt, so this cannot be done as two separate clips.
+1. **A2 scope (a scope-versus-headroom call for the lead or user).** 7 s plus a keyframe (about 320 + 55 = 375) honours "one eye open" over the last second; 4 s (183) leaves it wrong. I specced the 7 s. SEQ_020 has only one free attempt, so this cannot be done as two separate clips.
 2. **D4 scope.** 15 s (685) is the cost of the rays being in shot 2 as well. The only cheaper route is a held clean frame for part of the act, which I advise against.
 3. **Bedroom finish drift** (section 3): my keyframes follow the accepted neighbours, not the PENV master. If the user wants the master's palette, SEQ_014-029 are a re-render (audit's optional polish, 1,231 for SEQ_016/017 alone).
 4. **D3 serious face timing** is left to the take (harmless variation); fixing it costs 411.
 5. **Maria's dotted pyjamas in V30 f0-f191** become plain in the new clips; no other shot is touched.
-6. **EDL support for a two-row repair take** (`R6_D4_B`) is not implemented; the splice fields describe it exactly.
+6. **EDL support for the SEQ_027 two-splice row and the SEQ_028 repair offset** (section 8) is not implemented; the splice fields describe it exactly.
+8. **Contract deviation (SEQ_027, deliberate).** INTENT.json and qc_contract.json list "a small vent on her side flutters" as an essential visual and in the ending lock. `R6_D4_A` and `R6_D4_B` do not show a visible fan or vent, because that cue is the likeliest
+   source of the wing-like strips at her ear discs and the user's note forbids any lines or rays around her head; the fan stays a sound only ("a small soft mechanical whirr from inside her torso"). The reviewer should judge these clips against the user's note, not that
+   line of the contract. If the lead wants the contract line honoured, the vent must be a small flat louvre on her torso side, never near the head; I did not spec that. Recorded in each spec as `contract_deviation`.
+9. **Cap and headroom** (end of section 1): the act fits, but at 2,027.6 it takes the episode's retry headroom from 1,438 to 965. The A2 scope call (item 1) is the single largest lever: it is worth 192.2 including its keyframe.
 7. Not verified by me: whether Seedance will actually reproduce the foot scratch (D3) between two near-identical pins; the contingency keyframe is described, not built.

@@ -20,7 +20,7 @@
  "refs": [
   [
    "REF1 V48 f96 (look, light, lens, Maria and the crayon boy)",
-   "PENDING_GRAB:V48-d8961c9d7491:96"
+   "c0e58b405b36fe686da7eca8458ee8eb4e85a72d1063b6c4f11fe896cc76c8ac.png"
   ],
   [
    "REF2 identity board",
@@ -28,7 +28,7 @@
   ],
   [
    "REF3 V01 f47 (room layout only: table, roll, windows, counter, doorway)",
-   "PENDING_GRAB:V01-fa24309c5dd0:47"
+   "f6cec1b18130fb7cac108219f3b513152c4a74cfb937773f0631c985da8cc967.png"
   ]
  ],
  "prompt": "Make a new frame in the warm afternoon dining hall of image 1 from a different camera position: a low three-quarter view from the near end of the long table, at table height, looking down the length of the table toward the far open doorway. Maria sits in the left foreground in her seat on the window side, seen in profile from behind her shoulder, her head turned toward the far end of the table, her eyes looking down the long paper roll, her lips closed, a still, quiet, stuck expression; her own white sheet lies on the table in front of her at the very bottom-left edge of the frame, mostly out of frame. Down the middle of the long wooden table lies one long roll of white paper, unrolled flat from the foreground to the far end, about a third as wide as the table; the part of the roll beside Maria is still blank white, and a little further along it carries rows of children's crayon family drawings in soft pastel colours, each row three to five simple figures holding hands: moms with brown hair, dads in big shoes, children, and a grandma with a purple purse. Every figure stands upright with its head toward the far end of the table. There is no robot, no machine and no writing on any drawing. Beyond Maria on her side the crayon boy sits in the next seat, back at his own small sheet, drawing with his green crayon; across the table on the right the jersey boy sits in the near seat and the girl with two braids in the next seat, both drawing on their own small sheets. Exactly four children; every other chair along both sides of the table is empty. Tall barred windows on the left wall glow with low golden sunset light over a grey wood-plank wall, a blue-and-white tiled counter stands on the right, the far doorway is open to bright outdoor light and nobody stands in it; MACA is not in the room. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is the identity board. The identity board is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Image 3 is a frame of this same hall from the near end of the table and is used only for where the table, the roll, the windows, the counter and the doorway are; never copy its people, its number of children or its colours. Identity, from the identity board: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA, a tall robot, is not in this frame. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",

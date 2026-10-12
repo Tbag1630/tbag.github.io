@@ -1,0 +1,95 @@
+{
+ "tid": "R6_032",
+ "seq": "SEQ_032",
+ "kind": "flf",
+ "first": "out:K_R6_031_END",
+ "last": "out:K_R6_032_END",
+ "seconds": 13,
+ "segment": 12.125,
+ "est_credits": 593.3,
+ "splice": {
+  "seq": "SEQ_032",
+  "replace": [
+   [
+    "V36-0e99e41911a2",
+    0,
+    113
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    112,
+    151
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    202,
+    245
+   ],
+   [
+    "V36-0e99e41911a2",
+    265,
+    361
+   ]
+  ],
+  "use": [
+   0,
+   291
+  ],
+  "rec_in_f": 9375,
+  "rec_out_f": 9666,
+  "shared_start": true,
+  "shared_end": false,
+  "note": "13 s render = 313 frames; 291 are used (f0..f290), so the last 22 frames are dropped. f0 is K_R6_031_END, SEQ_031's last frame too (one doubled frame, invisible). The end is NEAR-shared, not shared: the used last frame is 22 frames before the pinned K_R6_032_END on a requested still hold, so the join into SEQ_033 dissolves (8 frames) unless the join check finds the hold frame-identical to K_R6_032_END."
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: proud, hopeful. Arousal: gentle, rising as Maria crosses the floor, then still.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a green crayon scratching on a sheet; P02 a chair scraping softly on tile; P03 light footsteps of a small child on tile and a paper rustle; P04 a soft servo whirr as MACA turns and bends her head; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "the crayon boy turns back to his own sheet and draws a green dinosaur; Maria, in the second window-side seat, glances proudly toward MACA across the floor, her drawing in front of her"
+   },
+   {
+    "video_beat": "Maria lifts the drawing in both hands, stands and pushes her chair back; the boy keeps drawing"
+   },
+   {
+    "video_beat": "Maria carries the drawing at her chest toward the camera end of the table, walks around the near end of the table on the open floor without touching it, and crosses to MACA; the camera eases back and pans right to follow her"
+   },
+   {
+    "video_beat": "MACA turns to face her; Maria stops in front of MACA and lifts the drawing up high in both hands toward her, facing the camera; MACA bends her head to look down at it, Chico sitting at her feet; hold still"
+   }
+  ],
+  "continuity": "Maria walking on the open floor to MACA; the crayon boy staying in his seat beyond Maria's empty chair, drawing; the braids girl and the jersey boy in their seats; MACA on the open floor in front of the tiled counter with Chico at her feet; one drawing, Maria's, all the way",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "Maria never walks through the crayon boy, a chair or the table and never steps on or over it: she goes around the near end of the table on the open floor, a physical path",
+   "the boy never leaves his seat or jumps to another chair",
+   "the final seconds are a still hold"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN A (authorized path): single 13 s FLF K31 -> K32. Caveat: the path around the table end is steered by the prompt only; plan B (R6_032_a + R6_032_b through K_R6_032_MID) pins it. Cue frames (clip = slot - 39): 'held it up with both hands' f208; 'It's for you' f246; 'It's us' f284.",
+ "gate": "SEQ_032 attempt 3 is approved (non-contingent); attempt 4 is a contingency",
+ "variant": "A",
+ "attempt_needed": 3,
+ "cue_frames": {
+  "held it up with both hands": [
+   208,
+   "Maria holds the drawing up with both hands to MACA"
+  ]
+ },
+ "keyframes": [
+  "K_R6_031_END",
+  "K_R6_032_END"
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "tid": "R6_037_HAND",
+ "seq": "SEQ_037",
+ "kind": "flf",
+ "first": "out:K_036_B",
+ "last": "out:K_037_A",
+ "seconds": 10,
+ "segment": 9.708,
+ "est_credits": 456.4,
+ "splice": {
+  "seq": "SEQ_037",
+  "replace": [
+   "V42-d673f2cfebf1",
+   0,
+   233
+  ],
+  "use": [
+   8,
+   241
+  ],
+  "rec_in_f": 10756,
+  "rec_out_f": 10989,
+  "shared_start": false,
+  "shared_end": true,
+  "note": "D6. 10 s = 241 frames; f8..f240 (233 frames) are used. The start is NEAR-shared, not shared: the used first frame is 8 frames after the pinned K_036_B on a requested still opening look, so the join from V50 dissolves (8 frames) unless the join check finds f8 frame-identical to K_036_B. The end is shared: f240 is K_037_A, also V51's f0 (one doubled frame, invisible); V51 [0,121] follows unchanged"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: tender, resolved. Arousal: calm, settling.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a soft tap of a metal fingertip on the chest panel; P02 a gentle servo whirr and a metal-on-fabric settle as MACA's hand closes around Maria's hand; P03 crayons scratching at a distance; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "MACA kneels on the right of frame, her head tilted toward Maria; Maria stands on the left grinning up at her with her hands behind her back; they hold the look for a moment"
+   },
+   {
+    "video_beat": "MACA lifts her near hand and gently touches the crayon drawing glowing on her chest panel with one fingertip, the drawing staying in full colour"
+   },
+   {
+    "video_beat": "MACA lowers her hand; Maria brings her hand out from behind her back and MACA's white-and-grey robot hand closes gently around Maria's small hand, the segmented metal fingers curling over it"
+   },
+   {
+    "video_beat": "the camera pulls back slowly to a wider two-shot, MACA kneeling and holding Maria's hand, Chico sitting by MACA's knees; hold still"
+   }
+  ],
+  "continuity": "Maria on the screen-left in her pink overall outfit over a light-blue collared shirt, purple belt and purple boots; MACA kneeling on the screen-right with the colour crayon drawing of a girl, a dog and a robot glowing on her chest panel; Chico sitting by MACA's knees once he enters the frame in the pull-back; the children at the long table drawing in the background",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "MACA's hands are white-and-grey robot hands with three or four segmented metal fingers, never fleshy or skin-coloured; the only skin on screen is Maria's hand",
+   "the chest drawing stays the same colour crayon drawing, never a grey pencil sketch, never redrawn",
+   "Maria's outfit never changes",
+   "one of each character; Maria stays on MACA's screen-left",
+   "the camera never closes in on the hands",
+   "no lip movement forming words",
+   "no cut"
+  ],
+  "one_shot": true
+ },
+ "design": "D6: one FLF K_036_B -> K_037_A replacing V42 f0-f232. Both locked keyframes opened and found clean: PROD/K_036_B/crop.png, PROD/K_037_A/crop.png (Maria's outfit identical in both; MACA's holding hand is grey segmented metal).",
+ "gate": "SEQ_037 attempt 3 is approved (non-contingent). Beats vs narration (clip s): 'Honest...' 2.9-5.65 touch the drawing; 'Know who keeps choosing you' 6.27-7.63 take Maria's hand; hold and pull back to K_037_A by 9.7.",
+ "variant": "D6",
+ "attempt_needed": 3,
+ "keyframes": []
+}

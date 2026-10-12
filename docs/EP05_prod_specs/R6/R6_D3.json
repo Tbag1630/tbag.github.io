@@ -3,10 +3,10 @@
  "seq": "SEQ_022",
  "kind": "flf",
  "fix": "D3",
- "first": "grab:V23_f357",
- "last": "grab:V24_f102",
+ "first": "85c3cd16e38e8c48c51ae6d5c806836920f65c195cc9d675d2e7bb438afb2319.png",
+ "last": "d6ba860c18a33d4026b8c5f37ed66f5caaae7f5fb3c4654e2974de4c13975f07.png",
  "seconds": 4,
- "segment": 4.0,
+ "segment": 3.958,
  "splice": {
   "seq": "SEQ_022",
   "replace": [

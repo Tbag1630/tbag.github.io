@@ -1,0 +1,87 @@
+{
+ "tid": "R6_032_a",
+ "seq": "SEQ_032",
+ "kind": "flf",
+ "first": "out:K_R6_031_END",
+ "last": "out:K_R6_032_MID",
+ "seconds": 6,
+ "segment": 6.0,
+ "est_credits": 273.8,
+ "splice": {
+  "seq": "SEQ_032",
+  "replace": [
+   [
+    "V36-0e99e41911a2",
+    0,
+    113
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    112,
+    151
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    202,
+    245
+   ],
+   [
+    "V36-0e99e41911a2",
+    265,
+    361
+   ]
+  ],
+  "use": [
+   0,
+   145
+  ],
+  "rec_in_f": 9375,
+  "rec_out_f": 9520,
+  "shared_start": true,
+  "shared_end": true,
+  "note": "plan B: parts a and b together replace the whole SEQ_032 record (rec 9375-9666, 291 frames): part a uses f0..f144 (145 frames), part b f1..f146 (146 frames); f144 is K_R6_032_MID, the shared frame, used once"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: proud, hopeful. Arousal: gentle, rising as Maria crosses the floor.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a green crayon scratching on a sheet; P02 a chair scraping softly on the tile as Maria stands; P03 soft light footsteps of a small child on tile and a gentle paper rustle; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "the crayon boy turns back to his own sheet and draws a green dinosaur; Maria, in the second window-side seat, glances proudly toward MACA across the floor, her drawing in front of her"
+   },
+   {
+    "video_beat": "Maria lifts the drawing from the table in both hands, stands up and pushes her chair back; the boy keeps drawing"
+   },
+   {
+    "video_beat": "the camera eases back as Maria carries the drawing in front of her chest toward the camera end of the table and reaches the near end of the long table on the open floor, her path going around the end of the table, never touching it"
+   }
+  ],
+  "continuity": "Maria walking on the open floor past the near end of the table, the crayon boy staying in his seat beyond Maria's empty chair drawing, MACA standing on the right in front of the tiled counter with Chico at her feet, turning toward Maria; one drawing, Maria's",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "Maria never walks through the crayon boy, a chair or the table",
+   "Maria never steps on or over the table",
+   "the boy never leaves his seat and never jumps to another chair"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN B part a: K31 -> K32_MID (Maria at the near end of the table on the floor).",
+ "gate": "needs attempt 3 (approved) and attempt 4 for part b (contingency by default: the lead must ask the user to lift requires_fail for SEQ_032)",
+ "variant": "B",
+ "attempt_needed": 3,
+ "keyframes": [
+  "K_R6_031_END",
+  "K_R6_032_MID"
+ ],
+ "use_instead_of": "R6_032"
+}

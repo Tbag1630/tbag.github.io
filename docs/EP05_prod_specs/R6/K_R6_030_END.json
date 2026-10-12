@@ -1,0 +1,45 @@
+{
+ "tid": "K_R6_030_END",
+ "kind": "keyframe",
+ "seq": "SEQ_030/SEQ_031",
+ "design": "K30: last frame of SEQ_030 and first frame of SEQ_031 (shared keyframe). Medium close over the finished glow drawing, Maria still scribbling, the crayon boy leaning in from seat 3 to look.",
+ "base_frame": "V35_f72 (grab): Maria in profile at the table, the boy leaning in beyond her, the room",
+ "size": "1280x720",
+ "quality": "high",
+ "refs": [
+  [
+   "REF1 V35_f72 (edit this frame: room, camera, light, table, window, far doorway)",
+   "ce11fc12ec380cc896e687ab0f35f58f8a8afad4a3c2f2e26d85e7021bac29e8.png"
+  ],
+  [
+   "REF2 identity board",
+   "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ],
+  [
+   "K_DRAW_US_GLOW: Maria's family drawing after the morning glow (the drawing on the paper is exactly this image)",
+   "out:K_DRAW_US_GLOW"
+  ],
+  [
+   "REF4 K_035_A (hall tabletop sheets, wall and floor colour only)",
+   "out:K_035_A"
+  ]
+ ],
+ "prompt": "Edit image 1. Keep its room, camera position, framing, light, long table, window and far doorway exactly as they are. Replace the drawing on the paper in front of Maria with exactly image 3: Maria's crayon drawing on cream paper: on the left a girl with brown hair, a thin yellow headband and a pink pinafore dress; in the middle a small tan dog with a blue checked blanket draped over its back; on the right a robot drawn upright, a round white head with a teal visor band and two blue eyes, square shoulders, a pink chest with a row of five coloured chest lights and orange joints; green zigzag grass along the bottom, with a big sunburst of yellow and orange crayon glow scribbles drawn all around the whole robot, thickest around its pink chest, crossing its arms and legs and running off the top, right and bottom edges of the paper, while the girl and the dog stay clear of it. The whole sheet is visible; the glow is thick yellow and orange crayon scribbling on the paper, not a light source, and a few yellow and orange crayon streaks run past the sheet's top, right and bottom edges onto the wooden table. Image 3 is the artwork alone, cropped to the paper: the sheet's shape, its edges and the table come from image 1, and the artwork fills the whole sheet. Orientation: the camera sees the drawing upright, the grass along the edge nearest the camera and the girl at the left end. Remove the bright glowing ring from image 1. Maria, in profile at the left, holds an orange crayon in her right hand touching the glow, still scribbling. The crayon boy leans in from his seat beyond her with his hands on the table edge, looking at her drawing with curiosity, mouth closed, a green crayon in one hand. The rest of the long table beyond carries long white sheets of the other children's drawings and crayon tins as image 4 shows. The other children's sheets show families of people only: moms with brown hair, dads with big shoes, a grandma with a purple purse; the crayon boy's own sheet shows green dinosaurs; Maria's drawing is the only robot anywhere. Exactly Maria and the crayon boy in frame; nobody else. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
+ "reviewer_checks": [
+  "16:9 1280x720, finished 3D animation, no sketch or pencil look",
+  "character count: exactly the people named, one of each, no lookalike Maria",
+  "grey hall of K_035_A (not the porthole-door / bulletin-board hall)",
+  "Maria is on MACA's screen-left whenever both stand; MACA stands on the open floor beside the table",
+  "drawing equals K_DRAW_US_GLOW: girl, dog with blue checked blanket and robot all present, glow scribbles all around the robot running off the top, right and bottom edges; girl and dog stay clear of the glow; not robot-only",
+  "no ring halo; glow reads as crayon",
+  "boy leaning in at L3, not duplicated; Maria's face and hair per identity board"
+ ],
+ "pending_grabs": {
+  "ce11fc12ec380cc896e687ab0f35f58f8a8afad4a3c2f2e26d85e7021bac29e8.png": {
+   "take": "V35-ceca5139a436",
+   "frame": 72,
+   "job": "f4464d52-d6c7-4e31-be56-c406fada4466"
+  }
+ },
+ "grab_note": "replace each grab:<take>_f<n> ref with the cloud png from docs/EP05_prod_specs/00_cloud_frame_grabs.json after the free LoadVideo -> ImageFromBatch grab"
+}

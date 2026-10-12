@@ -1,0 +1,33 @@
+{
+ "tid": "K_R6_033_END",
+ "kind": "keyframe",
+ "seq": "SEQ_033/SEQ_034",
+ "design": "K33: last frame of SEQ_033 and first frame of SEQ_034 (shared keyframe). Wide: MACA with both arms raised like a bear, her chest screen pulsing softly, Maria grinning below holding the drawing, Chico at her feet, the children at the table.",
+ "base_frame": "K_035_A (locked) re-composed wider",
+ "size": "1280x720",
+ "quality": "high",
+ "refs": [
+  [
+   "REF1 K_035_A locked grey-hall keyframe (edit and re-compose: room, table, children, render style)",
+   "out:K_035_A"
+  ],
+  [
+   "REF2 identity board",
+   "23f1e2cd80010bf5e2110a5927c0d3b277610af6fae8291c536b08f433f3f2f1.png"
+  ],
+  [
+   "K_DRAW_US_GLOW: Maria's family drawing after the morning glow (the drawing on the paper is exactly this image)",
+   "out:K_DRAW_US_GLOW"
+  ]
+ ],
+ "prompt": "Use image 1 as the authority for the room, the long table, the children's look and the render style, and re-compose it as a wider shot of the same room: pull the camera back and raise it slightly so that MACA's raised hands fit inside the frame with headroom. MACA stands upright on the open floor on the right in front of the tiled counter with both arms raised straight up over her head like a bear, her hands open, her blue face screen with a big happy smile; her pink chest plate is bare (remove the drawing from it) except for its small dark inset screen, which glows in a soft warm pulse of light. Maria stands on MACA's left, on the screen-left, grinning up at her and holding her own drawing flat against her chest with both hands, the drawing exactly image 3: Maria's crayon drawing on cream paper: on the left a girl with brown hair, a thin yellow headband and a pink pinafore dress; in the middle a small tan dog with a blue checked blanket draped over its back; on the right a robot drawn upright, a round white head with a teal visor band and two blue eyes, square shoulders, a pink chest with a row of five coloured chest lights and orange joints; green zigzag grass along the bottom, with a big sunburst of yellow and orange crayon glow scribbles drawn all around the whole robot, thickest around its pink chest, crossing its arms and legs and running off the top, right and bottom edges of the paper, while the girl and the dog stay clear of it. Image 3 is the artwork alone, cropped to the paper: it fills a wide landscape sheet of cream paper that Maria holds horizontally, the grass along the bottom edge, the girl at the left end and the robot at the right end, facing the camera. Chico sits on the floor at MACA's feet looking up, not on her boot. Along the long table at the left, the crayon boy, the braids girl and the jersey boy sit in their own seats at their own sheets, looking up toward MACA; Maria's chair in seat 2 is empty. No rays, wings, beams or lines come from MACA's head. The other children's sheets show families of people only: moms with brown hair, dads with big shoes, a grandma with a purple purse; the crayon boy's own sheet shows green dinosaurs; Maria's drawing is the only robot anywhere. Exactly Maria, three children, MACA and Chico. Image 1 is the authority for render style, lens, lighting, room, furniture and colour: keep its finished 3D animated film look exactly, as if this were another frame of the same shot. Image 2 is a painted character sheet used only for identity (faces, hair, wardrobe colours); never copy its painted style, its plain background or its poses. Identity, from image 2: Maria is a small girl with black bangs, a thin yellow headband, a side ponytail with a pink scrunchie, a pink overall outfit over a light-blue collared shirt and purple boots. The crayon boy has tousled ginger-blond hair and a green T-shirt with a small dinosaur. The braids girl has two dark braids and olive overalls over a cream shirt. The jersey boy has short brown hair and a white shirt with navy trim. MACA is a tall robot with a white riveted helmet, a glowing blue face screen with two smiling eyes, a pink chest plate with a small dark inset screen and an orange hip plate. Chico is a small tan-and-white chihuahua with a pink collar. One instance of each character only. Output one 16:9 full-colour production frame, 1280x720, no text, no sketch lines.",
+ "reviewer_checks": [
+  "16:9 1280x720, finished 3D animation, no sketch or pencil look",
+  "character count: exactly the people named, one of each, no lookalike Maria",
+  "grey hall of K_035_A (not the porthole-door / bulletin-board hall)",
+  "Maria is on MACA's screen-left whenever both stand; MACA stands on the open floor beside the table",
+  "MACA's arms fully raised and inside the frame, hands open, no wing-like lines around her head",
+  "chest bare with soft inset-screen glow; drawing is in Maria's hands = K_DRAW_US_GLOW",
+  "crayon boy in his own seat (not beside Maria); three children at the table; seat 2 empty"
+ ]
+}

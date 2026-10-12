@@ -618,5 +618,142 @@
   "local_png": "project/EP05/PROD/cloud_frames/V03_f332.png",
   "sha256": "da7d1d2abada75eb3dc26b69ed565769872bbbad4f18344a355fe5b744e2feab",
   "dhash_bits_vs_local_decode": 0
+ },
+ "V48_f96": {
+  "take": "V48-d8961c9d7491",
+  "frame": 96,
+  "cloud_png": "c0e58b405b36fe686da7eca8458ee8eb4e85a72d1063b6c4f11fe896cc76c8ac.png",
+  "job_id": "27339d81-fb70-4cc0-b7d4-37b5ec28da2c",
+  "local_png": "project/EP05/PROD/cloud_frames/V48_f96.png",
+  "sha256": "4b3529a8d525da9047730fbd1e70a3c226e23247223aa8b9e30844603cbddcf1",
+  "dhash_bits_vs_local_decode": 1
+ },
+ "V01_f47": {
+  "take": "V01-fa24309c5dd0",
+  "frame": 47,
+  "cloud_png": "f6cec1b18130fb7cac108219f3b513152c4a74cfb937773f0631c985da8cc967.png",
+  "job_id": "8c5153d7-6ce3-455d-b342-6d2cfb435e43",
+  "local_png": "project/EP05/PROD/cloud_frames/V01_f47.png",
+  "sha256": "6f9759ff3043c06b72211500df03d14760bd5dafefd033cf7c1c74a3a47af603",
+  "dhash_bits_vs_local_decode": 0
+ },
+ "V17_f76": {
+  "take": "V17-60ca61e0bac1",
+  "frame": 76,
+  "cloud_png": "0d1a6b76a489ef0a2719ad9a628206caaf6e8e996868e82c84fa0ca5ff177fdb.png",
+  "job_id": "df53794e-5c06-421d-a542-2d36fad2d72b",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V17_f172": {
+  "take": "V17-60ca61e0bac1",
+  "frame": 172,
+  "cloud_png": "8c33134df4a09d3d3906de67523d6b2f3a6977691ef57114de056b2031cca22d.png",
+  "job_id": "df53794e-5c06-421d-a542-2d36fad2d72b",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V22_f168": {
+  "take": "V22-36ba4e9708b9",
+  "frame": 168,
+  "cloud_png": "da0d651d418fb74edbe10d80335361035a0b2f805aac8bc5a70718fe12aa85d0.png",
+  "job_id": "593dba02-a3b7-4311-8e8c-21079fccd227",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V22_f253": {
+  "take": "V22-36ba4e9708b9",
+  "frame": 253,
+  "cloud_png": "daa49f3c3c7dac77bc8aa176d24568f4c1f85bb4aae770fe0bf61afecc9e2867.png",
+  "job_id": "593dba02-a3b7-4311-8e8c-21079fccd227",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V23_f84": {
+  "take": "V23-5633ad143f50",
+  "frame": 84,
+  "cloud_png": "f487e79ce866a145f8ba29818b481337b2f39342c55941e7fae6aaaa2042be95.png",
+  "job_id": "7dca3ea1-a17c-4f6f-a450-f31090f2aa12",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V23_f180": {
+  "take": "V23-5633ad143f50",
+  "frame": 180,
+  "cloud_png": "c26a498124613b3fa3c4b0dcdbd655c22922d0704885d3359ff8993024b47a34.png",
+  "job_id": "7dca3ea1-a17c-4f6f-a450-f31090f2aa12",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V23_f357": {
+  "take": "V23-5633ad143f50",
+  "frame": 357,
+  "cloud_png": "85c3cd16e38e8c48c51ae6d5c806836920f65c195cc9d675d2e7bb438afb2319.png",
+  "job_id": "7dca3ea1-a17c-4f6f-a450-f31090f2aa12",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V24_f102": {
+  "take": "V24-03998dec95a6",
+  "frame": 102,
+  "cloud_png": "d6ba860c18a33d4026b8c5f37ed66f5caaae7f5fb3c4654e2974de4c13975f07.png",
+  "job_id": "145fce05-b27d-42f7-9885-2c6e05964299",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V26_f288": {
+  "take": "V26-d9351a00709c",
+  "frame": 288,
+  "cloud_png": "77380960226263f0966c5ba714be75a9a2ec761040de479cb21eb0c07adfac5d.png",
+  "job_id": "98c5332b-2ec4-45de-a9df-dedd771a9eb7",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V29_f277": {
+  "take": "V29-f22ccbb1beb2",
+  "frame": 277,
+  "cloud_png": "9a89187607d9d28823387a9c7bb1ba1bcdaf893357ffeb50ccf8f68c5705ffb6.png",
+  "job_id": "a26bf491-3789-4f1b-82d5-3aa4cecacadb",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V30_f197": {
+  "take": "V30-afec35ce58f7",
+  "frame": 197,
+  "cloud_png": "aac342cdaf25b79edba885e58384cc9e21f51c05f399b43cff3ac9e80f470c57.png",
+  "job_id": "ad54e3cf-e0b5-4df5-9bb8-3af2edc7c6bf",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V30_f203": {
+  "take": "V30-afec35ce58f7",
+  "frame": 203,
+  "cloud_png": "d91c0907a46253ba85a0e22829cd383fa263ce092a973ae8a0c9325ff4d1f5e9.png",
+  "job_id": "ad54e3cf-e0b5-4df5-9bb8-3af2edc7c6bf",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V31_f28": {
+  "take": "V31-8830210c7b44",
+  "frame": 28,
+  "cloud_png": "e00b193674c22f5d4473620f4e76280791b7c842043f3b746a9a4984208d2ad8.png",
+  "job_id": "50b976b4-3a75-4fd8-bc38-996ae75f1ffc",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V32_f88": {
+  "take": "V32-a554b3a4d301",
+  "frame": 88,
+  "cloud_png": "e71c4c6a83c10d07651886ce7ffcf3ce69f136527a15c27303b802ccafd567fc.png",
+  "job_id": "56c919b9-23bd-44b3-972b-386e62db7f42",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V40_f0": {
+  "take": "V40-1a6760c68f9e",
+  "frame": 0,
+  "cloud_png": "a2aabfcf5888ec82a519dc4792ffa66759bb85820750234672a17e1d80994b37.png",
+  "job_id": "fdd7876f-6000-49ae-b57a-c780c6919af7",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V35_f72": {
+  "take": "V35-ceca5139a436",
+  "frame": 72,
+  "cloud_png": "ce11fc12ec380cc896e687ab0f35f58f8a8afad4a3c2f2e26d85e7021bac29e8.png",
+  "job_id": "311e47d6-97bd-4938-b585-64853aa481f3",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
+ },
+ "V35_f264": {
+  "take": "V35-ceca5139a436",
+  "frame": 264,
+  "cloud_png": "1fbc798ab7ada8328554593cc393b01eb7f4e7f71e81348192c7abc245a251a9.png",
+  "job_id": "311e47d6-97bd-4938-b585-64853aa481f3",
+  "verify": "cloud name is the content sha256; ImageFromBatch index of the same take (method verified on V03/V48/V01 grabs: 0-1 dHash bits)"
  }
 }

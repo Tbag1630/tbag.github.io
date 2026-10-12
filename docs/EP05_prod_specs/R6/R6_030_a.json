@@ -1,0 +1,69 @@
+{
+ "tid": "R6_030_a",
+ "seq": "SEQ_030",
+ "kind": "flf",
+ "first": "out:K_R6_030_START",
+ "last": "out:K_R6_030_MID",
+ "seconds": 4,
+ "segment": 4.0,
+ "est_credits": 182.6,
+ "splice": {
+  "seq": "SEQ_030",
+  "replace": [
+   "V34-5342a41bc959",
+   0,
+   97
+  ],
+  "use": [
+   0,
+   97
+  ],
+  "rec_in_f": 8749,
+  "rec_out_f": 8846,
+  "shared_start": false,
+  "shared_end": true,
+  "note": "97 frames used in full; part b starts on this clip's last frame (K_R6_030_MID) and is used from its f1, so no frame is doubled inside the sequence"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: fresh, curious. Arousal: gentle.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 the soft rustle of paper unrolling and settling flat on the wooden table; P02 a crayon tin shifting with a small metal tap; P03 a crayon picked up with a light click; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "high wide from the near end of the long table: Maria sits in the second window-side seat holding a rolled-up white paper drawing upright in her lap; the crayon boy sits beyond her drawing on his own sheet, the braids girl and the jersey boy draw further down; MACA stands on the open floor on the right with Chico at her feet, watching"
+   },
+   {
+    "video_beat": "Maria lays the roll on the table and unrolls it flat with both hands: her family drawing is revealed, a girl with brown hair, a yellow headband and a pink pinafore dress, a small tan dog with a blue checked blanket over its back, and a robot drawn upright with a teal visor band and a pink chest with five coloured lights, green zigzag grass along the bottom"
+   },
+   {
+    "video_beat": "the camera pushes in smoothly to a medium view from the table's end as Maria picks up an orange crayon and holds it just above the drawing, about to start"
+   }
+  ],
+  "continuity": "Maria in the second window-side seat; the crayon boy in the seat beyond her drawing on his own sheet; MACA on the open floor to the right with Chico at her feet until she leaves the frame in the push-in; one drawing only, Maria's",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "the drawing has no glow yet",
+   "the children stay in their seats"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN B part a: K29_start -> K30_MID (unrolled K_DRAW_US pinned). 4 s covers the unrolling cue (f39).",
+ "gate": "needs attempt 3 (approved) and attempt 4 for part b (contingency by default: the lead must ask the user to lift requires_fail for SEQ_030)",
+ "variant": "B",
+ "attempt_needed": 3,
+ "keyframes": [
+  "K_R6_030_START",
+  "K_R6_030_MID"
+ ],
+ "use_instead_of": "R6_030"
+}

@@ -1,0 +1,80 @@
+{
+ "tid": "R6_034",
+ "seq": "SEQ_034",
+ "kind": "flf",
+ "first": "out:K_R6_033_END",
+ "last": "out:K_R6_034_END",
+ "seconds": 9,
+ "segment": 9.0,
+ "est_credits": 410.8,
+ "splice": {
+  "seq": "SEQ_034",
+  "replace": [
+   "V39-a67a4b9420bb",
+   0,
+   217
+  ],
+  "use": [
+   0,
+   217
+  ],
+  "rec_in_f": 9859,
+  "rec_out_f": 10076,
+  "shared_start": true,
+  "shared_end": false,
+  "note": "217 frames = 9 s render exactly, used in full. f0 is K_R6_033_END, SEQ_033's last frame too (one doubled frame, invisible). The end frame K_R6_034_END is a new edit of V40 f0 with the right drawing: V40 f0-f164 still holds the robot-only drawing, so this join is an 8-frame dissolve until SEQ_035's head is fixed"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: proud, warm. Arousal: gentle, settling into tenderness.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 a single soft servo bounce; P02 a smooth servo whirr as MACA's arm sweeps down; P03 a soft paper rustle as Maria hugs the drawing; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "wide: MACA stands with both arms raised, her raised arms bouncing once, the small chest screen pulsing softly; Maria grins below holding the drawing; Chico sits at MACA's feet; the crayon boy, the braids girl and the jersey boy sit at their own sheets at the long table looking up"
+   },
+   {
+    "video_beat": "MACA lowers her arms and her near hand sweeps down to present Maria as the camera pushes in slowly"
+   },
+   {
+    "video_beat": "the camera settles on a medium two-shot: Maria beaming up at MACA, holding her drawing in front of her in both hands, MACA's open palm extended toward her"
+   }
+  ],
+  "continuity": "Maria on MACA's screen-left; MACA on the open floor on the screen-right; Chico sitting at MACA's feet until he leaves the frame at the bottom in the push-in; the crayon boy, the braids girl and the jersey boy in their own seats at the long table; one drawing, Maria's, in Maria's hands",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "the crayon boy stays seated at his own sheet for the whole clip; no child jumps to a chair beside Maria and nobody leaves a seat",
+   "the drawing stays in Maria's hands and never appears on MACA's chest in this clip",
+   "no wing-like lines, rays, beams or halos around MACA's head",
+   "Maria stays on MACA's screen-left"
+  ],
+  "one_shot": true
+ },
+ "design": "SEQ_034 K33 -> K34_end. Cues (clip frames = slot frames + 7): 'Hoo-hoo, ha-ha' f8 the raised arms bounce once; 'superb hero' f126 MACA's hand sweeps down to present Maria.",
+ "gate": "SEQ_034 attempt 2 is inside the ceiling (V39 is attempt 1); attempt 3 is a contingency",
+ "variant": "A+B",
+ "attempt_needed": 2,
+ "cue_frames": {
+  "Hoo-hoo, ha-ha": [
+   8,
+   "MACA's arms bounce once, still raised"
+  ],
+  "superb hero": [
+   126,
+   "MACA's hand sweeps down to present Maria"
+  ]
+ },
+ "keyframes": [
+  "K_R6_033_END",
+  "K_R6_034_END"
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "tid": "R6_030_b",
+ "seq": "SEQ_030",
+ "kind": "flf",
+ "first": "out:K_R6_030_MID",
+ "last": "out:K_R6_030_END",
+ "seconds": 11,
+ "segment": 11.0,
+ "est_credits": 502.0,
+ "splice": {
+  "seq": "SEQ_030",
+  "replace": [
+   "V34-5342a41bc959",
+   97,
+   361
+  ],
+  "use": [
+   1,
+   265
+  ],
+  "rec_in_f": 8846,
+  "rec_out_f": 9110,
+  "shared_start": true,
+  "shared_end": true,
+  "note": "264 frames used (f1..f264); f0 is K_R6_030_MID, already part a's last frame; f264 is K_R6_030_END; parts a+b = 97 + 264 = 361 frames = the SEQ_030 record"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: determined, proud. Arousal: gentle, building steadily as the glow grows.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 quick crayon scribbles scratching on paper, faster and larger; P02 the small tap and roll of a crayon on the wood; P03 a faint chair creak as the crayon boy leans in; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria scribbles big warm yellow and orange glow all around the drawn robot, thickest around its chest, again and again, the glow growing bigger while the crayon boy beyond her keeps drawing on his own sheet"
+   },
+   {
+    "video_beat": "the glow scribbles spread and run off the top, right and bottom edges of the paper onto the wooden table in a few streaks; Maria keeps scribbling with her orange crayon"
+   },
+   {
+    "video_beat": "the crayon boy leans in from his seat beyond her to look at the glowing drawing, his hands on the table edge; Maria's hand is still scribbling at the last moment"
+   }
+  ],
+  "continuity": "Maria in the second window-side seat in profile at the left; the crayon boy in the seat beyond her; the same camera from the first frame to the last; one drawing only, Maria's, the same family drawing, the glow growing around the drawn robot",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "the camera does not move away from the first frame's view; the drawing never leaves the table"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN B part b: K30_MID -> K30. Same camera at both ends; the glow grows between them; cue 'off the edge' f300 = part b f204.",
+ "gate": "attempt 4 for SEQ_030 (see R6_030_a)",
+ "variant": "B",
+ "attempt_needed": 4,
+ "keyframes": [
+  "K_R6_030_MID",
+  "K_R6_030_END"
+ ],
+ "use_instead_of": "R6_030"
+}

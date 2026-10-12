@@ -1,0 +1,87 @@
+{
+ "tid": "R6_032_b",
+ "seq": "SEQ_032",
+ "kind": "flf",
+ "first": "out:K_R6_032_MID",
+ "last": "out:K_R6_032_END",
+ "seconds": 7,
+ "segment": 7.0,
+ "est_credits": 319.5,
+ "splice": {
+  "seq": "SEQ_032",
+  "replace": [
+   [
+    "V36-0e99e41911a2",
+    0,
+    113
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    112,
+    151
+   ],
+   [
+    "V37-a56cd4f9aadc",
+    202,
+    245
+   ],
+   [
+    "V36-0e99e41911a2",
+    265,
+    361
+   ]
+  ],
+  "use": [
+   1,
+   147
+  ],
+  "rec_in_f": 9520,
+  "rec_out_f": 9666,
+  "shared_start": true,
+  "shared_end": false,
+  "note": "146 frames used (f1..f146 of 169); f0 is K_R6_032_MID, already part a's last frame. The end is NEAR-shared: the used last frame is 22 frames before the pinned K_R6_032_END on a requested still hold, so the join into SEQ_033 dissolves (8 frames) unless the join check finds the hold frame-identical to K_R6_032_END."
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: proud, tender. Arousal: gentle, then still.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 soft light footsteps of a small child on tile and a gentle paper rustle; P02 a soft servo whirr as MACA turns and bends her head, the paper held taut; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "Maria carries the drawing in front of her chest across the open floor from the end of the long table to MACA; the crayon boy keeps drawing at his seat in the background"
+   },
+   {
+    "video_beat": "MACA turns to face her; Maria stops in front of MACA and lifts the drawing up high in both hands toward her, the drawing facing the camera; MACA bends her head to look down at it; the camera settles into a medium two-shot"
+   },
+   {
+    "video_beat": "hold still on the two of them, Maria holding the drawing up, MACA looking down at it, Chico sitting at MACA's feet"
+   }
+  ],
+  "continuity": "Maria on the screen-left holding the drawing up, MACA on the screen-right looking down at it; the crayon boy staying in his seat drawing in the background; one drawing, Maria's, the same family drawing",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "Maria stays on MACA's screen-left and nobody swaps sides",
+   "Maria never walks through the table or the boy",
+   "the final seconds are a still hold"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN B part b: K32_MID -> K32.",
+ "gate": "attempt 4 for SEQ_032 (see R6_032_a)",
+ "variant": "B",
+ "attempt_needed": 4,
+ "keyframes": [
+  "K_R6_032_MID",
+  "K_R6_032_END"
+ ],
+ "use_instead_of": "R6_032"
+}

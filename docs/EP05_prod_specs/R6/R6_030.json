@@ -1,0 +1,81 @@
+{
+ "tid": "R6_030",
+ "seq": "SEQ_030",
+ "kind": "flf",
+ "first": "out:K_R6_030_START",
+ "last": "out:K_R6_030_END",
+ "seconds": 15,
+ "segment": 15.0,
+ "est_credits": 684.6,
+ "splice": {
+  "seq": "SEQ_030",
+  "replace": [
+   "V34-5342a41bc959",
+   0,
+   361
+  ],
+  "use": [
+   0,
+   361
+  ],
+  "rec_in_f": 8749,
+  "rec_out_f": 9110,
+  "shared_start": false,
+  "shared_end": true,
+  "join_in": "SCENE dip (night to morning) as already cut",
+  "note": "361 frames = 15 s render exactly, used in full. Its last frame K_R6_030_END is also SEQ_031's first frame: the one doubled frame at each shared join is invisible and keeps every record length exact"
+ },
+ "plan": {
+  "environment": "the same grey-walled dining hall in the morning: one long wooden table down the left side with brown chairs and children's drawings along it, barred windows on the left wall, a tiled counter with a steel cooking pot on the right, a bright open doorway at the far end",
+  "emotional_guidance": "Valence: fresh, determined, proud. Arousal: gentle, building as the glow grows.",
+  "visual_style": "finished full-colour 3D animation, identical in look, lighting and character design to the first frame; never a sketch",
+  "audio": {
+   "sounds": "P01 paper unrolling and settling flat on the wooden table; P02 quick crayon scribbles on paper; P03 a crayon tapping and rolling on the wood; P04 a faint chair creak; unpitched foley only, no tones, no melody",
+   "room": "the morning hall, bright and calm, the other children drawing at a distance"
+  },
+  "panels": [
+   {
+    "video_beat": "high wide from the near end of the long table: Maria sits in the second window-side seat holding a rolled-up paper drawing upright in her lap; the crayon boy sits beyond her drawing, the braids girl and the jersey boy draw further down; MACA stands on the open floor on the right with Chico at her feet, watching"
+   },
+   {
+    "video_beat": "Maria unrolls the paper flat on the table with both hands: her family drawing is revealed, a girl with brown hair, a yellow headband and a pink pinafore dress, a small tan dog with a blue checked blanket over its back, and an upright robot with a teal visor band and a pink chest with five coloured lights, green zigzag grass along the bottom"
+   },
+   {
+    "video_beat": "the camera pushes in slowly as Maria scribbles big warm yellow and orange glow with her crayons all around the drawn robot, thickest around its chest, the glow growing bigger"
+   },
+   {
+    "video_beat": "the glow scribbles run off the top, right and bottom edges of the paper onto the table; the camera settles into a medium close view over the drawing from the table's end, Maria's hand still scribbling; the crayon boy leans in from his seat beyond her to look"
+   }
+  ],
+  "continuity": "Maria in the second window-side seat; the crayon boy in the seat beyond her; the braids girl and the jersey boy in the next seats beyond him, all on the window side; MACA on the open floor to the right of the table with Chico at her feet; one drawing only, Maria's, from the unrolling to the last frame",
+  "preventions": [
+   "the grey hall of the first frame, never a hall with a red porthole door or a bulletin board",
+   "Maria's drawing keeps one design, size and orientation in every frame: the girl, the dog with the blue checked blanket and the robot together, never a robot alone",
+   "no other sheet shows a robot",
+   "one of each person, no lookalike girl and no second boy in a green shirt",
+   "no lip movement forming words",
+   "no pencil or sketch look",
+   "no cut",
+   "the children stay in their seats"
+  ],
+  "one_shot": true
+ },
+ "design": "PLAN A (authorized path): one 15 s FLF K29_start -> K30. Caveat: the unrolled pre-glow drawing K_DRAW_US is not pinned inside the clip; plan B (R6_030_a + R6_030_b) pins it at the same 15 s.",
+ "gate": "docs/EP05_reviews/R6_script_audit.md M row; SEQ_030 attempt 3 is approved (non-contingent)",
+ "variant": "A",
+ "attempt_needed": 3,
+ "cue_frames": {
+  "unrolled her drawing": [
+   39,
+   "Maria unrolls the drawing flat"
+  ],
+  "off the edge of the paper": [
+   300,
+   "her scribbles run past the paper's edge"
+  ]
+ },
+ "keyframes": [
+  "K_R6_030_START",
+  "K_R6_030_END"
+ ]
+}
