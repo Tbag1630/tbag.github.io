@@ -1,0 +1,394 @@
+{
+  "max_attempts": 2,
+  "gates_enabled": true,
+  "authorization": {
+    "sequence_boards": true,
+    "video": "NOT_AUTHORIZED",
+    "source": "User 2026-10-12 quality-first steer (keyframes for repairs, title and ending): EP05 STEER - QUALITY-FIRST, PAID GENERATION AUTHORIZED. Non-zero spending is authorized. Quality is the primary objective. ... Respect the production firewall. Use the existing authorized generation and payment mechanisms.",
+    "audio": "AUTHORIZED",
+    "audio_source": "EP05 — WHOLE-EPISODE AUDIO, MUSIC, PICTURE AND FINAL FINISHING DIRECTIVE (user, 2026-10-12): \"Quality is the priority. Paid generation and paid production tools are authorized when they materially improve the result. Authorization to spend does not authorize bypassing a production firewall or claiming unverified jobs, balances, costs, or results.\" Phase 5: \"Compose or generate original instrumental music\"; Phase 6: \"Use original or appropriately licensed audio.\""
+  },
+  "budget": {
+    "cap_credits": null,
+    "estimate_per_board": 55.3,
+    "alert_frac": 0.8
+  },
+  "frozen_configs": {
+    "c157082aa4a96db2": {
+      "config": {
+        "class": "OpenAIGPTImageNodeV2",
+        "model": "gpt-image-2.5-flare",
+        "size": "Custom",
+        "w": 2976,
+        "h": 2656,
+        "quality": "high",
+        "background": "opaque",
+        "n": 1,
+        "images": [
+          "model.images.image_1",
+          "model.images.image_2"
+        ],
+        "sections": [
+          "[PROJECT CARD]",
+          "[CONTINUITY HEADER]",
+          "[SCENE PACKET]",
+          "[CHARACTER SANITIZATION]",
+          "[IDENTITY CONSISTENCY]",
+          "[STORYBOARD PURITY]",
+          "[MASTER SHOT RULE]",
+          "[EMOTIONAL ARC]",
+          "[STYLE LOCKS]",
+          "[SPATIAL CONTINUITY LOCK]",
+          "[DIRECTOR STRIP]",
+          "[SEQUENCE]"
+        ]
+      },
+      "validated_by": [
+        "SEQ_009 A01"
+      ],
+      "utc": "2026-10-11T15:47:03.488753Z"
+    }
+  },
+  "approvals": [
+    {
+      "target": "SEQ_003",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Approve attempt 3 (Recommended)\" for FIX_003_TAIL (5 s, about 228 credits) so the SEQ_003->004 join stays continuous at the long table.",
+      "utc": "2026-10-12T13:07:09.921256Z"
+    },
+    {
+      "target": "SEQ_006",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Approve attempt 3 (Recommended)\" for SEQ_006: one new keyframe (~15 credits) plus a 6 s clip (~274 credits), V08 close shot -> hard cut -> slow crane-back within one view ending on the locked K_WIDE_006.",
+      "utc": "2026-10-12T13:28:33.468929Z"
+    },
+    {
+      "target": "SEQ_003",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.470721Z",
+      "upgraded": {
+        "utc": "2026-10-12T18:08:37.098400Z",
+        "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA "
+      }
+    },
+    {
+      "target": "SEQ_004",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.471899Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_005",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.472833Z",
+      "upgraded": {
+        "utc": "2026-10-12T18:08:37.098409Z",
+        "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA "
+      }
+    },
+    {
+      "target": "SEQ_035",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.473748Z",
+      "upgraded": {
+        "utc": "2026-10-12T19:02:09.034603Z",
+        "quote": "User 2026-10-12 (AskUserQuestion, SEQ_035): \"Yes, fix it (Recommended)\": Re-render SEQ_035's first 9 s so MACA receives and wears the same family drawing (Maria, Chico, MACA plus the glow). This appro"
+      }
+    },
+    {
+      "target": "SEQ_036",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.474869Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_037",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User answer 2026-10-12: \"Pre-approve one each (Recommended)\": one extra paid attempt per remaining repair sequence (SEQ_003, 004, 005, 035, 036, 037), used only if a render fails QC with a MATERIAL defect, at its quoted cost.",
+      "utc": "2026-10-12T13:28:33.475814Z",
+      "upgraded": {
+        "utc": "2026-10-12T18:08:37.098422Z",
+        "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA "
+      }
+    },
+    {
+      "target": "SEQ_006",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.101829Z"
+    },
+    {
+      "target": "SEQ_007",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.103086Z"
+    },
+    {
+      "target": "SEQ_027",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.104090Z"
+    },
+    {
+      "target": "SEQ_030",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.110286Z"
+    },
+    {
+      "target": "SEQ_032",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.116097Z"
+    },
+    {
+      "target": "SEQ_003",
+      "attempt": 5,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.120941Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_005",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.122175Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_006",
+      "attempt": 5,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.123236Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_007",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.124376Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_015",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.125426Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_020",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.126631Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_021",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.127826Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_022",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.128780Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_027",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.132538Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_028",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.133751Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_029",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.134841Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_030",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.136172Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_031",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.137326Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_032",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.138603Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_033",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.139851Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_034",
+      "attempt": 3,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.140886Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_037",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T18:08:37.145956Z",
+      "requires_fail": true
+    },
+    {
+      "target": "SEQ_035",
+      "attempt": 4,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, SEQ_035): \"Yes, fix it (Recommended)\": Re-render SEQ_035's first 9 s so MACA receives and wears the same family drawing (Maria, Chico, MACA plus the glow). This approves one extra attempt for SEQ_035, plus one retry used only if the reviewer fails it.",
+      "utc": "2026-10-12T19:02:09.036901Z",
+      "requires_fail": true
+    }
+  ],
+  "video_pilot": {
+    "status": "AUTHORIZED",
+    "scope": [
+      "END_CARD",
+      "SEQ_003",
+      "SEQ_004",
+      "SEQ_005",
+      "SEQ_006",
+      "SEQ_007",
+      "SEQ_015",
+      "SEQ_020",
+      "SEQ_021",
+      "SEQ_022",
+      "SEQ_027",
+      "SEQ_028",
+      "SEQ_029",
+      "SEQ_030",
+      "SEQ_031",
+      "SEQ_032",
+      "SEQ_033",
+      "SEQ_034",
+      "SEQ_035",
+      "SEQ_036",
+      "SEQ_037",
+      "TITLE_A",
+      "TITLE_B",
+      "TITLE_C",
+      "TITLE_EXT"
+    ],
+    "cap_credits": 39500,
+    "max_attempts": 95,
+    "authorized_by": "user",
+    "source": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+    "note": "SUPERSEDED 2026-10-12 by the user's R6 authorization recorded in `source` (cap 39,500, attempt limit 95). Earlier note kept for the record: ZERO PAID GENERATION (user, 2026-10-12): all paid image, video, audio and music generation paused. A future authorization must name the operation, exact sequence, attempt limit and budget. Standing EP05 video budget. Each clip still needs a recorded quote and a price acceptance for its exact graph under this authorization; one paid attempt per clip, a repair only on a failed check, never a blind retry.",
+    "price_acceptance": {
+      "graph_sha256": "003579ebc77b61876ccaed7a4a60422d31af929c44baf1265afe5bc4254743d6",
+      "credits": 365.1,
+      "by": "user",
+      "quote": "User 2026-10-12 (AskUserQuestion, R6 fix budget): \"Full script fix (Recommended)\": Cap 31,500 -> 39,500. All 11 fixes, including the whole morning act re-rendered with one locked Maria + Chico + MACA drawing. Approves one extra attempt for SEQ_003, 005, 006, 007, 027, 030, 032 and 037. Each repaired sequence also gets one retry, used only if the reviewer fails it. Pilot attempt limit 68 -> 95. Fix list: docs/EP05_reviews/R6_script_audit.md",
+      "utc": "2026-10-12T19:37:02.584000Z"
+    },
+    "previous_pilot": {
+      "scope": [
+        "SEQ_001"
+      ],
+      "cap_credits": 700,
+      "max_attempts": 1,
+      "source": "Set the hard video-generation budget to 700 credits total for the pilot.\nAuthorization: SEQ_001 only.\n* Submit one clip, one paid attempt.\n* Test whether Seedance correctly interprets the `@image1` / `@image2` references and preserves the intended start-to-end state.\n* Run all available zero-cost preflight checks first, including prompt validation, reference mapping, duration limits, and credit estimation.\n* Record the pre-submission estimate, actual billed credits, job ID, output location, and QC verdict in the durable ledger.\n* No automatic repair, retry, or second submission. If the first result fails, stop and report the evidence.\n* The 700-credit limit is an absolute ceiling, not a spending target. If the expected charge or billing behavior is uncertain, or the job could exceed the cap, do not submit until verified.\n* Do not submit SEQ_002 or any other clip. Do not start a batch.\n* After SEQ_001 completes, inspect the actual output and compare it against the signed intent contract before requesting further authorization.\nThe firewall must enforce the limit at the submission boundary and survive restarts. A prompt instruction or estimated budget alone does not count as enforcement.\nProceed with preflight first. Submit SEQ_001 only if every gate passes and the 700-credit cap is enforceable. Otherwise, stop and report the blocker."
+    },
+    "title_1080p": {
+      "status": "AUTHORIZED",
+      "resolution": "1080p",
+      "scope": [
+        "TITLE_A",
+        "TITLE_B",
+        "TITLE_C",
+        "TITLE_EXT",
+        "END_CARD"
+      ],
+      "authorized_by": "user",
+      "source": "User 2026-10-12: \"Seedance does text and motion graphics too ... Also the ending message display. I told you it's ok to use video generators for this seedance 2.0 at 1080p if you have a solid plan\"",
+      "note": "Sequence clips stay 720p. Titles and the ending message may render at 1080p; every other gate still applies."
+    },
+    "history": [
+      {
+        "utc": "2026-10-12T18:08:37.098338Z",
+        "cap_credits": 31500,
+        "max_attempts": 68,
+        "scope": [
+          "SEQ_003",
+          "SEQ_004",
+          "SEQ_005",
+          "SEQ_006",
+          "SEQ_007",
+          "SEQ_035",
+          "SEQ_036",
+          "SEQ_037",
+          "TITLE_A",
+          "TITLE_B",
+          "TITLE_C",
+          "TITLE_EXT",
+          "END_CARD"
+        ],
+        "source": "EP05 STEER - QUALITY-FIRST, PAID GENERATION AUTHORIZED. Non-zero spending is authorized. Quality is the primary objective. ... Respect the production firewall. Use the existing authorized generation and payment mechanisms."
+      }
+    ]
+  }
+}

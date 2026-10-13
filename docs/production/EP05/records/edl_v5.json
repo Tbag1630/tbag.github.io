@@ -1,0 +1,1099 @@
+{
+ "episode": "EP05",
+ "variant": "v5",
+ "fps": 24,
+ "narration_frames": 11110,
+ "picture_frames": 11110,
+ "transitions": {
+  "SEQ_002": [
+   "dissolve",
+   0.333,
+   "time passes while she draws: the robot appears on the page"
+  ],
+  "SEQ_007": [
+   "dip",
+   0.5,
+   "afternoon hall to bedtime: 'The question came out at bedtime'"
+  ],
+  "SEQ_029": [
+   "dip",
+   0.5,
+   "night to morning: 'In the morning'"
+  ]
+ },
+ "head_fade": 0.5,
+ "tail_fade": 0.0,
+ "audio_mutes": {
+  "V20-4b05b652cb51": [
+   [
+    11.2,
+    14.05,
+    "stepped melodic tones, likely music"
+   ]
+  ],
+  "V26-d9351a00709c": [
+   [
+    2.95,
+    12.05,
+    "stepped harmonic chord changes, likely music"
+   ]
+  ],
+  "V28-e9c5010fc5af": [
+   [
+    5.95,
+    14.05,
+    "stepped melodic tones, likely music"
+   ]
+  ],
+  "V29-f22ccbb1beb2": [
+   [
+    9.9,
+    13.05,
+    "pulsed voiced bursts, possible vocalization"
+   ]
+  ],
+  "V39-a67a4b9420bb": [
+   [
+    0.35,
+    1.45,
+    "voiced burst, possible vocalization"
+   ],
+   [
+    3.5,
+    3.95,
+    "voiced burst"
+   ]
+  ],
+  "V14-961bf08ab33f": [
+   [
+    4.75,
+    5.69,
+    "stable tonal lines 984-1324 Hz, ringing helmet taps at about B5/E6"
+   ]
+  ],
+  "V18-5575153249e1": [
+   [
+    3.45,
+    4.49,
+    "stable tonal lines 258-387 Hz, whistle-like"
+   ]
+  ],
+  "V31-8830210c7b44": [
+   [
+    6.7,
+    9.79,
+    "stable tonal lines 281-621 Hz, chord-like hum"
+   ]
+  ],
+  "V59-f29b8361d32c": [
+   [
+    5.2,
+    10.05,
+    "R6 QC: staged tonal lines 293-881 Hz (a chord) under the hand-hold beat"
+   ]
+  ],
+  "V58-a195cb5d6af9": [
+   [
+    2.45,
+    7.75,
+    "R6 QC: held 262 Hz tone with harmonics (a note), not a purr"
+   ]
+  ]
+ },
+ "splices": {
+  "SEQ_006": {
+   "repair": "V45-0517022366c1",
+   "side": "tail",
+   "at": 132,
+   "hard_cut": true,
+   "qc": "PASS: hard cut from V08 f131 into a one-view zoom-out ending on locked K_WIDE_006; replaces V43 (failed mid-move)",
+   "frames": 121
+  },
+  "SEQ_007": {
+   "repair": "V44-82986bba5845",
+   "side": "head",
+   "at": 108,
+   "take_end": 285,
+   "qc": "clean; V09 ends at its internal cut f285 so the drifted closing wide never plays",
+   "shared_start": true,
+   "frames": 121
+  },
+  "SEQ_003": {
+   "repair": "V46-02156598be60",
+   "side": "tail",
+   "at": 128,
+   "hard_cut": true,
+   "qc": "PASS (lead picture QC): hard cut from V05 f127 into a one-view two-shot ending on K_004_START; replaces the separate-table tail",
+   "frames": 97
+  },
+  "SEQ_004": {
+   "repair": "V47-327eed7d99d8",
+   "side": "whole",
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): whole sequence, K_004_START -> K_005_START, two children at the long table",
+   "frames": 361
+  },
+  "SEQ_036": {
+   "repair": "V50-cbf12edd36cd",
+   "side": "whole",
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): whole sequence K_035_B -> K_036_B, MACA kneels, Maria stays screen-left; replaces V41 (head flipped Maria's side)",
+   "frames": 361
+  },
+  "SEQ_005": {
+   "repair": "V48-d8961c9d7491",
+   "side": "head",
+   "at": 72,
+   "shared": false,
+   "hard_cut": true,
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): K_005_START -> K_005_B push-in, then hard cut to V07 f72 (eyeline down the long table)",
+   "frames": 97
+  },
+  "SEQ_035": {
+   "repair": "V49-20898f95d524",
+   "side": "tail",
+   "at": 223,
+   "hard_cut": true,
+   "qc": "PASS (lead picture QC): hard cut from V40 f222 (Chico on the boot) into the long-table family shot ending on K_035_B",
+   "frames": 97
+  },
+  "SEQ_037": {
+   "side": "segments",
+   "segments": [
+    [
+     "V59-f29b8361d32c",
+     8,
+     241
+    ],
+    [
+     "V51-07fd7eee46d3",
+     0,
+     121
+    ]
+   ],
+   "repairs": [
+    "R6_037_HAND=V59-f29b8361d32c"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_015": {
+   "side": "segments",
+   "segments": [
+    [
+     "V17-60ca61e0bac1",
+     0,
+     77
+    ],
+    [
+     "V55-54556b6f53e4",
+     1,
+     96
+    ],
+    [
+     "V17-60ca61e0bac1",
+     172,
+     361
+    ]
+   ],
+   "repairs": [
+    "R6_A10=V55-54556b6f53e4"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_021": {
+   "side": "segments",
+   "segments": [
+    [
+     "V23-5633ad143f50",
+     0,
+     85
+    ],
+    [
+     "V56-f1336d21e048",
+     1,
+     96
+    ],
+    [
+     "V23-5633ad143f50",
+     180,
+     361
+    ]
+   ],
+   "repairs": [
+    "R6_D2=V56-f1336d21e048"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_022": {
+   "side": "segments",
+   "segments": [
+    [
+     "V24-03998dec95a6",
+     0,
+     7
+    ],
+    [
+     "V57-f8cc96b79afd",
+     1,
+     96
+    ],
+    [
+     "V24-03998dec95a6",
+     102,
+     337
+    ]
+   ],
+   "repairs": [
+    "R6_D3=V57-f8cc96b79afd"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_027": {
+   "side": "segments",
+   "segments": [
+    [
+     "V30-afec35ce58f7",
+     0,
+     6
+    ],
+    [
+     "V58-a195cb5d6af9",
+     1,
+     192
+    ],
+    [
+     "V30-afec35ce58f7",
+     197,
+     198
+    ],
+    [
+     "V60-70388320fe01",
+     1,
+     140
+    ]
+   ],
+   "repairs": [
+    "R6_D4_A=V58-a195cb5d6af9",
+    "R6_D4_B=V60-70388320fe01"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_028": {
+   "side": "segments",
+   "segments": [
+    [
+     "V60-70388320fe01",
+     140,
+     169
+    ],
+    [
+     "V31-8830210c7b44",
+     29,
+     337
+    ]
+   ],
+   "repairs": [
+    "R6_D4_B=V60-70388320fe01"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  }
+ },
+ "picture": {
+  "xfade_frames": 8,
+  "push_in": 0.04,
+  "still_threshold": 0.6,
+  "still_frames": 36,
+  "note": "user 2026-10-12: transitions at every inter-clip point, no noticeable holds. 8-frame dissolves centred on each cut (record timing unchanged); scene changes keep their dips; shared-keyframe splices stay seamless; slow push-in on segments with a still run of 1.5 s or more"
+ },
+ "rows": [
+  {
+   "seq": "SEQ_001",
+   "take": "V01-fa24309c5dd0",
+   "segments": [
+    [
+     "V01-fa24309c5dd0",
+     11,
+     337
+    ]
+   ],
+   "rec_in_f": 0,
+   "rec_out_f": 326,
+   "slot_f": [
+    0,
+    326
+   ],
+   "offset_f": 0,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_002",
+   "take": "V03-35c2d1e8d341",
+   "segments": [
+    [
+     "V03-35c2d1e8d341",
+     0,
+     333
+    ]
+   ],
+   "rec_in_f": 326,
+   "rec_out_f": 659,
+   "slot_f": [
+    326,
+    659
+   ],
+   "offset_f": 0,
+   "join": "JUMP"
+  },
+  {
+   "seq": "SEQ_003",
+   "take": "V05-bc46c7731c5d",
+   "segments": [
+    [
+     "V05-bc46c7731c5d",
+     2,
+     128
+    ],
+    [
+     "V46-02156598be60",
+     0,
+     97
+    ]
+   ],
+   "rec_in_f": 659,
+   "rec_out_f": 882,
+   "slot_f": [
+    659,
+    882
+   ],
+   "offset_f": 0,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_004",
+   "take": "V06-3f58e4dd348a",
+   "segments": [
+    [
+     "V47-327eed7d99d8",
+     1,
+     361
+    ]
+   ],
+   "rec_in_f": 882,
+   "rec_out_f": 1242,
+   "slot_f": [
+    882,
+    1241
+   ],
+   "offset_f": 1,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_005",
+   "take": "V07-6aaee2ed215d",
+   "segments": [
+    [
+     "V48-d8961c9d7491",
+     1,
+     97
+    ],
+    [
+     "V07-6aaee2ed215d",
+     72,
+     286
+    ]
+   ],
+   "rec_in_f": 1242,
+   "rec_out_f": 1552,
+   "slot_f": [
+    1241,
+    1552
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_006",
+   "take": "V08-076797ef641b",
+   "segments": [
+    [
+     "V08-076797ef641b",
+     0,
+     132
+    ],
+    [
+     "V45-0517022366c1",
+     0,
+     121
+    ]
+   ],
+   "rec_in_f": 1552,
+   "rec_out_f": 1805,
+   "slot_f": [
+    1552,
+    1791
+   ],
+   "offset_f": 14,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_007",
+   "take": "V09-cfc563cb4317",
+   "segments": [
+    [
+     "V44-82986bba5845",
+     1,
+     120
+    ],
+    [
+     "V09-cfc563cb4317",
+     108,
+     285
+    ]
+   ],
+   "rec_in_f": 1805,
+   "rec_out_f": 2101,
+   "slot_f": [
+    1791,
+    2108
+   ],
+   "offset_f": -7,
+   "join": "SCENE"
+  },
+  {
+   "seq": "SEQ_008",
+   "take": "V10-4aac6a91e690",
+   "segments": [
+    [
+     "V10-4aac6a91e690",
+     0,
+     337
+    ]
+   ],
+   "rec_in_f": 2101,
+   "rec_out_f": 2438,
+   "slot_f": [
+    2108,
+    2440
+   ],
+   "offset_f": -2,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_009",
+   "take": "V11-04c71b931efe",
+   "segments": [
+    [
+     "V11-04c71b931efe",
+     0,
+     206
+    ]
+   ],
+   "rec_in_f": 2438,
+   "rec_out_f": 2644,
+   "slot_f": [
+    2440,
+    2644
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_010",
+   "take": "V12-1c5951db0281",
+   "segments": [
+    [
+     "V12-1c5951db0281",
+     27,
+     337
+    ]
+   ],
+   "rec_in_f": 2644,
+   "rec_out_f": 2954,
+   "slot_f": [
+    2644,
+    2972
+   ],
+   "offset_f": -18,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_011",
+   "take": "V13-a98b9f5df43b",
+   "segments": [
+    [
+     "V13-a98b9f5df43b",
+     0,
+     361
+    ]
+   ],
+   "rec_in_f": 2954,
+   "rec_out_f": 3315,
+   "slot_f": [
+    2972,
+    3316
+   ],
+   "offset_f": -1,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_012",
+   "take": "V14-961bf08ab33f",
+   "segments": [
+    [
+     "V14-961bf08ab33f",
+     0,
+     241
+    ]
+   ],
+   "rec_in_f": 3315,
+   "rec_out_f": 3556,
+   "slot_f": [
+    3316,
+    3538
+   ],
+   "offset_f": 18,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_013",
+   "take": "V15-e7c532275e8a",
+   "segments": [
+    [
+     "V15-e7c532275e8a",
+     0,
+     260
+    ]
+   ],
+   "rec_in_f": 3556,
+   "rec_out_f": 3816,
+   "slot_f": [
+    3538,
+    3816
+   ],
+   "offset_f": 0,
+   "join": "JUMP"
+  },
+  {
+   "seq": "SEQ_014",
+   "take": "V16-8290543df17b",
+   "segments": [
+    [
+     "V16-8290543df17b",
+     7,
+     289
+    ]
+   ],
+   "rec_in_f": 3816,
+   "rec_out_f": 4098,
+   "slot_f": [
+    3816,
+    4098
+   ],
+   "offset_f": 0,
+   "join": "JUMP"
+  },
+  {
+   "seq": "SEQ_015",
+   "take": "V17-60ca61e0bac1",
+   "segments": [
+    [
+     "V17-60ca61e0bac1",
+     28,
+     77
+    ],
+    [
+     "V55-54556b6f53e4",
+     1,
+     96
+    ],
+    [
+     "V17-60ca61e0bac1",
+     172,
+     361
+    ]
+   ],
+   "rec_in_f": 4098,
+   "rec_out_f": 4431,
+   "slot_f": [
+    4098,
+    4453
+   ],
+   "offset_f": -22,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_016",
+   "take": "V18-5575153249e1",
+   "segments": [
+    [
+     "V18-5575153249e1",
+     0,
+     313
+    ]
+   ],
+   "rec_in_f": 4431,
+   "rec_out_f": 4744,
+   "slot_f": [
+    4453,
+    4753
+   ],
+   "offset_f": -9,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_017",
+   "take": "V19-b7da7d753cba",
+   "segments": [
+    [
+     "V19-b7da7d753cba",
+     0,
+     337
+    ]
+   ],
+   "rec_in_f": 4744,
+   "rec_out_f": 5081,
+   "slot_f": [
+    4753,
+    5068
+   ],
+   "offset_f": 13,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_018",
+   "take": "V20-4b05b652cb51",
+   "segments": [
+    [
+     "V20-4b05b652cb51",
+     0,
+     337
+    ]
+   ],
+   "rec_in_f": 5081,
+   "rec_out_f": 5418,
+   "slot_f": [
+    5068,
+    5395
+   ],
+   "offset_f": 23,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_019",
+   "take": "V21-cc02f55ea46f",
+   "segments": [
+    [
+     "V21-cc02f55ea46f",
+     0,
+     211
+    ]
+   ],
+   "rec_in_f": 5418,
+   "rec_out_f": 5629,
+   "slot_f": [
+    5395,
+    5629
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_020",
+   "take": "V22-36ba4e9708b9",
+   "segments": [
+    [
+     "V22-36ba4e9708b9",
+     2,
+     337
+    ]
+   ],
+   "rec_in_f": 5629,
+   "rec_out_f": 5964,
+   "slot_f": [
+    5629,
+    5964
+   ],
+   "offset_f": 0,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_021",
+   "take": "V23-5633ad143f50",
+   "segments": [
+    [
+     "V23-5633ad143f50",
+     0,
+     85
+    ],
+    [
+     "V56-f1336d21e048",
+     1,
+     96
+    ],
+    [
+     "V23-5633ad143f50",
+     180,
+     358
+    ]
+   ],
+   "rec_in_f": 5964,
+   "rec_out_f": 6322,
+   "slot_f": [
+    5964,
+    6322
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_022",
+   "take": "V24-03998dec95a6",
+   "segments": [
+    [
+     "V57-f8cc96b79afd",
+     1,
+     96
+    ],
+    [
+     "V24-03998dec95a6",
+     102,
+     337
+    ]
+   ],
+   "rec_in_f": 6322,
+   "rec_out_f": 6652,
+   "slot_f": [
+    6322,
+    6648
+   ],
+   "offset_f": 4,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_023",
+   "take": "V26-d9351a00709c",
+   "segments": [
+    [
+     "V26-d9351a00709c",
+     21,
+     289
+    ]
+   ],
+   "rec_in_f": 6652,
+   "rec_out_f": 6920,
+   "slot_f": [
+    6648,
+    6935
+   ],
+   "offset_f": -15,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_024",
+   "take": "V27-a08e5738f801",
+   "segments": [
+    [
+     "V27-a08e5738f801",
+     0,
+     265
+    ]
+   ],
+   "rec_in_f": 6920,
+   "rec_out_f": 7185,
+   "slot_f": [
+    6935,
+    7191
+   ],
+   "offset_f": -6,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_025",
+   "take": "V28-e9c5010fc5af",
+   "segments": [
+    [
+     "V28-e9c5010fc5af",
+     0,
+     337
+    ]
+   ],
+   "rec_in_f": 7185,
+   "rec_out_f": 7522,
+   "slot_f": [
+    7191,
+    7506
+   ],
+   "offset_f": 16,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_026",
+   "take": "V29-f22ccbb1beb2",
+   "segments": [
+    [
+     "V29-f22ccbb1beb2",
+     0,
+     278
+    ]
+   ],
+   "rec_in_f": 7522,
+   "rec_out_f": 7800,
+   "slot_f": [
+    7506,
+    7800
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_027",
+   "take": "V30-afec35ce58f7",
+   "segments": [
+    [
+     "V58-a195cb5d6af9",
+     1,
+     192
+    ],
+    [
+     "V30-afec35ce58f7",
+     197,
+     198
+    ],
+    [
+     "V60-70388320fe01",
+     1,
+     140
+    ]
+   ],
+   "rec_in_f": 7800,
+   "rec_out_f": 8131,
+   "slot_f": [
+    7800,
+    8136
+   ],
+   "offset_f": -5,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_028",
+   "take": "V31-8830210c7b44",
+   "segments": [
+    [
+     "V60-70388320fe01",
+     140,
+     169
+    ],
+    [
+     "V31-8830210c7b44",
+     29,
+     337
+    ]
+   ],
+   "rec_in_f": 8131,
+   "rec_out_f": 8468,
+   "slot_f": [
+    8136,
+    8463
+   ],
+   "offset_f": 5,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_029",
+   "take": "V32-a554b3a4d301",
+   "segments": [
+    [
+     "V32-a554b3a4d301",
+     0,
+     281
+    ]
+   ],
+   "rec_in_f": 8468,
+   "rec_out_f": 8749,
+   "slot_f": [
+    8463,
+    8749
+   ],
+   "offset_f": 0,
+   "join": "SCENE"
+  },
+  {
+   "seq": "SEQ_030",
+   "take": "V34-5342a41bc959",
+   "segments": [
+    [
+     "V34-5342a41bc959",
+     0,
+     361
+    ]
+   ],
+   "rec_in_f": 8749,
+   "rec_out_f": 9110,
+   "slot_f": [
+    8749,
+    9090
+   ],
+   "offset_f": 20,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_031",
+   "take": "V35-ceca5139a436",
+   "segments": [
+    [
+     "V35-ceca5139a436",
+     0,
+     265
+    ]
+   ],
+   "rec_in_f": 9110,
+   "rec_out_f": 9375,
+   "slot_f": [
+    9090,
+    9336
+   ],
+   "offset_f": 39,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_032",
+   "take": "V36-0e99e41911a2",
+   "segments": [
+    [
+     "V36-0e99e41911a2",
+     0,
+     113
+    ],
+    [
+     "V37-a56cd4f9aadc",
+     112,
+     151
+    ],
+    [
+     "V37-a56cd4f9aadc",
+     202,
+     245
+    ],
+    [
+     "V36-0e99e41911a2",
+     265,
+     361
+    ]
+   ],
+   "rec_in_f": 9375,
+   "rec_out_f": 9666,
+   "slot_f": [
+    9336,
+    9688
+   ],
+   "offset_f": -22,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_033",
+   "take": "V38-38e96cbfc516",
+   "segments": [
+    [
+     "V38-38e96cbfc516",
+     0,
+     193
+    ]
+   ],
+   "rec_in_f": 9666,
+   "rec_out_f": 9859,
+   "slot_f": [
+    9688,
+    9866
+   ],
+   "offset_f": -7,
+   "join": "CH"
+  },
+  {
+   "seq": "SEQ_034",
+   "take": "V39-a67a4b9420bb",
+   "segments": [
+    [
+     "V39-a67a4b9420bb",
+     0,
+     217
+    ]
+   ],
+   "rec_in_f": 9859,
+   "rec_out_f": 10076,
+   "slot_f": [
+    9866,
+    10082
+   ],
+   "offset_f": -6,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_035",
+   "take": "V40-1a6760c68f9e",
+   "segments": [
+    [
+     "V40-1a6760c68f9e",
+     0,
+     223
+    ],
+    [
+     "V49-20898f95d524",
+     0,
+     97
+    ]
+   ],
+   "rec_in_f": 10076,
+   "rec_out_f": 10396,
+   "slot_f": [
+    10082,
+    10396
+   ],
+   "offset_f": 0,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_036",
+   "take": "V41-35d7bed2f778",
+   "segments": [
+    [
+     "V50-cbf12edd36cd",
+     1,
+     361
+    ]
+   ],
+   "rec_in_f": 10396,
+   "rec_out_f": 10756,
+   "slot_f": [
+    10396,
+    10755
+   ],
+   "offset_f": 1,
+   "join": "HARD"
+  },
+  {
+   "seq": "SEQ_037",
+   "take": "V42-d673f2cfebf1",
+   "segments": [
+    [
+     "V59-f29b8361d32c",
+     8,
+     241
+    ],
+    [
+     "V51-07fd7eee46d3",
+     0,
+     121
+    ]
+   ],
+   "rec_in_f": 10756,
+   "rec_out_f": 11110,
+   "slot_f": [
+    10755,
+    11110
+   ],
+   "offset_f": 0,
+   "join": "END"
+  }
+ ]
+}

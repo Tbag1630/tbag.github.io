@@ -1,0 +1,501 @@
+{
+ "episode": "EP05",
+ "variant": "v5",
+ "utc": "2026-10-12T20:27:49+00:00",
+ "verdict": "WARN",
+ "delivery_target": {
+  "integrated_lufs": -16.0,
+  "true_peak_dbtp_max": -1.0,
+  "lra": "measured, no limit"
+ },
+ "counts": {
+  "PASS": 20,
+  "WARN": 2,
+  "FAIL": 0,
+  "UNKNOWN": 2
+ },
+ "checks": [
+  {
+   "id": "input.narration_clock",
+   "verdict": "PASS",
+   "evidence": "narration.wav 462.921837 s = 11110.124 frames (floor 11110); EDL narration_frames 11110, EDL picture_frames 11110, picture file 11110 frames",
+   "measured": {
+    "narration_s": 462.921837,
+    "narration_frames": 11110,
+    "edl_frames": 11110,
+    "picture_frames": 11110,
+    "channels": 1,
+    "sample_rate": "44100"
+   }
+  },
+  {
+   "id": "input.conform_stems",
+   "verdict": "PASS",
+   "evidence": "stems from edit.py: narration 22220000 samples, fx_bed 22220000 samples, expected 22220000 (11110 frames x 2000)",
+   "measured": {
+    "narration_samples": 22220000,
+    "fx_samples": 22220000,
+    "expected": 22220000
+   }
+  },
+  {
+   "id": "input.cue_files",
+   "verdict": "PASS",
+   "evidence": "M00 6.060 s; M01 39.033 s; M02 30.023 s; M03 10.054 s; M05 64.017 s; M06 29.002 s; M07 87.980 s; M08 39.033 s; M09 15.999 s; M10 43.027 s; M11 6.060 s. M04 excluded: spotting status 'REJECTED: G minor and flat against the C major home key (EP05_MUSIC_BAKEOFF.md); the window stays silent'",
+   "measured": {
+    "cues": 11
+   }
+  },
+  {
+   "id": "input.reels",
+   "verdict": "PASS",
+   "evidence": "title: 1920x1080 @ 24.0 fps, 121 frames -> conformed 121 frames, sfx embedded; end: 1920x1080 @ 24.0 fps, 121 frames -> conformed 145 frames, sfx embedded",
+   "measured": {
+    "reels": {
+     "title": {
+      "source": "/home/user/tbag.github.io/project/EP05/VIDEO/V52-3dd78c0c53f2.output.mp4",
+      "is_title_v2_default": false,
+      "probe": {
+       "path": "/home/user/tbag.github.io/project/EP05/VIDEO/V52-3dd78c0c53f2.output.mp4",
+       "codec": "h264",
+       "width": 1920,
+       "height": 1080,
+       "fps": 24.0,
+       "sar": "1:1",
+       "pix_fmt": "yuv420p",
+       "frames": 121,
+       "duration_s": 5.085011,
+       "has_audio": true,
+       "audio": {
+        "codec": "aac",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 5.085011
+       }
+      },
+      "conformed": true,
+      "conformed_file": "/home/user/tbag.github.io/project/EP05/EDIT/v5_final/reels/title_1080p24.mkv",
+      "conformed_frames": 121,
+      "hold_frames": 0,
+      "sfx_source": "embedded",
+      "sfx_raw_samples": 244089,
+      "sfx_fit_samples": 242000,
+      "sfx_vs_sidecar_lag_samples": null,
+      "sfx_vs_sidecar_corr": null,
+      "audio_policy_screen": {
+       "decodable": true,
+       "duration_s": 5.085,
+       "rms_dbfs": -37.5,
+       "silent_fraction": 0.683,
+       "clipping_fraction": 0.0,
+       "tonal_fraction": 0.688,
+       "modulation_2_8hz": 0.335,
+       "automated_fail": false,
+       "flags": [
+        "steady tone: possible music or whine, listen"
+       ],
+       "listening_required": true
+      },
+      "note": ""
+     },
+     "end": {
+      "source": "/home/user/tbag.github.io/project/EP05/VIDEO/V54-aa8d042ffaa4.output.mp4",
+      "is_title_v2_default": false,
+      "probe": {
+       "path": "/home/user/tbag.github.io/project/EP05/VIDEO/V54-aa8d042ffaa4.output.mp4",
+       "codec": "h264",
+       "width": 1920,
+       "height": 1080,
+       "fps": 24.0,
+       "sar": "1:1",
+       "pix_fmt": "yuv420p",
+       "frames": 121,
+       "duration_s": 5.085011,
+       "has_audio": true,
+       "audio": {
+        "codec": "aac",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 5.085011
+       }
+      },
+      "conformed": true,
+      "conformed_file": "/home/user/tbag.github.io/project/EP05/EDIT/v5_final/reels/end_1080p24.mkv",
+      "conformed_frames": 145,
+      "hold_frames": 24,
+      "sfx_source": "embedded",
+      "sfx_raw_samples": 244089,
+      "sfx_fit_samples": 290000,
+      "sfx_vs_sidecar_lag_samples": null,
+      "sfx_vs_sidecar_corr": null,
+      "audio_policy_screen": {
+       "decodable": true,
+       "duration_s": 5.085,
+       "rms_dbfs": -59.7,
+       "silent_fraction": 1.0,
+       "clipping_fraction": 0.0,
+       "tonal_fraction": 0.0,
+       "modulation_2_8hz": 0.17,
+       "automated_fail": true,
+       "flags": [
+        "no audible sound"
+       ],
+       "listening_required": true
+      },
+      "note": ""
+     }
+    }
+   }
+  },
+  {
+   "id": "audio.policy_reels",
+   "verdict": "WARN",
+   "evidence": "automated screen flags (listen): title: steady tone: possible music or whine, listen | end: no audible sound",
+   "measured": {
+    "screened": [
+     "title",
+     "end"
+    ],
+    "screens": {
+     "title": {
+      "decodable": true,
+      "duration_s": 5.085,
+      "rms_dbfs": -37.5,
+      "silent_fraction": 0.683,
+      "clipping_fraction": 0.0,
+      "tonal_fraction": 0.688,
+      "modulation_2_8hz": 0.335,
+      "automated_fail": false,
+      "flags": [
+       "steady tone: possible music or whine, listen"
+      ],
+      "listening_required": true
+     },
+     "end": {
+      "decodable": true,
+      "duration_s": 5.085,
+      "rms_dbfs": -59.7,
+      "silent_fraction": 1.0,
+      "clipping_fraction": 0.0,
+      "tonal_fraction": 0.0,
+      "modulation_2_8hz": 0.17,
+      "automated_fail": true,
+      "flags": [
+       "no audible sound"
+      ],
+      "listening_required": true
+     }
+    }
+   }
+  },
+  {
+   "id": "frames.total",
+   "verdict": "PASS",
+   "evidence": "master 11376 frames; title 121 + body 11110 + end card 145 = 11376",
+   "measured": {
+    "master": 11376,
+    "title": 121,
+    "body": 11110,
+    "end": 145,
+    "expected": 11376
+   }
+  },
+  {
+   "id": "sync.frames_vs_audio",
+   "verdict": "PASS",
+   "evidence": "mix WAV 22752000 samples = 474.0000 s vs 11376 frames x 2000 = 22752000 samples (exact); master streams: video 474.0000 s, audio 474.0000 s (delta +0.0 ms; one AAC frame is 21.3 ms)",
+   "measured": {
+    "mix_samples": 22752000,
+    "expected_samples": 22752000,
+    "video_s": 474.0,
+    "audio_s": 474.0
+   }
+  },
+  {
+   "id": "decode.errors",
+   "verdict": "PASS",
+   "evidence": "ffmpeg decode of the master: no errors",
+   "measured": {
+    "stderr": ""
+   }
+  },
+  {
+   "id": "loudness.integrated",
+   "verdict": "PASS",
+   "evidence": "delivered master -16.00 LUFS vs target -16.0 (+0.00 LU); mix WAV -16.00 LUFS; mode: loudnorm linear",
+   "measured": {
+    "master_lufs": -16.0,
+    "mix_wav_lufs": -16.0,
+    "target": -16.0,
+    "prenorm_lufs": -15.5
+   }
+  },
+  {
+   "id": "loudness.true_peak",
+   "verdict": "PASS",
+   "evidence": "delivered master -4.00 dBTP (ceiling -1.0); mix WAV -4.00 dBTP; AAC overshoot over the WAV +0.00 dB",
+   "measured": {
+    "master_tp": -4.0,
+    "mix_wav_tp": -4.0,
+    "ceiling": -1.0
+   }
+  },
+  {
+   "id": "loudness.lra",
+   "verdict": "PASS",
+   "evidence": "loudness range 2.3 LU on the master (2.3 LU on the WAV); measured only, no delivery limit set",
+   "measured": {
+    "master_lra": 2.3,
+    "mix_wav_lra": 2.3
+   }
+  },
+  {
+   "id": "loudness.stems",
+   "verdict": "PASS",
+   "evidence": "narration -15.5; fx_bed -35.2; music -34.2; title_audio -19.9; end_audio -19.9; cue_M01 -34.5; cue_M02 -34.4; cue_M03 -34.8; cue_M05 -34.0; cue_M06 -34.5; cue_M07 -34.2; cue_M08 -34.1; cue_M09 -34.4; cue_M10 -34.1; cue_M00 -20.0; cue_M11 -20.0 LUFS (post fade and duck for cues)",
+   "measured": {
+    "stems": {
+     "narration": {
+      "lufs": -15.5,
+      "lra": 2.3,
+      "tp": -3.8
+     },
+     "fx_bed": {
+      "lufs": -35.2,
+      "lra": 18.5,
+      "tp": -12.7
+     },
+     "music": {
+      "lufs": -34.2,
+      "lra": 8.8,
+      "tp": -20.4
+     },
+     "title_audio": {
+      "lufs": -19.9,
+      "lra": 1.1,
+      "tp": -9.1
+     },
+     "end_audio": {
+      "lufs": -19.9,
+      "lra": 1.2,
+      "tp": -11.7
+     },
+     "cue_M01": {
+      "lufs": -34.5,
+      "tp": -21.5
+     },
+     "cue_M02": {
+      "lufs": -34.4,
+      "tp": -21.6
+     },
+     "cue_M03": {
+      "lufs": -34.8,
+      "tp": -24.3
+     },
+     "cue_M05": {
+      "lufs": -34.0,
+      "tp": -21.3
+     },
+     "cue_M06": {
+      "lufs": -34.5,
+      "tp": -21.3
+     },
+     "cue_M07": {
+      "lufs": -34.2,
+      "tp": -21.8
+     },
+     "cue_M08": {
+      "lufs": -34.1,
+      "tp": -20.6
+     },
+     "cue_M09": {
+      "lufs": -34.4,
+      "tp": -23.4
+     },
+     "cue_M10": {
+      "lufs": -34.1,
+      "tp": -20.4
+     },
+     "cue_M00": {
+      "lufs": -20.0,
+      "tp": -10.0
+     },
+     "cue_M11": {
+      "lufs": -20.0,
+      "tp": -11.6
+     }
+    }
+   }
+  },
+  {
+   "id": "music.levels",
+   "verdict": "PASS",
+   "evidence": "placed cue loudness (trimmed, before fades and duck): M01 -28.0 (target -28), M02 -28.0 (target -28), M03 -28.0 (target -28), M05 -28.0 (target -28), M06 -28.0 (target -28), M07 -28.0 (target -28), M08 -28.0 (target -28), M09 -28.0 (target -28), M10 -28.0 (target -28), M00 -20.0 (target -20), M11 -20.0 (target -20)",
+   "measured": {
+    "cues": {
+     "M01": {
+      "source_lufs": -10.9,
+      "gain_db": -17.1,
+      "placed_lufs": -28.0
+     },
+     "M02": {
+      "source_lufs": -11.7,
+      "gain_db": -16.3,
+      "placed_lufs": -28.0
+     },
+     "M03": {
+      "source_lufs": -9.9,
+      "gain_db": -18.1,
+      "placed_lufs": -28.0
+     },
+     "M05": {
+      "source_lufs": -11.4,
+      "gain_db": -16.6,
+      "placed_lufs": -28.0
+     },
+     "M06": {
+      "source_lufs": -11.1,
+      "gain_db": -16.9,
+      "placed_lufs": -28.0
+     },
+     "M07": {
+      "source_lufs": -11.3,
+      "gain_db": -16.7,
+      "placed_lufs": -28.0
+     },
+     "M08": {
+      "source_lufs": -11.3,
+      "gain_db": -16.7,
+      "placed_lufs": -28.0
+     },
+     "M09": {
+      "source_lufs": -9.4,
+      "gain_db": -18.6,
+      "placed_lufs": -28.0
+     },
+     "M10": {
+      "source_lufs": -11.0,
+      "gain_db": -17.0,
+      "placed_lufs": -28.0
+     },
+     "M00": {
+      "source_lufs": -11.8,
+      "gain_db": -8.2,
+      "placed_lufs": -20.0
+     },
+     "M11": {
+      "source_lufs": -9.8,
+      "gain_db": -10.2,
+      "placed_lufs": -20.0
+     }
+    }
+   }
+  },
+  {
+   "id": "phase.correlation",
+   "verdict": "PASS",
+   "evidence": "aphasemeter over 22207 non-silent frames (of 22219): mean 0.7665, 1.71% of frames below 0, minimum -0.6057; all frames: mean 0.7663, 1.73% below 0",
+   "measured": {
+    "frames": 22219,
+    "mean_all": 0.7663,
+    "frac_below0_all": 0.0173,
+    "active_frames": 22207,
+    "mean_active": 0.7665,
+    "frac_below0_active": 0.0171,
+    "min_active": -0.6057
+   }
+  },
+  {
+   "id": "mono.compatibility",
+   "verdict": "PASS",
+   "evidence": "(L+R)/2 fold-down -16.00 LUFS vs stereo -16.00 LUFS: drop 0.00 dB (WARN above 3.0 dB)",
+   "measured": {
+    "stereo_lufs": -16.0,
+    "mono_lufs": -16.0,
+    "drop_db": 0.0
+   }
+  },
+  {
+   "id": "clipping",
+   "verdict": "PASS",
+   "evidence": "samples at or above 0.9999: mix WAV 0, decoded master 0; peak mix -3.98 dBFS, decoded master -3.98 dBFS",
+   "measured": {
+    "mix_wav": 0,
+    "master": 0
+   }
+  },
+  {
+   "id": "music.silences",
+   "verdict": "PASS",
+   "evidence": "music stem peak per window: [38.5-58.0] -200.0 dBFS, [97.5-170.75] -200.0 dBFS, [263.42-277.0] -200.0 dBFS, [M04 window 146.8-148.4] -200.0 dBFS (limit -60.0); planning overlaps: none; M04 excluded: spotting status 'REJECTED: G minor and flat against the C major home key (EP05_MUSIC_BAKEOFF.md); the window stays silent'",
+   "measured": {
+    "windows": {
+     "38.5-58.0": -200.0,
+     "97.5-170.75": -200.0,
+     "263.42-277.0": -200.0,
+     "M04 window 146.8-148.4": -200.0
+    },
+    "planning_conflicts": []
+   }
+  },
+  {
+   "id": "music.cues_audible",
+   "verdict": "PASS",
+   "evidence": "every placed body cue has music in its slot",
+   "measured": {
+    "dead": []
+   }
+  },
+  {
+   "id": "music.cue_fit",
+   "verdict": "WARN",
+   "evidence": "M08: file (39.033 s, from 364.540 s) ends at 403.573 s, 0.097 s before out_s 403.670; faded out at the file end, not looped or stretched | M08->M09: crossfade at 403.67 s is not equal-power: overlap 0.403 s of 1.000 s | M09: file (15.999 s, from 403.170 s) ends at 419.169 s, 0.911 s before out_s 420.080; faded out at the file end, not looped or stretched | M09->M10: crossfade at 420.08 s is not equal-power: overlap 0.000 s of 1.000 s, music gap 0.411 s | M10: file (43.027 s, from 419.580 s) ends at 462.607 s, 0.310 s before out_s 462.917; faded out at the file end, not looped or stretched",
+   "measured": {
+    "warnings": [
+     "M08: file (39.033 s, from 364.540 s) ends at 403.573 s, 0.097 s before out_s 403.670; faded out at the file end, not looped or stretched",
+     "M08->M09: crossfade at 403.67 s is not equal-power: overlap 0.403 s of 1.000 s",
+     "M09: file (15.999 s, from 403.170 s) ends at 419.169 s, 0.911 s before out_s 420.080; faded out at the file end, not looped or stretched",
+     "M09->M10: crossfade at 420.08 s is not equal-power: overlap 0.000 s of 1.000 s, music gap 0.411 s",
+     "M10: file (43.027 s, from 419.580 s) ends at 462.607 s, 0.310 s before out_s 462.917; faded out at the file end, not looped or stretched"
+    ]
+   }
+  },
+  {
+   "id": "music.reel_sync",
+   "verdict": "UNKNOWN",
+   "evidence": "M00 was composed for the title_v2 6 s reel (hits on THUNK f14 and CLINK) and M11 for a 6 s end card; the reels now in use are 5.042 s and 6.042 s, so whether the hits land needs a human audition",
+   "measured": {}
+  },
+  {
+   "id": "audition",
+   "verdict": "UNKNOWN",
+   "evidence": "no listening pass has happened; all numbers above are machine measurements",
+   "measured": {}
+  },
+  {
+   "id": "foley",
+   "verdict": "PASS",
+   "evidence": "foley: inbuilt clip audio (FX bed)",
+   "measured": {}
+  },
+  {
+   "id": "master.spec",
+   "verdict": "PASS",
+   "evidence": "h264 High yuv420p 1920x1080 24/1; aac 48000 Hz 2 ch 255462 bps; faststart True; x264 crf 16.0",
+   "measured": {
+    "video": "h264",
+    "profile": "High",
+    "audio_bitrate": 255462,
+    "faststart": true
+   }
+  },
+  {
+   "id": "protected.untouched",
+   "verdict": "PASS",
+   "evidence": "146 files under EDIT/master, EDIT/title_v2, EDIT/title, EDIT/v5/master unchanged (size and mtime) before and after the run",
+   "measured": {
+    "files": 146
+   }
+  }
+ ]
+}

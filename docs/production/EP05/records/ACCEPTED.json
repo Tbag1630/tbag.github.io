@@ -1,0 +1,277 @@
+{
+ "note": "Candidate splices for master v3. Only QC-cleared spans of repair clips are listed. The accepted master is untouched.",
+ "splices": {
+  "SEQ_006": {
+   "repair": "V45-0517022366c1",
+   "side": "tail",
+   "at": 132,
+   "hard_cut": true,
+   "qc": "PASS: hard cut from V08 f131 into a one-view zoom-out ending on locked K_WIDE_006; replaces V43 (failed mid-move)"
+  },
+  "SEQ_007": {
+   "repair": "V44-82986bba5845",
+   "side": "head",
+   "at": 108,
+   "take_end": 285,
+   "qc": "clean; V09 ends at its internal cut f285 so the drifted closing wide never plays",
+   "shared_start": true
+  },
+  "SEQ_003": {
+   "repair": "V46-02156598be60",
+   "side": "tail",
+   "at": 128,
+   "hard_cut": true,
+   "qc": "PASS (lead picture QC): hard cut from V05 f127 into a one-view two-shot ending on K_004_START; replaces the separate-table tail"
+  },
+  "SEQ_004": {
+   "repair": "V47-327eed7d99d8",
+   "side": "whole",
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): whole sequence, K_004_START -> K_005_START, two children at the long table"
+  },
+  "SEQ_036": {
+   "repair": "V50-cbf12edd36cd",
+   "side": "whole",
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): whole sequence K_035_B -> K_036_B, MACA kneels, Maria stays screen-left; replaces V41 (head flipped Maria's side)"
+  },
+  "SEQ_005": {
+   "repair": "V48-d8961c9d7491",
+   "side": "head",
+   "at": 72,
+   "shared": false,
+   "hard_cut": true,
+   "shared_start": true,
+   "qc": "PASS (lead picture QC): K_005_START -> K_005_B push-in, then hard cut to V07 f72 (eyeline down the long table)"
+  },
+  "SEQ_035": {
+   "repair": "V49-20898f95d524",
+   "side": "tail",
+   "at": 223,
+   "hard_cut": true,
+   "qc": "PASS (lead picture QC): hard cut from V40 f222 (Chico on the boot) into the long-table family shot ending on K_035_B"
+  },
+  "SEQ_037": {
+   "side": "segments",
+   "segments": [
+    [
+     "V59-f29b8361d32c",
+     8,
+     241
+    ],
+    [
+     "V51-07fd7eee46d3",
+     0,
+     121
+    ]
+   ],
+   "repairs": [
+    "R6_037_HAND=V59-f29b8361d32c"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_015": {
+   "side": "segments",
+   "segments": [
+    [
+     "V17-60ca61e0bac1",
+     0,
+     77
+    ],
+    [
+     "V55-54556b6f53e4",
+     1,
+     96
+    ],
+    [
+     "V17-60ca61e0bac1",
+     172,
+     361
+    ]
+   ],
+   "repairs": [
+    "R6_A10=V55-54556b6f53e4"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_021": {
+   "side": "segments",
+   "segments": [
+    [
+     "V23-5633ad143f50",
+     0,
+     85
+    ],
+    [
+     "V56-f1336d21e048",
+     1,
+     96
+    ],
+    [
+     "V23-5633ad143f50",
+     180,
+     361
+    ]
+   ],
+   "repairs": [
+    "R6_D2=V56-f1336d21e048"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_022": {
+   "side": "segments",
+   "segments": [
+    [
+     "V24-03998dec95a6",
+     0,
+     7
+    ],
+    [
+     "V57-f8cc96b79afd",
+     1,
+     96
+    ],
+    [
+     "V24-03998dec95a6",
+     102,
+     337
+    ]
+   ],
+   "repairs": [
+    "R6_D3=V57-f8cc96b79afd"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_027": {
+   "side": "segments",
+   "segments": [
+    [
+     "V30-afec35ce58f7",
+     0,
+     6
+    ],
+    [
+     "V58-a195cb5d6af9",
+     1,
+     192
+    ],
+    [
+     "V30-afec35ce58f7",
+     197,
+     198
+    ],
+    [
+     "V60-70388320fe01",
+     1,
+     140
+    ]
+   ],
+   "repairs": [
+    "R6_D4_A=V58-a195cb5d6af9",
+    "R6_D4_B=V60-70388320fe01"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  },
+  "SEQ_028": {
+   "side": "segments",
+   "segments": [
+    [
+     "V60-70388320fe01",
+     140,
+     169
+    ],
+    [
+     "V31-8830210c7b44",
+     29,
+     337
+    ]
+   ],
+   "repairs": [
+    "R6_D4_B=V60-70388320fe01"
+   ],
+   "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+  }
+ },
+ "joins": {},
+ "audio_mutes": {
+  "V59-f29b8361d32c": [
+   [
+    5.2,
+    10.05,
+    "R6 QC: staged tonal lines 293-881 Hz (a chord) under the hand-hold beat"
+   ]
+  ],
+  "V58-a195cb5d6af9": [
+   [
+    2.45,
+    7.75,
+    "R6 QC: held 262 Hz tone with harmonics (a note), not a purr"
+   ]
+  ]
+ },
+ "superseded": {
+  "V43-26bd23d9247f": "failed QC mid-move (extra boy, doubled Maria); not used",
+  "V41-35d7bed2f778": "whole SEQ_036 replaced by V50: its head (f0-164) put Maria screen-right"
+ },
+ "tail_fade": 0.0,
+ "tail_fade_note": "v3: the Seedance end card (END_FLF) starts on K_037_W, the body's last frame, so the body ends without a dip to black; the end card carries the fade out. Restore 1.5 if the deterministic title_v2 end card is used instead.",
+ "picture": {
+  "xfade_frames": 8,
+  "push_in": 0.04,
+  "still_threshold": 0.6,
+  "still_frames": 36,
+  "note": "user 2026-10-12: transitions at every inter-clip point, no noticeable holds. 8-frame dissolves centred on each cut (record timing unchanged); scene changes keep their dips; shared-keyframe splices stay seamless; slow push-in on segments with a still run of 1.5 s or more"
+ },
+ "superseded_splices": {
+  "SEQ_037": {
+   "repair": "V51-07fd7eee46d3",
+   "side": "tail",
+   "at": 233,
+   "hard_cut": true,
+   "qc": "PASS (lead picture QC): hard cut from V42 f234 (hand-hold close) into the final pull-back ending on K_037_W, the episode's last image; cut at V42 f232 (2 frames earlier than the gate's 235) so the picture ends on the narration's last frame"
+  }
+ },
+ "rejected_repairs": {
+  "SEQ_020": {
+   "splice": {
+    "side": "segments",
+    "segments": [
+     [
+      "V22-36ba4e9708b9",
+      0,
+      169
+     ],
+     [
+      "V61-615e97183abf",
+      1,
+      169
+     ]
+    ],
+    "repairs": [
+     "R6_A2=V61-615e97183abf"
+    ],
+    "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+   },
+   "reason": "R6_A2 V61 reviewer FAIL: Chico still lies at her chest f54-f138; hops to the floor f12-f30; pitched glide 3.7-4.6 s. Original V22 kept.",
+   "date": "2026-10-12"
+  },
+  "SEQ_031": {
+   "splice": {
+    "side": "segments",
+    "segments": [
+     [
+      "V62-1c7ee92acd1e",
+      0,
+      265
+     ]
+    ],
+    "repairs": [
+     "R6_031=V62-1c7ee92acd1e"
+    ],
+    "qc": "R6 reviewer PASS (docs/EP05_reviews/R6_clip_qc.md)"
+   },
+   "reason": "R6_031 V62 reviewer FAIL: jump cut f213->f214; drawing content contradicts V34/V36 (robot-only). Original V35 kept.",
+   "date": "2026-10-12"
+  }
+ }
+}
