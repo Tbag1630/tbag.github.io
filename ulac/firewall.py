@@ -421,6 +421,8 @@ def video_payload(root: Path, rid: str) -> dict:
     cur = _reservations(root).get(rid)
     if cur is None:
         raise FirewallError(f"{rid} has no reservation in the ledger")
+    if why := castlock.problems(root):          # a reservation made before the cast lock existed (EP05 V67) stays blocked
+        raise FirewallError(f"CAST LOCK refused the payload of {rid}: " + "; ".join(why))
     graph = json.loads((Path(root) / cur["graph_file"]).read_text(encoding="utf-8"))
     if video.graph_sha256(graph) != cur["graph_sha256"]:
         raise FirewallError(f"{rid}: the stored graph no longer matches its reserved hash")

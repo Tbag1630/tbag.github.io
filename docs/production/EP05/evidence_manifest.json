@@ -45,7 +45,7 @@
   "V02-a0dec5bdea15": {
    "seq": "SEQ_002",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -57,7 +57,7 @@
   "V03-35c2d1e8d341": {
    "seq": "SEQ_002",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -69,7 +69,7 @@
   "V04-307c43d3c84b": {
    "seq": "SEQ_003",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -81,7 +81,7 @@
   "V05-bc46c7731c5d": {
    "seq": "SEQ_003",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -93,7 +93,7 @@
   "V06-3f58e4dd348a": {
    "seq": "SEQ_004",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -105,7 +105,7 @@
   "V07-6aaee2ed215d": {
    "seq": "SEQ_005",
    "reserved": 593.4,
-   "billed": null,
+   "billed": 594.98,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -117,7 +117,7 @@
   "V08-076797ef641b": {
    "seq": "SEQ_006",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -129,7 +129,7 @@
   "V09-cfc563cb4317": {
    "seq": "SEQ_007",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -141,7 +141,7 @@
   "V10-4aac6a91e690": {
    "seq": "SEQ_008",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -153,7 +153,7 @@
   "V11-04c71b931efe": {
    "seq": "SEQ_009",
    "reserved": 410.8,
-   "billed": null,
+   "billed": 412.5,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -165,7 +165,7 @@
   "V12-1c5951db0281": {
    "seq": "SEQ_010",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -177,7 +177,7 @@
   "V13-a98b9f5df43b": {
    "seq": "SEQ_011",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -189,7 +189,7 @@
   "V14-961bf08ab33f": {
    "seq": "SEQ_012",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -201,7 +201,7 @@
   "V15-e7c532275e8a": {
    "seq": "SEQ_013",
    "reserved": 547.7,
-   "billed": null,
+   "billed": 549.36,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -213,7 +213,7 @@
   "V16-8290543df17b": {
    "seq": "SEQ_014",
    "reserved": 547.7,
-   "billed": null,
+   "billed": 549.36,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -225,7 +225,7 @@
   "V17-60ca61e0bac1": {
    "seq": "SEQ_015",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -237,7 +237,7 @@
   "V18-5575153249e1": {
    "seq": "SEQ_016",
    "reserved": 593.4,
-   "billed": null,
+   "billed": 594.98,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -249,7 +249,7 @@
   "V19-b7da7d753cba": {
    "seq": "SEQ_017",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -261,7 +261,7 @@
   "V20-4b05b652cb51": {
    "seq": "SEQ_018",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -273,7 +273,7 @@
   "V21-cc02f55ea46f": {
    "seq": "SEQ_019",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -285,7 +285,7 @@
   "V22-36ba4e9708b9": {
    "seq": "SEQ_020",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -297,7 +297,7 @@
   "V23-5633ad143f50": {
    "seq": "SEQ_021",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -309,7 +309,7 @@
   "V24-03998dec95a6": {
    "seq": "SEQ_022",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -333,7 +333,7 @@
   "V26-d9351a00709c": {
    "seq": "SEQ_023",
    "reserved": 547.7,
-   "billed": null,
+   "billed": 549.36,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -345,7 +345,7 @@
   "V27-a08e5738f801": {
    "seq": "SEQ_024",
    "reserved": 502.1,
-   "billed": null,
+   "billed": 503.74,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -357,7 +357,7 @@
   "V28-e9c5010fc5af": {
    "seq": "SEQ_025",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -369,7 +369,7 @@
   "V29-f22ccbb1beb2": {
    "seq": "SEQ_026",
    "reserved": 593.4,
-   "billed": null,
+   "billed": 594.98,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -381,7 +381,7 @@
   "V30-afec35ce58f7": {
    "seq": "SEQ_027",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -393,7 +393,7 @@
   "V31-8830210c7b44": {
    "seq": "SEQ_028",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -405,7 +405,7 @@
   "V32-a554b3a4d301": {
    "seq": "SEQ_029",
    "reserved": 547.7,
-   "billed": null,
+   "billed": 549.36,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -429,7 +429,7 @@
   "V34-5342a41bc959": {
    "seq": "SEQ_030",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -441,7 +441,7 @@
   "V35-ceca5139a436": {
    "seq": "SEQ_031",
    "reserved": 502.1,
-   "billed": null,
+   "billed": 503.74,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -453,7 +453,7 @@
   "V36-0e99e41911a2": {
    "seq": "SEQ_032",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -465,7 +465,7 @@
   "V37-a56cd4f9aadc": {
    "seq": "SEQ_032",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -477,7 +477,7 @@
   "V38-38e96cbfc516": {
    "seq": "SEQ_033",
    "reserved": 365.1,
-   "billed": null,
+   "billed": 366.87,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -489,7 +489,7 @@
   "V39-a67a4b9420bb": {
    "seq": "SEQ_034",
    "reserved": 410.8,
-   "billed": null,
+   "billed": 412.5,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -501,7 +501,7 @@
   "V40-1a6760c68f9e": {
    "seq": "SEQ_035",
    "reserved": 639.0,
-   "billed": null,
+   "billed": 640.6,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -513,7 +513,7 @@
   "V41-35d7bed2f778": {
    "seq": "SEQ_036",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -525,7 +525,7 @@
   "V42-d673f2cfebf1": {
    "seq": "SEQ_037",
    "reserved": 684.6,
-   "billed": null,
+   "billed": 686.22,
    "submitted": true,
    "not_executed": false,
    "qc": [],
@@ -705,7 +705,7 @@
   "V55-54556b6f53e4": {
    "seq": "SEQ_015",
    "reserved": 182.6,
-   "billed": null,
+   "billed": 184.39,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -719,7 +719,7 @@
   "V56-f1336d21e048": {
    "seq": "SEQ_021",
    "reserved": 182.6,
-   "billed": null,
+   "billed": 184.39,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -733,7 +733,7 @@
   "V57-f8cc96b79afd": {
    "seq": "SEQ_022",
    "reserved": 182.6,
-   "billed": null,
+   "billed": 184.39,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -747,7 +747,7 @@
   "V58-a195cb5d6af9": {
    "seq": "SEQ_027",
    "reserved": 365.1,
-   "billed": null,
+   "billed": 366.87,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -761,7 +761,7 @@
   "V59-f29b8361d32c": {
    "seq": "SEQ_037",
    "reserved": 456.4,
-   "billed": null,
+   "billed": 458.12,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -775,7 +775,7 @@
   "V60-70388320fe01": {
    "seq": "SEQ_028",
    "reserved": 319.5,
-   "billed": null,
+   "billed": 321.25,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -789,7 +789,7 @@
   "V61-615e97183abf": {
    "seq": "SEQ_020",
    "reserved": 319.5,
-   "billed": null,
+   "billed": 321.25,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -803,7 +803,7 @@
   "V62-1c7ee92acd1e": {
    "seq": "SEQ_031",
    "reserved": 502.1,
-   "billed": null,
+   "billed": 503.74,
    "submitted": true,
    "not_executed": false,
    "qc": [
@@ -4096,5 +4096,9 @@
  "reels": [
   "V52-3dd78c0c53f2",
   "V54-aa8d042ffaa4"
+ ],
+ "notes": [
+  "takes[] (billed amounts) refreshed 2026-10-13 after the billing backfill.",
+  "files[] hashes, including CREDIT_LEDGER.jsonl, are as frozen before the backfill; the post-backfill ledger is docs/production/EP05/records/CREDIT_LEDGER.jsonl (sha256 67b52bc93bdbb26bcdba595734328f30edfdd58288ec2d2594a16410daa3f3d8)."
  ]
 }

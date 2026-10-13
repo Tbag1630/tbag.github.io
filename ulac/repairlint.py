@@ -1,4 +1,5 @@
-"""Repair-contract lint: zero-cost checks on a pinned (first/last frame) repair before it is quoted or accepted.
+"""Contract lint: zero-cost checks on a pinned (first/last frame) clip before it is quoted or accepted. Every pinned clip
+states the end state it must reach and its pins are checked against it; repairs also name their fix.
 
 EP05 R6 paid for two repairs that could not succeed:
   * R6_A2 (V61): the fix was "Chico across Maria's feet, one eye open". The end keyframe K_R6_A2_END was reviewed for
@@ -32,11 +33,12 @@ def _pin_checks(spec: dict, which: str, locks: dict[str, dict]) -> tuple[dict, s
     return dict(spec.get(f"{which}_checks") or {}), ""
 
 
-def problems(spec: dict, locks: dict[str, dict]) -> list[str]:
-    """Why this repair spec must not be quoted. `locks` maps keyframe id -> its LOCK.json content."""
+def problems(spec: dict, locks: dict[str, dict], repair: bool = True) -> list[str]:
+    """Why this pinned-clip spec must not be quoted. `locks` maps keyframe id -> its LOCK.json content (with any contract
+    addendum merged). Every pinned clip states the end state it must reach; a repair also names its fix."""
     why = []
     tid = spec.get("tid", "?")
-    if not spec.get("fix"):
+    if repair and not spec.get("fix"):
         why.append(f"{tid} names no fix target (`fix`)")
     req = spec.get("requires") or {}
     end_state, inv = list(req.get("end_state") or []), list(req.get("invariants") or [])
@@ -71,4 +73,15 @@ def acceptance_problems(specs: dict[str, dict], accepting: set[str], already: se
 
 
 def load_locks(prod_dir: Path) -> dict[str, dict]:
-    return {p.parent.name: json.loads(p.read_text()) for p in Path(prod_dir).glob("*/LOCK.json")}
+    """LOCK.json per keyframe, with contract checks from the newest CONTRACT*.json addendum whose lock hash matches
+    (locks are immutable, so checks recorded after locking live beside them; prod.contract)."""
+    out = {}
+    for p in Path(prod_dir).glob("*/LOCK.json"):
+        lock = json.loads(p.read_text())
+        adds = [json.loads(c.read_text()) for c in p.parent.glob("CONTRACT*.json")]
+        adds = sorted((a for a in adds if a.get("lock_sha256") == lock.get("sha256")), key=lambda a: a.get("version", 0))
+        if adds:
+            lock = {**lock, "contract_checks": {**(lock.get("contract_checks") or {}), **adds[-1]["contract_checks"]},
+                    "contract_reviewer": adds[-1].get("reviewer")}
+        out[p.parent.name] = lock
+    return out

@@ -17,9 +17,9 @@
 | Video, R6 repairs V55–V67 | 13 reserved, 8 billed (4 not executed on 402) | 2,524.40 | V67: never submitted |
 | **Video total** | 67 reserved, 59 executed | **30,125.30** | |
 | Images: boards, character grids, environment masters, keyframes, title plates | 99 ledgered | **3,717.95** | 1,934.75 of it predates firewall reservations (`backfilled`) |
-| Images **outside the ledger** | 6 | **71.55** | Oct 11 12:22–12:54, gpt-image (P04) |
+| Images **unattributed** (no reservation or target) | 6 | **71.55** | Oct 11 12:22–12:54, gpt-image; only in the `BILLING_JOBS.json` feed snapshot (P04) |
 | Score (Sonilo) | 13 | 179.51 | 11 cues used; M04 rejected |
-| Transcription (scribe_v2) | 1 | 11.94 | not in the ledger |
+| Transcription (scribe_v2) | 1 | 11.94 | not in the ledger; attributed to EP05 by inference (Oct 11 10:16, before the EP05 asset jobs) |
 | **Episode total billed** | | **34,106.25** | 34,022.76 ledgered + 71.55 unledgered image + 11.94 transcription |
 | Per finished minute (474 s) | | **≈ 4,318** | 4,307 on ledgered spend only |
 
@@ -59,6 +59,6 @@ These are the series baseline. No earlier episode was measured in this repositor
 
 1. Read `get_billing_activity`, paging until the wave's first job appears. Each read is free.
 2. Match every `api_usage_completed` line to the ledger by `job_id`. Write `video_billed` (through `firewall.video_billed`) or `billed` for each.
-3. List feed jobs with no ledger match. These are spend outside the firewall: record each one as a defect.
+3. List feed jobs with no ledger match. These are unattributed spend: record each one as a defect, and say whether it was a bypass, if known.
 4. List ledger jobs submitted but unbilled (`metrics.video.submitted_without_billing`). Explain each one: a provider rejection, 402, or still running.
 5. Recompute `metrics/<EP>.json` and the committed total, and report any headroom change.

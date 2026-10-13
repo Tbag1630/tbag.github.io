@@ -66,3 +66,25 @@ def test_ep05_a2_would_have_been_refused_before_the_quote():
 @pytest.mark.skipif(not (SPECS / "R6_031.json").exists(), reason="R6 specs not present")
 def test_ep05_031_names_no_fix_target():
     assert any("names no fix" in w for w in rl.problems(json.loads((SPECS / "R6_031.json").read_text()), {}))
+
+
+def test_story_clips_need_an_end_state_but_not_a_fix_name():
+    spec = {"tid": "SEQ_010_FLF", "first": "out:K_A", "last": "out:K_B",
+            "requires": {"end_state": ["Maria lying down"], "invariants": ["one Maria"]}}
+    locks = _locks(a={"one Maria": "PASS"}, b={"Maria lying down": "PASS", "one Maria": "PASS"})
+    assert rl.problems(spec, locks, repair=False) == []
+    assert any("no required end state" in w for w in rl.problems({**spec, "requires": {}}, locks, repair=False))
+
+
+def test_contract_addendum_supplies_checks_without_touching_the_lock(tmp_path):
+    d = tmp_path / "K_B"
+    d.mkdir()
+    (d / "LOCK.json").write_text(json.dumps({"target": "K_B", "sha256": "abc", "contract_checks": {}}))
+    (d / "CONTRACT.json").write_text(json.dumps({"lock_sha256": "abc", "version": 1, "reviewer": "reviewer agent",
+                                                 "contract_checks": {"one eye open": "FAIL"}}))
+    (d / "CONTRACT_2.json").write_text(json.dumps({"lock_sha256": "abc", "version": 2, "reviewer": "reviewer agent",
+                                                   "contract_checks": {"one eye open": "PASS"}}))
+    (d / "CONTRACT_3.json").write_text(json.dumps({"lock_sha256": "OTHER", "version": 3,          # a different frame
+                                                   "contract_checks": {"one eye open": "FAIL"}}))
+    locks = rl.load_locks(tmp_path)
+    assert locks["K_B"]["contract_checks"] == {"one eye open": "PASS"} and locks["K_B"]["sha256"] == "abc"

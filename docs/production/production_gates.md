@@ -39,12 +39,12 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 
 | # | Check | Enforcement | Evidence |
 |---|---|---|---|
-| SC-1 | Cast lock holds; identity references are in the lock | **CODE** (castlock) | refusal text or a reservation |
+| SC-1 | Cast lock holds; identity references are in the lock; a stored reservation's payload is refused while it fails | **CODE** (castlock in `reserve`, `video_reserve`, `video_payload`) | refusal text or a reservation |
 | SC-2 | Graph preflight: environment master on the reference slot, no sketch or END_LOCK as a frame, at most 15 s, audio on, 720p | **CODE** (`video.preflight`, `frame_source_problems`) | `video_quoted.problems` |
 | SC-3 | Quote recorded, price accepted, within cap and attempt ceiling, scope authorized | **CODE** (`firewall.video_reserve`) | ledger `video_quoted`, `video_reserved` |
-| SC-4 | Keyframes reviewer-passed and locked, with **`contract_checks`** for every state the clip must reach | **CODE** (`repairlint` in `prod.flf`; `prod.lock`) | `PROD/K_*/LOCK.json` |
+| SC-4 | **Every pinned clip** (story, repair or title) states `requires.end_state`; its keyframes are reviewer-passed, locked and carry **`contract_checks`** for every required state | **CODE** (`repairlint` in `prod.flf` for every spec; `prod.lock`; `prod.contract` addendum) | `PROD/K_*/LOCK.json`, `CONTRACT*.json` |
 | SC-5 | Repair names its fix and required states; a shared-prop change only with its neighbours | **CODE** (`repairlint`, `r6_accept`) | spec `requires`, `with_neighbours` |
-| SC-6 | A chained clip's predecessor has a PASS on record | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` / `video_qc_note` |
+| SC-6 | A chained clip's predecessor has a PASS on record: the reviewer's picture review (`video_qc_note`) or a human `video_qc` | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` / `video_qc_note` |
 | SC-7 | Credit balance confirmed with the producer to cover the whole batch | PROCESS (no balance read available; LL-17) | ledger `decision` naming the confirmed balance |
 | SC-8 | After each wave, billing reconciled into the ledger; submitted-but-unbilled jobs listed | CODE (`metrics.video.submitted_without_billing`) + PROCESS (run it) | `video_billed` / `billed` events |
 | SC-9 | Pilot first on a new method (two sequences) | PROCESS (CLAUDE.md §2.6) | pilot QC records |

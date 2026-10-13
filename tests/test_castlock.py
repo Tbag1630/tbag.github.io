@@ -115,3 +115,14 @@ def test_a_chained_clip_needs_its_predecessor_reviewed(tmp_path):
     assert "V02-b" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]   # the latest take is the one that counts
     _video(tmp_path, "V03-c", "SEQ_001", [{"event": "video_qc_note", "rid": "V03-c", "verdict": "PASS (picture)"}])
     assert firewall.predecessor_qc_problems(tmp_path, "SEQ_002") == []
+
+
+def test_a_stored_reservation_cannot_be_sent_without_the_cast_lock(tmp_path):
+    """EP05 V67 was reserved before the cast lock existed; its stored payload must not reach a submit."""
+    (tmp_path / "VIDEO").mkdir()
+    (tmp_path / "VIDEO" / "V01-a.graph.json").write_text("{}")
+    with open(tmp_path / firewall.LEDGER, "w") as f:
+        f.write(json.dumps({"utc": "t", "event": "video_reserved", "rid": "V01-a", "seq": "SEQ_001", "credits": 1.0,
+                            "graph_sha256": "x", "graph_file": "VIDEO/V01-a.graph.json"}) + "\n")
+    with pytest.raises(firewall.FirewallError, match="CAST LOCK refused the payload"):
+        firewall.video_payload(tmp_path, "V01-a")

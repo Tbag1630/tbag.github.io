@@ -61,11 +61,10 @@ def frame(name: str | None) -> str | None:
 
 def flf(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
-    if spec.get("fix") or spec.get("kind", "").startswith("repair") or tid.startswith(("R6", "FIX")):
-        from . import repairlint
-        why = repairlint.problems(spec, repairlint.load_locks(ROOT / "PROD"))
-        if why:
-            raise SystemExit("repair contract lint refused (nothing quoted): " + "; ".join(why))
+    from . import repairlint                       # every pinned clip, repairs and story clips alike (SC-4)
+    why = repairlint.problems(spec, repairlint.load_locks(ROOT / "PROD"), repair=bool(spec.get("fix")))
+    if why:
+        raise SystemExit("contract lint refused (nothing quoted): " + "; ".join(why))
     spec["first"], spec["last"] = frame(spec["first"]), frame(spec.get("last"))
     prompt = storyboard.video_text_flf(spec["plan"])
     secs = int(spec["seconds"])
@@ -87,6 +86,26 @@ def flf(tid: str, spec_path: str) -> dict:
     d = _dir(tid)
     (d / f"{r['rid']}.prompt.txt").write_text(prompt)
     return {"tid": tid, "seq": seq, "rid": r["rid"], "credits": credits, "graph": r["graph_file"], "committed_before": r["committed_before"]}
+
+
+def contract(tid: str, reviewer: str, checks) -> dict:
+    """Record a reviewer's contract checks for a locked keyframe without touching the lock (locks are immutable): which
+    required states ("Chico lies across Maria's feet") hold in exactly this frame. Each review is a new versioned file;
+    repairlint uses the newest one whose lock hash matches."""
+    d = _dir(tid)
+    lk = d / "LOCK.json"
+    if not lk.exists():
+        raise SystemExit(f"{tid} is not locked: lock the keyframe before recording contract checks")
+    if isinstance(checks, str):
+        checks = json.loads(checks)
+    if not reviewer.strip() or not checks:
+        raise SystemExit("name the reviewer and give at least one checked state")
+    n = 1 + len(list(d.glob("CONTRACT*.json")))
+    rec = {"target": tid, "lock_sha256": json.loads(lk.read_text())["sha256"], "reviewer": reviewer,
+           "contract_checks": {str(k): str(v).upper() for k, v in checks.items()}, "version": n}
+    (d / ("CONTRACT.json" if n == 1 else f"CONTRACT_{n}.json")).write_text(json.dumps(rec, indent=1))
+    firewall.record(ROOT, "contract_checked", target=tid, reviewer=reviewer, version=n, checks=rec["contract_checks"])
+    return rec
 
 
 def sent(tid: str, ref: str, job: str) -> None:
@@ -208,6 +227,6 @@ def inspect(tid: str, rid: str, first: str = "", last: str = "") -> dict:
 if __name__ == "__main__":
     cmd, *a = sys.argv[1:]
     res = {"img": img, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop, "sound": sound,
-           "lock": lock}[cmd](*a)
+           "lock": lock, "contract": contract}[cmd](*a)
     if res is not None:
         print(json.dumps(res))

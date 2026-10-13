@@ -70,7 +70,7 @@ Human working hours were never recorded.
 | F4 | **Generated audio carried music on at least 8 takes**, despite "no music, no melody" in every prompt. All 8 were muted from spectra. Nobody has listened to the mutes, to the title-reel tone flag, or to the film. | `EDIT/v5/edl.json` `audio_mutes`; `regression/audio_music_labels.json` | MATERIAL |
 | F5 | **Two R6 repairs could not have succeeded.** On R6_A2 (V61), both pins showed the defect. The end keyframe was reviewed for "one Chico" and his eyes, never for where he lies. R6_031 (V62) changed the drawing that its neighbours keep. 824.99 credits were spent. | `PROD/K_R6_A2_END/LOCK.json` review text; `R6_clip_qc.md` | MATERIAL |
 | F6 | **Human-decision records were written by automation.** Eight `video_qc` PASS events were written straight through `record()` under the name "lead (picture QC)", skipping the listening rule. The old `_user()` check accepted that name as a person. Code also signs price acceptances as `by="user"` under a standing authorization. | ledger lines for V44–V54; `ulac/prod.py` and `ulac/chain.py` | MATERIAL |
-| F7 | **There was spend outside the ledger.** 6 GPT image jobs (71.55 credits, Oct 11 12:22–12:54) were billed with no ledger record. Billed amounts for 47 videos and 40 images had never been reconciled. | `EP05/records/billing_feed_2026-10-13.txt` vs ledger | MATERIAL |
+| F7 | **There was spend the ledger cannot attribute.** 6 GPT image jobs (71.55 credits, Oct 11 12:22–12:54) were billed with no reservation or target. They appear only in the billing snapshot `BILLING_JOBS.json`, so their purpose is unknown, and this is not a proven bypass. Billed amounts for 47 videos and 80 images had never been reconciled. | `EP05/records/billing_feed_2026-10-13.txt` vs ledger | MATERIAL |
 | F8 | **The workspace ran dry mid-batch.** V63–V66 and K_R6_030_MID failed with 402. Nothing was billed, but the morning-act repairs died with them. | ledger `video_not_executed` | MATERIAL |
 | F9 | **Delivery was improvised.** The 560 MB master exists only in an ephemeral container. Both session file sends were refused (limits of 500 MiB, then 30 MiB). The watch page's download is a 3.6 Mb/s rendition. Browser playback was never observed. | session record; `R6_delivery.md` | MATERIAL |
 | F10 | **There was no human real-time watch or listen of any version** before it went to the client. | finish `qc.json` UNKNOWN "audition"; recovery report §11 | BLOCKING |
@@ -182,13 +182,14 @@ Every defect in the registry maps to one or more of these causes. The table coun
 6. **Prevention:**
    - `firewall.record` refuses `GUARDED_EVENTS` unless the checking function writes them.
    - `_user()` rejects agent role words.
+   - Scope: `video_qc_note` (the reviewer agent's picture review) stays agent-written by design. It is what the chain gate (RC3) and keyframe gates accept, as CLAUDE.md's reviewer gate intends. Only a human `video_qc` PASS asserts a listening review.
 7. **Test:** `tests/test_castlock.py` (guard and `_user` cases).
 8. **Evidence it works:**
    - **Status:** Regression-protected for QC and approvals.
    - The code-signed price acceptance (P11) is **Observed**, not changed. It cites the user's standing authorization text. Changing it would alter paid-path behaviour, so the owner's decision is required.
 
-### RC9: MCP submission bypasses the firewall (2 defects; open)
-1. **What happened:** 71.55 credits were spent with no reservation (P04).
+### RC9: MCP submission sits outside the firewall (2 defects; open)
+1. **What happened:** 71.55 credits were spent with no reservation or attributable target (P04). The submit tools sit outside the firewall (L34), but whether these 6 jobs went through them is not recorded.
 2. **Evidence:** The billing feed against the ledger.
 3. **Why:** The platform's submit tools are callable directly.
 4. **What allowed it:** The firewall is a library that callers opt into.

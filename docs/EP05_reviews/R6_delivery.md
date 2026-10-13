@@ -47,7 +47,16 @@ The audit also flagged A10 (pyjamas at 2:58), which is fixed with V55. Clip evid
 | M (A1, A5, D5) | 6:09-7:05 | Morning act: drawing changes every shot; wrong hall; Maria walks through the boy | END keyframes 030-034 locked; K_R6_030_MID failed on 402; V62 (031) failed review. SEQ_030-032 must be re-rendered together |
 | SEQ_035 head | 7:17 | Head approved for a fix | Not started |
 
-Restarting needs credits in the Comfy workspace (only the user can top up). V63-V66 can be resubmitted under their existing reservations. Everything else goes through the firewall as usual.
+Restarting needs credits in the Comfy workspace (only the user can top up).
+
+**Correction, 2026-10-13:** V63-V66 *cannot* be resubmitted under their existing reservations. They carry billed-zero records, and the firewall submits a reservation once. Restarting the staged work also needs:
+
+- the producer's signed cast lock (`ulac/castlock.py`), which also blocks V67's stored payload;
+- `requires` in each spec;
+- contract checks on each keyframe pin (`prod.contract`);
+- new reservations.
+
+See `docs/production/next_episode_requirements.md` B6.
 
 ## Spend
 

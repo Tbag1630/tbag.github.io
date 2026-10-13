@@ -10,6 +10,7 @@ Stage gate SA-6 means walking this file line by line and signing it in the episo
 | B2 | **No human watch or listen of EP05** (stage gate SE-3). This includes the 8 music mutes, the title-reel tone flag and browser playback of the watch page. | Producer | Watch the v5 film in real time on headphones. Record what was heard at the muted windows (V58 5:32–5:38, V59 7:38–7:43) and whether the cast and story read correctly. | A signed watch-and-listen note in the episode record |
 | B3 | **Environment authority for the hall undecided.** The grey footage is accepted only as a deviation, and `chain.ENV_MASTERS` is empty. | Producer, then lead | Decide whether the hall is the warm dressed master or the grey footage look. Upload the chosen master and record its cloud name in `ENV_MASTERS`. | ledger `decision`; `ENV_MASTERS` populated |
 | B4 | **No credits** in the Comfy workspace (402 on 2026-10-12) | Producer | Top up, and state the balance before the batch (stage gate SC-7) | ledger `decision` naming the confirmed balance |
+| B6 | **The staged R6 work cannot run as written.** Its specs carry no `requires`, its keyframe locks carry no contract checks, and V63–V66 are closed (billed-zero records), so they need new reservations. V67's stored payload is refused until the cast lock is signed. | Lead, with the producer's approval | For each staged spec, add `requires`; record `prod.contract` checks for its pins; re-quote through the firewall. Every step is free until the quote. | `contract lint` passes; new reservations |
 | B5 | **The EP05 master exists only in this container** | Producer and lead | Move `EDIT/v5_final/EP05_v5_candidate_master.mp4` (560 MB, sha256 in `EP05/evidence_manifest.json`) and the mix to the producer's storage. Verify the hash after the move. | storage link plus a matching hash |
 
 ## Mandatory changes, with the status of each control
@@ -18,7 +19,7 @@ Stage gate SA-6 means walking this file line by line and signing it in the episo
 |---|---|---|---|
 | M1 | Cast lock before any cast-bearing paid job | `ulac/castlock.py` (CODE) | Implemented and regression-protected |
 | M2 | Keyframe-first pinned FLF for every story clip; no reference-to-video chains for new work | CLAUDE.md §1–2; `prod.flf` | Implemented. Verified on 17 repair clips; never run as a whole-episode method. **Run the 2-sequence pilot first** (CLAUDE.md §2.6). |
-| M3 | Every keyframe lock carries `contract_checks` for the states its clip must reach; repairs name `fix` and `requires` | `repairlint` (CODE) | Implemented and regression-protected |
+| M3 | Every pinned clip states `requires.end_state`; each keyframe carries `contract_checks` (in its lock, or a `prod.contract` addendum); repairs also name `fix` | `repairlint` in `prod.flf` for every spec (CODE) | Implemented and regression-protected |
 | M4 | No chained clip before its predecessor's PASS | `predecessor_qc_problems` (CODE) | Implemented and regression-protected |
 | M5 | Music screen on every ingested clip; mute candidates reviewed **by ear** | `musicscreen` in `audio_screen` (CODE plus a listen) | Implemented. The labels are unlistened. |
 | M6 | A canonical prop reference for each story-critical prop, locked like a keyframe | Process (SA-5) | **Not implemented as code**. Hypothesis (LL-10). |

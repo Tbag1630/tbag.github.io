@@ -895,9 +895,9 @@
    "category": "cost",
    "severity": "MATERIAL",
    "stage_detected": "post_delivery",
-   "status": "open (MCP submit outside firewall)",
+   "status": "open (unattributed; reconcile every wave)",
    "root_cause": "RC9",
-   "observed": "6 image jobs (71.55 credits) billed with no ledger record"
+   "observed": "6 image jobs (71.55 credits, Oct 11 12:22-12:54) billed with no ledger reservation or target; they appear only in the billing snapshot BILLING_JOBS.json (fetched Oct 11 18:40). Purpose not recorded; likely board-stage tests around commit d3cfb63. Unattributed spend, not a proven firewall bypass."
   },
   {
    "id": "EP05-P05",
@@ -994,6 +994,12 @@
    "status": "lesson",
    "root_cause": "RC17",
    "observed": "pgrep/pkill wait loops matched their own command line (killed the shell twice; one loop never ended)"
+  }
+ ],
+ "corrections": [
+  {
+   "date": "2026-10-13",
+   "note": "P04 relabelled from 'spend outside the firewall' to 'unattributed spend' after checking EVENTS/RUN_STATE/SEQUENCES records; commit 3b5abcf's message used the earlier wording."
   }
  ]
 }

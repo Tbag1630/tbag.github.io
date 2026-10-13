@@ -41,12 +41,12 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | ID | Category | Severity | Stage | Status | RC | Observed |
 |---|---|---|---|---|---|---|
 | EP05-L01 | environment | MATERIAL | post_generation | accepted_deviation | RC2 | Grey institutional hall: plain wood tables, brown chairs, white door, grey or teal counter. Consistent from clip to clip within each act. |
-| EP05-L02 | environment | MINOR | post_generation | accepted | RC2 | Bedroom dressing changes between camera setups. V10-V14: plain dark walls. V15-V17: moon window, patterned wallpaper, rainbow rug. V18-V19:  |
-| EP05-L03 | continuity | MATERIAL | post_generation | fixed (J2 V46) | RC2+RC3 | From the wide at 6 s: separate small tables, a sink counter at right, many extra children, and the boy on Maria's screen-left (in SEQ_002 he |
-| EP05-L04 | continuity | MATERIAL | post_generation | fixed (J2 V47) | RC2+RC3 | Whole clip: small separate table, sink counter, boy on Maria's screen-left, braids girl and jersey boy absent, 8+ extra children and an adul |
-| EP05-L05 | continuity | MATERIAL | post_generation | fixed (J2 V48) | RC3 | Opening continues the SEQ_004 small-table wide; from 3 s the long paper-covered table returns and the overhead at 9-12.5 s shows the canonic |
-| EP05-L06 | identity | BLOCKING | post_generation | fixed (J1 V45) | RC6 | Maria (pink, scrunchie) and the boy (green) sit in the foreground while look-alikes (a headband girl in a grey dress, a blond boy in olive)  |
-| EP05-L07 | identity | MATERIAL | post_generation | fixed (J1 V44/V45) | RC6 | In the long-table wides Maria reads as a grey-dressed girl and the boy as an olive-shirted boy (costume colour drift). The braids girl wears |
+| EP05-L02 | environment | MINOR | post_generation | accepted | RC2 | Bedroom dressing changes between camera setups. V10-V14: plain dark walls. V15-V17: moon window, patterned wallpaper, rainbow rug. V18-V19: star curtains, blue  |
+| EP05-L03 | continuity | MATERIAL | post_generation | fixed (J2 V46) | RC2+RC3 | From the wide at 6 s: separate small tables, a sink counter at right, many extra children, and the boy on Maria's screen-left (in SEQ_002 he sits screen-right b |
+| EP05-L04 | continuity | MATERIAL | post_generation | fixed (J2 V47) | RC2+RC3 | Whole clip: small separate table, sink counter, boy on Maria's screen-left, braids girl and jersey boy absent, 8+ extra children and an adult in the background. |
+| EP05-L05 | continuity | MATERIAL | post_generation | fixed (J2 V48) | RC3 | Opening continues the SEQ_004 small-table wide; from 3 s the long paper-covered table returns and the overhead at 9-12.5 s shows the canonical long table with c |
+| EP05-L06 | identity | BLOCKING | post_generation | fixed (J1 V45) | RC6 | Maria (pink, scrunchie) and the boy (green) sit in the foreground while look-alikes (a headband girl in a grey dress, a blond boy in olive) sit at the table beh |
+| EP05-L07 | identity | MATERIAL | post_generation | fixed (J1 V44/V45) | RC6 | In the long-table wides Maria reads as a grey-dressed girl and the boy as an olive-shirted boy (costume colour drift). The braids girl wears her hair down. |
 | EP05-L07b | identity | MATERIAL | post_generation | fixed (J1 V44) | RC6 | Same costume drift as L07 (opening and closing wides of SEQ_007). |
 | EP05-L08 | continuity | MINOR | post_generation | accepted | RC6 | 8+ children at the long table instead of the canonical 4 (audit D5). |
 | EP05-L09 | edit | MINOR | post_generation | fixed (dissolve) | RC6 | Same insert framing, but the robot drawing appears already half drawn: a jump cut. |
@@ -55,12 +55,12 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-L12 | continuity | MINOR | post_generation | fixed (trim) | RC6 | V17 opens with Maria lying; V16 ends with her propped up. |
 | EP05-L13 | continuity | UNCERTAIN | post_generation | flagged | RC6 | Insert of Chico asleep on a different round rug by a star chest, while he lies on the bed before and after. |
 | EP05-L14 | environment | MINOR | post_generation | accepted | RC2 | Opening insert has a white painted bed and brighter light than the established wide. |
-| EP05-L15 | continuity | MATERIAL | post_generation | fixed (trim) | RC6 | Frames 0-20 are a separate shot with MACA in front of the bed; at frame 21 it cuts to MACA behind the bed, where SEQ_022 ends. A teleport ac |
+| EP05-L15 | continuity | MATERIAL | post_generation | fixed (trim) | RC6 | Frames 0-20 are a separate shot with MACA in front of the bed; at frame 21 it cuts to MACA behind the bed, where SEQ_022 ends. A teleport across two cuts. |
 | EP05-L16 | continuity | MINOR | post_generation | open (R6 A8) | RC2 | Closing bedroom wide: different bed and wall decor; Chico curled on the floor rug, not on Maria's feet. |
-| EP05-L17 | prop | MINOR | post_generation | open (R6 M) | RC5 | After the internal cut the drawing is a different design (a glow-scribbled upright robot instead of the horizontal pink robot), on a round w |
+| EP05-L17 | prop | MINOR | post_generation | open (R6 M) | RC5 | After the internal cut the drawing is a different design (a glow-scribbled upright robot instead of the horizontal pink robot), on a round wooden table. |
 | EP05-L18 | identity | BLOCKING | post_generation | fixed (composite) | RC6 | A second Maria (pink, ponytail, holding paper) walks ahead of Maria down the table. |
 | EP05-L19 | continuity | MATERIAL | post_generation | fixed (composite) | RC6 | Cuts back to the opening table shot, with Maria seated again after walking away. |
-| EP05-L20 | edit | MINOR | post_generation | accepted | RC6 | Inside the composite: a forward jump cut along the walk axis (V37 6.29 s to 8.42 s); the boy's foreground paper differs between takes at the |
+| EP05-L20 | edit | MINOR | post_generation | accepted | RC6 | Inside the composite: a forward jump cut along the walk axis (V37 6.29 s to 8.42 s); the boy's foreground paper differs between takes at the match cut (green di |
 | EP05-L21 | environment | MATERIAL | post_generation | fixed (J3 V49) | RC2+RC3 | Closing wide: small square tables, kitchen counter with pots, MACA and Maria standing (board P04: one long table). |
 | EP05-L22 | continuity | MATERIAL | post_generation | fixed (J3 V50) | RC6 | Cuts back to the same small-table wide with MACA standing, although she was kneeling at the long table of drawings at 1.5-6.5 s. |
 | EP05-L23 | continuity | MATERIAL | post_generation | fixed (J3 V51) | RC6 | The episode's closing image is the small-table wide with MACA standing (board: long table, MACA kneeling, the same layout). |
@@ -71,10 +71,10 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-L28 | audio | MATERIAL | post_generation | mitigated (mute, unlistened) | RC4 | Voiced bursts near 650 Hz, possibly a generated "hoo-hoo ha-ha" competing with the narration line. |
 | EP05-L29 | audio | ACCEPTABLE | post_generation | accepted (screen false alarms) | RC4 | The "steady tone, possible music or whine" flags on 29 clips are broadband room hum (energy at 200-300 Hz, no stable pitch). |
 | EP05-L30 | audio | MINOR | post_generation | fixed (level match) | RC4 | Clip audio levels span -59.9 LUFS (V13) to -20.2 LUFS (V29), with peaks up to -5 dBTP. |
-| EP05-L31 | process | MATERIAL | post_generation | corrected | RC15 | docs/EP05_CONTINUITY_AUDIT.md listed D2, D4, D6, D7 and D8 as "free trims". They are not free: every slot is locked to the narration, and cu |
+| EP05-L31 | process | MATERIAL | post_generation | corrected | RC15 | docs/EP05_CONTINUITY_AUDIT.md listed D2, D4, D6, D7 and D8 as "free trims". They are not free: every slot is locked to the narration, and cutting 2-5 s needs th |
 | EP05-L32 | storyboard | MINOR | post_generation | accepted | RC14 | The END_LOCK carries leaked header text from the next panels ("P03 ... 35mm / Lean back", "P04 ... 35mm / Admire"). |
-| EP05-L33 | process | MATERIAL | post_generation | prevented (sketch registry guard) | RC14 | V02's last frame is perceptually identical to the SEQ_002 pencil END_LOCK (0 of 64 dHash bits differ): the sketch was used as the last frame |
-| EP05-L34 | process | MATERIAL | post_generation | open (MCP submit outside firewall) | RC9 | FIREWALL.json still had authorization.sequence_boards = true under the zero-generation mandate; the MCP submit_workflow tool is not gated by |
+| EP05-L33 | process | MATERIAL | post_generation | prevented (sketch registry guard) | RC14 | V02's last frame is perceptually identical to the SEQ_002 pencil END_LOCK (0 of 64 dHash bits differ): the sketch was used as the last frame and the clip turned |
+| EP05-L34 | process | MATERIAL | post_generation | open (MCP submit outside firewall) | RC9 | FIREWALL.json still had authorization.sequence_boards = true under the zero-generation mandate; the MCP submit_workflow tool is not gated by the firewall. |
 | EP05-R6-A6 | prop | MATERIAL | post_delivery | open | RC5 | 0:32-0:38 MACA drawn upside down, page changes at the splice |
 | EP05-R6-D1 | continuity | MATERIAL | client | open | RC2+RC5 | 1:00-1:09 wrong table and drawings, Maria's seat empty |
 | EP05-R6-A3 | prop | MATERIAL | post_delivery | open | RC5 | 1:15-1:25 paper roll missing |
@@ -114,7 +114,7 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-P01 | client | BLOCKING | client | open (cast lock built; unsigned) | RC1 | Client rejected the refreshed cast look (CR-01); EP05 identity provenance unverified; v5 sent with an unverified 'original cast' claim |
 | EP05-P02 | process | MATERIAL | post_generation | prevented (predecessor QC gate) | RC3 | 41 chained clips (V02-V42) paid overnight with no per-clip QC record; drift ran down the chain |
 | EP05-P03 | process | MATERIAL | post_delivery | prevented (guarded events, _user hardening) | RC8 | 8 video_qc PASS events written straight through record() by the lead, bypassing the human-listening rule |
-| EP05-P04 | cost | MATERIAL | post_delivery | open (MCP submit outside firewall) | RC9 | 6 image jobs (71.55 credits) billed with no ledger record |
+| EP05-P04 | cost | MATERIAL | post_delivery | open (unattributed; reconcile every wave) | RC9 | 6 image jobs (71.55 credits, Oct 11 12:22-12:54) billed with no ledger reservation or target; they appear only in the billing snapshot BILLING_JOBS.json (fetche |
 | EP05-P05 | cost | MINOR | post_delivery | fixed (backfill); reconciliation now a stage-gate item | RC11 | 47 video and 40 image billed amounts never written to the ledger |
 | EP05-P06 | cost | MATERIAL | post_generation | open (no balance read available) | RC13 | Workspace ran out of credits mid-batch (402) on V63-V66 and K_R6_030_MID |
 | EP05-P07 | delivery | MATERIAL | post_delivery | open | RC12 | The 560 MB master could not be delivered through the session (500 MiB and 30 MiB limits); it lives only in the container |

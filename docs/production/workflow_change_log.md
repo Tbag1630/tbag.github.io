@@ -15,6 +15,9 @@ Each entry gives the change, why it was made, the evidence and its verification 
 | **Repair-contract lint** (`ulac/repairlint.py`) in `prod.flf` (before quoting) and `r6_accept` (at acceptance); `prod.lock` records `contract_checks` | R6_A2 and R6_031 were paid but could not succeed (824.99 credits) | `f8dfdbf`; `test_repairlint.py` | Regression-protected |
 | **Predecessor QC gate** (`firewall.predecessor_qc_problems`) in `chain.prep` and `prep_r2v` | V02–V42 chained with no review (P02) | `f8dfdbf` | Regression-protected |
 | **Metrics** (`ulac/metrics.py`) plus the defect registry | Comparable episode-over-episode measurement | `f8dfdbf`; `metrics/EP05.json` | Verified (`test_metrics.py`) |
+| The cast lock also guards `video_payload` | V67 was reserved before the lock and could still be sent | `test_castlock.py` | Regression-protected |
+| The contract lint runs on **every** FLF spec (`repair=False` for story clips); `prod.contract` adds versioned contract checks beside immutable locks | Review: repairs-only coverage overstated SC-4; existing R6 locks could not gain checks | `test_repairlint.py` | Regression-protected |
+| P04 relabelled as unattributed spend (the six jobs exist only in the `BILLING_JOBS.json` snapshot) | Verified against EVENTS, RUN_STATE and SEQUENCES records | `defect_registry.json` corrections | Corrected |
 | `timeline.py` reads segment splices | It crashed on the R6 format (P09) | `a36e194` | Regression-protected |
 
 Naming note: `chain.CAST_LOCK` (`05c7b5a`) is a *prompt line* for crowded hall scenes. The cast lock gate is `ulac/castlock.py`, and the two are unrelated.
