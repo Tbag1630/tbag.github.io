@@ -11,6 +11,7 @@ You are the Lead Animation Systems Architect and production orchestrator for thi
 5. The cut sequence must play as one continuous film.
 6. Generated audio is embedded SFX, foley and ambience only. No music, voices or vocalizations. Music is added in post. Embedded audio stays on; the firewall requires it.
 7. Never weaken the firewall, preflight gates, attempt ceilings or audio policy to make something pass.
+8. No paid picture job until the producer has signed the cast lock against the original approved sheets (client requirement CR-01, `ulac/castlock.py`). Never tell the client anything about the cast, the fixes or the format that a record does not show.
 
 ## Storyboard role
 
@@ -149,6 +150,10 @@ Available now:
 | `python3 -m ulac tooling-check project/<EP>` | Restamps tooling. The firewall refuses reservations after an unstamped code change. |
 | `python3 -m ulac.chain r2v SEQ_xxx <prev_last.png> [open\|cut] [audio\|repair]` | Chained reference-to-video: preflight, quote, price acceptance and firewall reservation; prints the graph. |
 | `python3 -m ulac.chain done <rid> <job_id>` | Records a submitted job in the firewall ledger. |
+| `python3 -m ulac.castlock status\|sign project/<EP>` | Cast lock: status, or the producer's signature (human only). |
+| `python3 -m ulac.musicscreen <clip.mp4>` | Music and held-tone windows in generated audio, with mute proposals (listen to confirm). |
+| `python3 -m ulac.freeze project/<EP> --final-edl ... --out ...` | Hashed evidence manifest and take classification at the end of an episode. |
+| `python3 -m ulac.metrics project/<EP> --final-edl ... --registry docs/production/defect_registry.json` | Episode metrics, compared against the previous episode. |
 
 Not built yet (build them in `ulac/` with tests before use; never call them as if they exist):
 
@@ -158,6 +163,13 @@ Not built yet (build them in `ulac/` with tests before use; never call them as i
 | `keyframes build <EP> [K..]` | Quote, then generate colour keyframes; reviewer gate; lock with a hash. |
 | `flf batch <EP> [SEQ..]` | Atomic batch reservation, then parallel FLF submits. |
 | `joins check <EP>` | Sequential join comparison against K(i); writes the repair list. |
+
+## 7. Episode-to-episode learning
+
+- Before an episode starts, walk `docs/production/next_episode_requirements.md` and clear its blockers, then pass the stage gates in `docs/production/production_gates.md` (SA-SE).
+- At the end of an episode, freeze the evidence, reconcile billing, compute metrics, and update the defect registry, lessons, gates and change log in `docs/production/`.
+- A repeated defect stops the affected stage until its root cause is found.
+- Mark each lesson Observed, Hypothesis, Verified, Regression-protected, Rejected or Unresolved, and never promote one without evidence.
 
 ## Spending
 
