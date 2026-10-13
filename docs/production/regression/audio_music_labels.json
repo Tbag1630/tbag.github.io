@@ -1,0 +1,85 @@
+{
+ "purpose": "Regression corpus for ulac.musicscreen: EP05 clip windows that reviewers muted as music-like (policy: no music in generated audio).",
+ "label_basis": "reviewer spectra and the edit's audio_mutes; NOBODY HAS LISTENED. Labels are Hypothesis-grade until a human listening pass.",
+ "episode": "EP05",
+ "media_root": "project/EP05/VIDEO",
+ "excluded": {
+  "V61-615e97183abf": "rejected take, pitched glide not cleared",
+  "V62-1c7ee92acd1e": "rejected take, pitched tone not cleared"
+ },
+ "music_windows": {
+  "V20-4b05b652cb51": [
+   [
+    11.2,
+    14.05
+   ]
+  ],
+  "V26-d9351a00709c": [
+   [
+    2.95,
+    12.05
+   ]
+  ],
+  "V28-e9c5010fc5af": [
+   [
+    5.95,
+    14.05
+   ]
+  ],
+  "V14-961bf08ab33f": [
+   [
+    4.75,
+    5.69
+   ]
+  ],
+  "V18-5575153249e1": [
+   [
+    3.45,
+    4.49
+   ]
+  ],
+  "V31-8830210c7b44": [
+   [
+    6.7,
+    9.79
+   ]
+  ],
+  "V59-f29b8361d32c": [
+   [
+    5.2,
+    10.05
+   ]
+  ],
+  "V58-a195cb5d6af9": [
+   [
+    2.45,
+    7.75
+   ]
+  ]
+ },
+ "baseline_2026-10-13": {
+  "musicscreen": {
+   "recall": 0.75,
+   "precision": 0.857,
+   "tp": 6,
+   "fn": 2,
+   "fp": 1,
+   "tn": 48,
+   "misses": [
+    "V14 (ringing taps < 1 s)",
+    "V18 (broad whistle)"
+   ],
+   "false": [
+    "V43 (590/1176/2348 Hz stack, rejected take)"
+   ]
+  },
+  "video.audio_screen steady-tone flag": {
+   "recall": 0.875,
+   "precision": 0.194,
+   "tp": 7,
+   "fn": 1,
+   "fp": 29,
+   "tn": 20
+  }
+ }
+}

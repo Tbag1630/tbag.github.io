@@ -33,8 +33,14 @@ def build(ep: Path, accepted: dict[str, str]) -> dict:
     current = edit.load_splices(ep)["splices"]
     per_seq: dict[str, list] = {}
     notes: dict[str, list] = {}
+    from . import repairlint
+    specs = {tid: json.loads((SPECS / f"{tid}.json").read_text()) for tid in accepted}
+    done = {n.split("=")[0] for sp in current.values() for n in (sp or {}).get("repairs", [])}
+    why = repairlint.acceptance_problems(specs, set(accepted), done)
+    if why:
+        raise ValueError("repair acceptance refused: " + "; ".join(why))
     for tid, rid in accepted.items():
-        spec = json.loads((SPECS / f"{tid}.json").read_text())
+        spec = specs[tid]
         blocks = [spec["splice"]] + ([spec["splice"]["then"]] if spec["splice"].get("then") else [])
         for b in blocks:
             per_seq.setdefault(b["seq"], []).extend(_reps(b, rid))

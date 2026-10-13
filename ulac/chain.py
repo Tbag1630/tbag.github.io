@@ -14,6 +14,8 @@ RATE = 639.0 / 14  # credits per second, 720p audio on; cloud estimates 8 s=365,
 
 
 def prep(seq: str, start: str) -> None:
+    if why := firewall.predecessor_qc_problems(ROOT, seq):
+        sys.exit("chain refused: " + "; ".join(why))
     d = ROOT / "SEQUENCES" / seq
     pj = json.loads((d / "prompt.json").read_text())
     plan = json.loads((d / "storyboard_plan.json").read_text())
@@ -87,6 +89,8 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
     alone loses identity and room when the previous clip ends on an insert."""
+    if why := firewall.predecessor_qc_problems(ROOT, seq):
+        sys.exit("chain refused: " + "; ".join(why))
     d = ROOT / "SEQUENCES" / seq
     pj = json.loads((d / "prompt.json").read_text())
     plan = json.loads((d / "storyboard_plan.json").read_text())

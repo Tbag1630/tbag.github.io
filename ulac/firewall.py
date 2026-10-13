@@ -394,6 +394,27 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
                   graph_file=str(path.relative_to(Path(root))))
 
 
+def predecessor_qc_problems(root: Path, seq: str) -> list[str]:
+    """A chained clip opens on the previous sequence's last frame, so that clip must have passed QC first (CLAUDE.md:
+    "unverified previous output used as a source of truth" blocks release). EP05 chained V02-V42 overnight with no
+    per-clip review; drift from a missing environment master ran down the chain (ledger L03-L05)."""
+    try:
+        n = int(str(seq).split("_")[-1])
+    except ValueError:
+        return []
+    prev = f"SEQ_{n - 1:03d}"
+    rids = [x["rid"] for x in video_state(root)["reservations"] if x["seq"] == prev and x["state"] in ("submitted", "billed")]
+    if not rids:
+        return []
+    last = rids[-1]
+    verdicts = [str(e.get("verdict", "")) for e in read_ledger(root)
+                if e.get("event") in ("video_qc", "video_qc_note") and e.get("rid") == last]
+    if not any(v.upper().startswith("PASS") for v in verdicts):
+        return [f"{seq} chains from {prev}'s last take {last}, which has no PASS QC record "
+                f"({verdicts or 'none'}): review it before paying for the next clip"]
+    return []
+
+
 def video_payload(root: Path, rid: str) -> dict:
     """The stored graph of one reservation, checked against the reserved hash. It is the only graph a paid submission
     may send."""

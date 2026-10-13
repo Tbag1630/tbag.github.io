@@ -97,3 +97,21 @@ def test_ep05_identity_board_is_refused_until_the_producer_signs():
     why = castlock.problems(EP)
     assert why and "CR-01" in why[0]
     assert "IDENTITY/identity_board.png" in castlock.identity_files(EP)
+
+
+def _video(root, rid, seq, events):
+    lines = [{"event": "video_reserved", "rid": rid, "seq": seq, "credits": 100.0, "graph_sha256": "g", "graph_file": "f"},
+             {"event": "video_submitted", "rid": rid, "job_id": "j" + rid}] + events
+    with open(root / firewall.LEDGER, "a") as f:
+        for e in lines:
+            f.write(json.dumps({"utc": "t", **e}) + "\n")
+
+
+def test_a_chained_clip_needs_its_predecessor_reviewed(tmp_path):
+    assert firewall.predecessor_qc_problems(tmp_path, "SEQ_001") == []          # nothing to chain from
+    _video(tmp_path, "V01-a", "SEQ_001", [])
+    assert "no PASS QC record" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]
+    _video(tmp_path, "V02-b", "SEQ_001", [{"event": "video_qc_note", "rid": "V02-b", "verdict": "FAIL"}])
+    assert "V02-b" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]   # the latest take is the one that counts
+    _video(tmp_path, "V03-c", "SEQ_001", [{"event": "video_qc_note", "rid": "V03-c", "verdict": "PASS (picture)"}])
+    assert firewall.predecessor_qc_problems(tmp_path, "SEQ_002") == []

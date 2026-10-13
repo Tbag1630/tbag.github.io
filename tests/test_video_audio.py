@@ -189,3 +189,15 @@ def test_the_spec_and_orchestrator_carry_the_same_policy():
     assert video.SOUND_POLICY in spec.read_text() and video.NO_MUSIC_RULE in spec.read_text()
     s04 = pytest.importorskip("orchestrator.stages.s04_s09_storyboard")
     assert s04.AUDIO_DEFAULT == video.SOUND_POLICY
+
+
+@needs_ffmpeg
+def test_the_screen_reports_music_windows_from_the_music_screen(tmp_path):
+    rng = np.random.default_rng(1)
+    t = np.arange(16000 * 6) / 16000
+    x = 0.01 * rng.standard_normal(t.size)
+    x[16000 * 2:16000 * 5] += sum(0.05 * np.sin(2 * np.pi * f * t[:16000 * 3]) for f in (293.7, 370.0, 440.0))
+    p = tmp_path / "chord.wav"
+    _wav(p, x)
+    s = video.audio_screen(p)
+    assert s["music_windows"] and any(f.startswith("music screen: chord") for f in s["flags"]) and s["listening_required"]

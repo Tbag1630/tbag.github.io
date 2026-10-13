@@ -1,0 +1,114 @@
+{
+ "episode": "EP05",
+ "final_edl": "EDIT/v5/edl.json",
+ "runtime_s": 474.0,
+ "video": {
+  "reserved": 67,
+  "executed": 59,
+  "status": {
+   "in_final_cut": 51,
+   "not_in_final_cut": 5,
+   "no_output": 1,
+   "never_submitted": 2,
+   "rejected_qc": 3,
+   "provider_rejected": 1,
+   "not_executed": 4
+  },
+  "clips_in_final_cut": 51,
+  "units_in_final_cut": 39,
+  "first_pass_units": 24,
+  "first_pass_acceptance_rate": 0.615,
+  "paid_retries": 20,
+  "paid_retries_per_accepted_clip": 0.392,
+  "billed_credits": 30125.3,
+  "billed_not_in_final_cut_credits": 4212.38,
+  "waste_share": 0.14,
+  "submitted_without_billing": [
+   "V25-7cd431761bc2",
+   "V53-86aa14a62240"
+  ]
+ },
+ "other": {
+  "image_jobs": 59,
+  "image_billed_credits": 1783.2,
+  "image_unbilled": 2,
+  "audio_jobs": 13,
+  "audio_billed_credits": 179.51,
+  "failed_events": 16
+ },
+ "billed_total_credits": 32088.01,
+ "credits_per_accepted_minute": 4061.8,
+ "human_intervention_hours": null,
+ "not_measurable": {
+  "human_intervention_hours": "no time records exist",
+  "editing_rework": "count of EDL variants only (see edit_variants)"
+ },
+ "edit_variants": [
+  "v3",
+  "v4",
+  "v5",
+  "base"
+ ],
+ "defects": {
+  "total": 83,
+  "by_stage_detected": {
+   "post_generation": 48,
+   "post_delivery": 16,
+   "client": 7,
+   "pre_generation": 12
+  },
+  "by_category": {
+   "environment": 5,
+   "continuity": 23,
+   "identity": 13,
+   "edit": 5,
+   "prop": 7,
+   "audio": 13,
+   "process": 9,
+   "storyboard": 1,
+   "story": 1,
+   "client": 1,
+   "cost": 3,
+   "delivery": 2
+  },
+  "by_severity": {
+   "MATERIAL": 60,
+   "MINOR": 17,
+   "BLOCKING": 4,
+   "UNCERTAIN": 1,
+   "ACCEPTABLE": 1
+  },
+  "pre_generation_share": 0.145,
+  "continuity_and_identity": 48,
+  "audio_and_sync": 13,
+  "open": 31,
+  "open_high_severity": [
+   "EP05-AUD-V14",
+   "EP05-AUD-V18",
+   "EP05-AUD-V31",
+   "EP05-AUD-V58",
+   "EP05-AUD-V59",
+   "EP05-L24",
+   "EP05-L25",
+   "EP05-L26",
+   "EP05-L27",
+   "EP05-L28",
+   "EP05-L34",
+   "EP05-P01",
+   "EP05-P04",
+   "EP05-P06",
+   "EP05-P07",
+   "EP05-P10",
+   "EP05-R6-A2",
+   "EP05-R6-A3",
+   "EP05-R6-A6",
+   "EP05-R6-A8",
+   "EP05-R6-D1",
+   "EP05-R6-H035",
+   "EP05-R6-M-A1",
+   "EP05-R6-M-A5",
+   "EP05-R6-M-D5",
+   "EP05-R6-M-DRAW"
+  ]
+ }
+}

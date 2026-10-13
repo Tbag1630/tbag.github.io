@@ -61,6 +61,11 @@ def frame(name: str | None) -> str | None:
 
 def flf(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
+    if spec.get("fix") or spec.get("kind", "").startswith("repair") or tid.startswith(("R6", "FIX")):
+        from . import repairlint
+        why = repairlint.problems(spec, repairlint.load_locks(ROOT / "PROD"))
+        if why:
+            raise SystemExit("repair contract lint refused (nothing quoted): " + "; ".join(why))
     spec["first"], spec["last"] = frame(spec["first"]), frame(spec.get("last"))
     prompt = storyboard.video_text_flf(spec["plan"])
     secs = int(spec["seconds"])
@@ -141,13 +146,17 @@ def crop(tid: str, source: str, x: str, y: str, w: str, h: str) -> dict:
     return {"tid": tid, "graph": str(out), "source": src}
 
 
-def lock(tid: str, cloud: str, path: str, review: str) -> dict:
-    """Lock a reviewer-passed keyframe: hash it, name its cloud file, and record the review. Locked frames are immutable."""
+def lock(tid: str, cloud: str, path: str, review: str, contract_checks: dict | None = None) -> dict:
+    """Lock a reviewer-passed keyframe: hash it, name its cloud file, and record the review. Locked frames are immutable.
+    `contract_checks` maps each state the repair requires ("Chico lies across Maria's feet") to PASS/FAIL as the reviewer
+    saw it in this frame; repairlint refuses a pinned repair whose pins do not mark every required state PASS."""
     lk = _dir(tid) / "LOCK.json"
     if lk.exists():
         raise SystemExit(f"{tid} is already locked; locked keyframes are immutable")
+    if isinstance(contract_checks, str):                      # CLI: a JSON object
+        contract_checks = json.loads(contract_checks)
     rec = {"target": tid, "file": path, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(), "cloud": cloud,
-           "review": review}
+           "review": review, "contract_checks": dict(contract_checks or {})}
     lk.write_text(json.dumps(rec, indent=1))
     firewall.record(ROOT, "accepted", target=tid, kind="keyframe", sha256=rec["sha256"], cloud=cloud, review=review)
     return rec

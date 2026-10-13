@@ -299,7 +299,13 @@ def audio_screen(path) -> dict:
         flags.append("steady tone: possible music or whine, listen")
     if modulation > 0.6:
         flags.append("rhythmic modulation: possible speech or rhythmic music, listen")
+    from . import musicscreen                     # chord/held-tone screen with hum rejection (EP05 corpus, docs/production)
+    music = musicscreen.windows(x) if musicscreen.RATE == RATE else []
+    if music:
+        flags.append("music screen: " + "; ".join(f"{m['kind']} {m['start_s']}-{m['end_s']} s {m['partials_hz'][:4]} Hz"
+                                                  for m in music) + ": listen, mute candidates")
     return {"decodable": True, "duration_s": round(x.size / RATE, 3), "rms_dbfs": round(float(rms_db), 1),
+            "music_windows": music,
             "silent_fraction": round(silent, 3), "clipping_fraction": round(clipping, 5),
             "tonal_fraction": round(tonal, 3), "modulation_2_8hz": round(modulation, 3),
             "automated_fail": automated_fail, "flags": flags, "listening_required": True}
