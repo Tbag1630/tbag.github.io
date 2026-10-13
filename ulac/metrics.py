@@ -55,6 +55,7 @@ def video_metrics(root: Path, edl: dict, reels: tuple[str, ...]) -> dict:
 
 
 def other_metrics(root: Path) -> dict:
+    """Non-video jobs: every reservation, plus billed jobs that predate the firewall (ledger `backfilled`)."""
     live, billed, kinds, failed = {}, {}, {}, 0
     for line in (Path(root) / "CREDIT_LEDGER.jsonl").read_text().splitlines():
         e = json.loads(line)
@@ -62,14 +63,18 @@ def other_metrics(root: Path) -> dict:
         if e["event"] == "reserved" and e.get("kind") != "video":
             live[key] = float(e.get("est_credits") or 0)
             kinds[key] = e.get("kind")
+        elif e["event"] == "backfilled":
+            kinds.setdefault(key, e.get("kind"))
         elif e["event"] == "released":
             live.pop(key, None)
         elif e["event"] == "billed":
             billed[key] = float(e.get("credits") or 0)
+            kinds.setdefault(key, e.get("kind"))
         elif e["event"] == "failed":
             failed += 1
-    img = [k for k in live if kinds.get(k) not in AUDIO_KINDS]
-    aud = [k for k in live if kinds.get(k) in AUDIO_KINDS]
+    keys = set(live) | set(billed)
+    img = [k for k in keys if kinds.get(k) not in AUDIO_KINDS]
+    aud = [k for k in keys if kinds.get(k) in AUDIO_KINDS]
     return {"image_jobs": len(img), "image_billed_credits": round(sum(billed.get(k, 0) for k in img), 2),
             "image_unbilled": sum(1 for k in img if k not in billed),
             "audio_jobs": len(aud), "audio_billed_credits": round(sum(billed.get(k, 0) for k in aud), 2),

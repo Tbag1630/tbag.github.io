@@ -29,15 +29,15 @@
   ]
  },
  "other": {
-  "image_jobs": 59,
-  "image_billed_credits": 1783.2,
+  "image_jobs": 99,
+  "image_billed_credits": 3717.95,
   "image_unbilled": 2,
   "audio_jobs": 13,
   "audio_billed_credits": 179.51,
   "failed_events": 16
  },
- "billed_total_credits": 32088.01,
- "credits_per_accepted_minute": 4061.8,
+ "billed_total_credits": 34022.76,
+ "credits_per_accepted_minute": 4306.7,
  "human_intervention_hours": null,
  "not_measurable": {
   "human_intervention_hours": "no time records exist",
