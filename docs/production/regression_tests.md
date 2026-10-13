@@ -2,7 +2,7 @@
 
 `python3 -m pytest -q tests` runs everything. `python3 -m ulac tooling-check project/<EP>` runs the suite and stamps the tooling, and the firewall refuses reservations without a fresh stamp.
 
-Last run (2026-10-13): **299 passed, 2 skipped**.
+Last run (2026-10-13): **302 passed, 2 skipped**.
 
 Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere they skip, and a skip is not a pass.
 
