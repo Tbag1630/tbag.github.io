@@ -26,7 +26,7 @@ from pathlib import Path
 
 from orchestrator.util import utc_iso
 
-from . import video
+from . import castlock, video
 
 MAX_ATTEMPTS = 2
 CAUSES = ("prompt_ambiguity", "reference_conflict", "model_limitation", "continuity_defect", "tooling_defect")
@@ -73,8 +73,17 @@ def read_ledger(root: Path) -> list[dict]:
     return [json.loads(x) for x in p.read_text().splitlines() if x.strip()] if p.exists() else []
 
 
-def record(root: Path, event: str, **fields) -> dict:
-    """Append one event and force it to disk: a paid job is only as safe as the record written before it."""
+# Events that carry a human decision. They are written only by the function that checks the decision (video_qc_record,
+# approve_extra, video_accept_price, castlock.sign). EP05 had eight "video_qc" PASS events written straight through
+# record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
+GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked")
+
+
+def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:
+    """Append one event and force it to disk: a paid job is only as safe as the record written before it. A guarded
+    event needs its checking function (`_sanctioned` is a guard against accidental bypass, not a security boundary)."""
+    if event in GUARDED_EVENTS and not _sanctioned:
+        raise FirewallError(f"{event!r} records a human decision: write it through its checking function, not record()")
     rec = {"utc": utc_iso(), "event": event, **fields}
     with open(Path(root) / LEDGER, "a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -133,7 +142,7 @@ def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str, requi
         entry["requires_fail"] = True
     conf["approvals"].append(entry)
     save_conf(root, conf)
-    record(root, "approved_extra", target=tid, attempt=attempt, by=by, quote=quote.strip())
+    record(root, "approved_extra", _sanctioned=True, target=tid, attempt=attempt, by=by, quote=quote.strip())
     return entry
 
 
@@ -194,6 +203,10 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
     conf = load_conf(root)
     if closed:
         raise FirewallError(f"{tid} has already passed QC: it is not regenerated unless a material defect is shown")
+    if kind not in AUDIO_KINDS and castlock.applies(kind, tid, ref_hashes):        # the job shows the cast (CR-01)
+        cast = castlock.problems(root) + castlock.ref_problems(root, ref_hashes)
+        if cast:
+            raise FirewallError(f"CAST LOCK refused {tid}: " + "; ".join(cast))
     check_ceiling(root, tid, attempt)
     live = _live_reservations(root, tid)
     cur = live.get(attempt)
@@ -240,9 +253,16 @@ LISTENING = ("speech_absent", "vocals_absent", "music_absent", "sync_ok", "no_ir
 _ACTORS = ("", "claude", "claude-code", "worker", "director", "agent")
 
 
+# Role words that name an agent, never a person. EP05's ledger has "lead (picture QC)" and "reviewer agent", which the
+# old check accepted as human.
+_ROLE_WORDS = ("agent", "reviewer", "lead", "builder", "research", "bot", "assistant", "model", "orchestrator", "claude")
+
+
 def _user(by: str) -> bool:
     who = str(by).strip().lower()
-    return who not in _ACTORS and not who.startswith(("automated", "claude"))
+    words = set(who.replace("(", " ").replace(")", " ").replace("-", " ").replace("_", " ").split())
+    return (who not in _ACTORS and not who.startswith(("automated", "claude"))
+            and not any(w in words for w in _ROLE_WORDS))
 
 
 def video_pilot(root: Path) -> dict:
@@ -310,7 +330,8 @@ def video_accept_price(root: Path, *, by: str, quote: str, graph_sha256: str, cr
            "utc": utc_iso()}
     conf["video_pilot"] = {**(conf.get("video_pilot") or {}), "price_acceptance": acc}
     save_conf(root, conf)
-    record(root, "video_price_accepted", graph_sha256=graph_sha256, credits=acc["credits"], by=by, quote=quote.strip())
+    record(root, "video_price_accepted", _sanctioned=True, graph_sha256=graph_sha256, credits=acc["credits"], by=by,
+           quote=quote.strip())
     return acc
 
 
@@ -319,7 +340,7 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
     (video_payload), and only after this returns. The platform's submit tool has no per-job cap, so this reservation is
     the enforcement: a job made without it is outside the firewall."""
     pilot = video_pilot(root)
-    why = gate_tooling(root)
+    why = gate_tooling(root) + castlock.problems(root)
     if str(pilot.get("status", "")).upper() != "AUTHORIZED":
         why.append("no video pilot authorization is recorded (FIREWALL.json video_pilot)")
     scope = pilot.get("scope") or []
@@ -435,7 +456,7 @@ def video_qc_record(root: Path, rid: str, *, verdict: str, reviewer: str, output
             raise FirewallError(f"PASS needs a listening review; not confirmed: {missing}")
         if len((notes or "").strip()) < 40:
             raise FirewallError("PASS needs notes on what was heard (40 characters or more)")
-    return record(root, "video_qc", rid=rid, verdict=verdict, reviewer=reviewer, listened=listened,
+    return record(root, "video_qc", _sanctioned=True, rid=rid, verdict=verdict, reviewer=reviewer, listened=listened,
                   notes=(notes or "").strip(), output_path=str(out), output_sha256=video.file_sha256(out),
                   structural=structural, screen=video.audio_screen(out),
                   next_step="no automatic retry: one paid attempt per pilot" if verdict == "FAIL" else "")

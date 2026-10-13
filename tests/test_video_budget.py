@@ -6,6 +6,7 @@ import subprocess
 
 import pytest
 
+from conftest import sign_cast
 from ulac import comfy, firewall, video
 
 SEG = 13.583
@@ -29,6 +30,8 @@ def _pilot(root, **over):
              "authorized_by": "user", **over}
     (root / firewall.CONF).write_text(json.dumps({"video_pilot": pilot}))
     (root / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "test"}))
+    if not (root / "CAST_LOCK.json").exists():
+        sign_cast(root)
 
 
 def _quote(root, graph=GRAPH, credits=639.0):
@@ -60,7 +63,7 @@ def test_refuses_without_authorization_and_writes_nothing(tmp_path):
     _quote(tmp_path)
     with pytest.raises(firewall.FirewallError, match="no video pilot authorization"):
         _reserve(tmp_path)
-    assert [e["event"] for e in firewall.read_ledger(tmp_path)] == ["video_quoted"]
+    assert [e["event"] for e in firewall.read_ledger(tmp_path) if e["event"] != "cast_locked"] == ["video_quoted"]
     assert not (tmp_path / firewall.VIDEO_DIR).exists()
 
 
@@ -242,7 +245,7 @@ def test_contingency_attempt_needs_a_recorded_qc_failure(tmp_path):
     _accept(tmp_path, graph=graphs[2])
     with pytest.raises(firewall.FirewallError, match="contingency"):
         _reserve(tmp_path, graph=graphs[2])
-    firewall.record(tmp_path, "video_qc", rid=r2["rid"], target="SEQ_001", verdict="FAIL_MATERIAL")
+    firewall.record(tmp_path, "video_qc", _sanctioned=True, rid=r2["rid"], target="SEQ_001", verdict="FAIL_MATERIAL")
     assert _reserve(tmp_path, graph=graphs[2])["rid"].startswith("V03-")
 
 

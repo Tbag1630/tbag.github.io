@@ -41,3 +41,14 @@ def ctx(tmp_path):
 
 def ff(*args):
     subprocess.run(["ffmpeg", "-v", "error", "-y", *args], check=True, capture_output=True)
+
+
+def sign_cast(root):
+    """Sign the episode's cast lock as the producer would (ulac.castlock): whatever identity files exist under
+    IDENTITY/ are taken as the approved originals; a stand-in board is written when there are none."""
+    from ulac import castlock
+    d = Path(root) / castlock.IDENTITY_DIR
+    d.mkdir(parents=True, exist_ok=True)
+    if not castlock.identity_files(root):
+        (d / "identity_board.png").write_bytes(b"\x89PNG stand-in identity board")
+    return castlock.sign(root, by="producer", statement="test fixture: these identity files stand in for the approved originals")

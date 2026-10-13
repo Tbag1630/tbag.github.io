@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
+from conftest import sign_cast
 from PIL import Image
 
 from ulac import adapters, audit, dag, endpoint, firewall, gates, layout, packer, qc, state
@@ -566,6 +568,7 @@ def test_compile_checks_before_spend(ep):
     firewall.save_conf(e.root, {"gates_enabled": False, "authorization": {"sequence_boards": True}})
     man = e.manifest
     cast = str(e.root / man["authorities"]["cast_references"][0]["path"])
+    sign_cast(e.root)
     with pytest.raises(RelayError, match="no registered Comfy Cloud upload name"):
         e.compile([("cast_reference", cast)], "character grid prompt v1")
     e.register_cloud_input(cast, "group_ref_upload.png", checked_by="user named the uploaded file")
@@ -593,6 +596,9 @@ def test_compile_checks_before_spend(ep):
     with pytest.raises(RelayError, match="build the storyboard prompt first"):
         e.compile([("dressed_master", master), ("identity_board", ident)])
     storyboard.build(e, "SEQ_001")
+    with pytest.raises(RelayError, match="CAST LOCK refused"):          # the new grid and board void the lock
+        e.compile([("dressed_master", master), ("identity_board", ident)])
+    sign_cast(e.root)                                                    # the producer approves the derived board
     req = e.compile([("dressed_master", master), ("identity_board", ident)])
     g = req["graph"]
     assert g["1"]["inputs"]["image"] == "master_00001_.png" and g["2"]["inputs"]["image"] == "identity_00001_.png"
@@ -885,6 +891,7 @@ def test_repair_must_be_a_classified_blocking_defect():
 def test_reservation_prevents_duplicate_and_overlapping_spend(tmp_path):
     kw = dict(tid="SEQ_X", kind="seq", ref_hashes={"previous_endpoint": "a"}, config_hash="c", seed=0, model="m",
               workflow="w", closed=False)
+    sign_cast(tmp_path)
     a = firewall.reserve(tmp_path, attempt=1, prompt_sha="p1", **kw)
     assert not a.get("reused")
     assert firewall.reserve(tmp_path, attempt=1, prompt_sha="p1", **kw)["reused"]       # same graph again: no new spend
@@ -991,6 +998,7 @@ def test_preflight_blocks_until_every_gate_passes(ep):
     e, tmp = ep
     master, ident = _ready_for_boards(e, tmp)
     refs = [("dressed_master", master), ("identity_board", ident)]
+    sign_cast(e.root)
     firewall.save_conf(e.root, {"gates_enabled": True, "authorization": {"sequence_boards": True}})
     with pytest.raises(RelayError) as bad:
         e.compile(refs)
