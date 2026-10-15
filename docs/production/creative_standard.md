@@ -155,8 +155,8 @@ Results are kept whether the experiment wins or loses:
 | At least three distinction choices and three key images, each naming real sequences | `DISTINCTION_THIN`, `KEY_IMAGES_FEW` | BLOCK |
 | Every sequence has its intent with all fields answered | `CREATIVE_MISSING`, `FIELD_MISSING` | BLOCK |
 | Camera values come from the vocabulary | `CAMERA_VALUE_UNKNOWN` | BLOCK |
-| No setup repeated over more than three consecutive sequences, and no move type over 40 %, without a reason | `REPETITION` | REVIEW |
-| No single setup held over 8 s without a reason | `LONG_HOLD` | REVIEW |
+| No setup repeated over more than three consecutive sequences, and no move type (static included) over 40 %, without a reason | `REPETITION` | REVIEW |
+| No setup held over 8 s on average (the sequence's duration divided by its planned setups) without a reason | `LONG_HOLD` | REVIEW |
 | No near-duplicate answers across sequences | `BOILERPLATE` | REVIEW |
 | Reviews: three lenses on the current hash; REJECTs cite criteria and evidence; open REJECTs block; only a person overrules | — | — |
 

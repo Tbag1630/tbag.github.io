@@ -268,16 +268,29 @@ def test_a_varied_plan_passes_and_a_deliberate_motif_is_answered_not_flagged():
         cam = [{"size": sizes[i % len(sizes)], "height": heights[i % len(heights)], "vantage": "front",
                 "move": moves[i], "subjects": ["MARIA"]},
                {"size": sizes[(i + 4) % len(sizes)], "height": heights[(i + 3) % len(heights)],
-                "vantage": "profile", "move": "static", "subjects": ["MACA"]}]
+                "vantage": "profile", "move": "static" if i % 3 == 0 else moves[(i + 4) % 8], "subjects": ["MACA"]}]
         seqs.append((f"SEQ_{i + 1:03d}", 12.0, cam, {}))
     fs = creative.validate(_plan(seqs))
     assert not (_codes(fs) & {"REPETITION", "LONG_HOLD", "BOILERPLATE", "CAMERA_VALUE_UNKNOWN", "FIELD_MISSING"})
-    motif = {"size": "WS", "height": "overhead", "vantage": "front", "move": "static", "subjects": ["MARIA"]}
-    seqs = [(sid, 6.0, [motif, cam[0]], {"repetition_reason": "the overhead returns each time she is alone"})
-            for sid, _, cam, _ in seqs[:5]]
+    motif = lambda i: {"size": "WS", "height": "overhead", "vantage": "front", "move": moves[i], "subjects": ["MARIA"]}
+    seqs = [(sid, 6.0, [motif(i), cam[0]], {"repetition_reason": "the overhead returns each time she is alone"})
+            for i, (sid, _, cam, _) in enumerate(seqs[:5])]
     assert "REPETITION" not in _codes(creative.validate(_plan(seqs)))
     seqs[2] = (seqs[2][0], 6.0, seqs[2][2], {})
     assert "REPETITION" in _codes(creative.validate(_plan(seqs)))
+
+
+def test_a_locked_off_default_counts_as_a_repeated_move():
+    # EP06 review round 1: 50 of 68 planned setups were static and the share check skipped static.
+    cam = lambda i: [{"size": creative.SIZES[i % 8], "height": creative.HEIGHTS[i % 6], "vantage": "front",
+                      "move": "static", "subjects": ["MARIA"]},
+                     {"size": creative.SIZES[(i + 3) % 8], "height": creative.HEIGHTS[(i + 2) % 6], "vantage": "pov",
+                      "move": "static", "subjects": ["MACA"]}]
+    body = _plan([(f"SEQ_{i + 1:03d}", 6.0, cam(i), {}) for i in range(6)])
+    f = [x for x in creative.validate(body) if x["code"] == "REPETITION" and x["clip"] == "EPISODE"]
+    assert f and "'static'" in f[0]["detail"]
+    body["brief"] = {"repetition_reasons": {"move:static": "the locked frame is the narrator's stillness, by act"}}
+    assert not [x for x in creative.validate(body) if x["code"] == "REPETITION" and x["clip"] == "EPISODE"]
 
 
 def test_a_single_setup_over_eight_seconds_needs_a_hold_reason():
@@ -286,6 +299,16 @@ def test_a_single_setup_over_eight_seconds_needs_a_hold_reason():
     assert "LONG_HOLD" not in _codes(creative.validate(_plan([("SEQ_001", 7.5, cam, {})])))
     ok = {"hold_reason": "her face changes from laughter to doubt inside the hold"}
     assert "LONG_HOLD" not in _codes(creative.validate(_plan([("SEQ_001", 12.0, cam, ok)])))
+
+
+def test_several_setups_over_a_long_span_still_count_as_long_holds():
+    # EP06 review round 1: a 20 s plan with two setups holds each for 10 s on average; the single-setup rule missed it.
+    two = [{"size": "MS", "height": "child_eye", "vantage": "front", "move": "static", "subjects": ["MARIA"]},
+           {"size": "CU", "height": "high", "vantage": "profile", "move": "push", "subjects": ["MACA"]}]
+    three = two + [{"size": "WS", "height": "low", "vantage": "behind", "move": "pan", "subjects": ["CHICO"]}]
+    f = [x for x in creative.validate(_plan([("SEQ_001", 20.0, two, {})])) if x["code"] == "LONG_HOLD"]
+    assert f and "10.0 s each" in f[0]["detail"]
+    assert "LONG_HOLD" not in _codes(creative.validate(_plan([("SEQ_001", 20.0, three, {})])))
 
 
 def test_boilerplate_answers_are_flagged():

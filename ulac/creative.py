@@ -250,8 +250,11 @@ def _validate_sequences(body: dict, out: list) -> None:
             _f(out, clip, "CAMERA_VALUE_UNKNOWN", BLOCK, "; ".join(bad[:6]))
         cams = s.get("camera") if isinstance(s.get("camera"), list) else []
         dur = s.get("duration")
-        if len(cams) == 1 and isinstance(dur, (int, float)) and dur > HOLD_S and not _answered(s.get("hold_reason")):
-            _f(out, clip, "LONG_HOLD", REVIEW, f"one setup held {dur:.1f} s (over {HOLD_S:.0f} s): say what keeps a "
+        # Average seconds per planned setup: a plan with several setups over a long span still holds each one long
+        # (EP06 review round 1 found the single-setup rule passed beat plans averaging 10 s per setup).
+        if cams and isinstance(dur, (int, float)) and dur / len(cams) > HOLD_S and not _answered(s.get("hold_reason")):
+            _f(out, clip, "LONG_HOLD", REVIEW, f"{len(cams)} setup(s) over {dur:.1f} s, {dur / len(cams):.1f} s each "
+                                               f"on average (over {HOLD_S:.0f} s): plan more setups or say what keeps a "
                                                f"child watching in hold_reason (CR-AUD-03)")
     # setups repeated across consecutive sequences (CR-CRAFT-03)
     keys = {c: {setup_key(x) for x in (seqs.get(c) or {}).get("camera") or [] if isinstance(x, dict)}
@@ -276,7 +279,8 @@ def _validate_sequences(body: dict, out: list) -> None:
     if len(planned) >= MOVE_MIN_SEQS:
         for mv in MOVES:
             n = sum(any(isinstance(x, dict) and x.get("move") == mv for x in seqs[c]["camera"]) for c in planned)
-            if mv != "static" and n / len(planned) > MOVE_SHARE and not _answered(reasons.get(f"move:{mv}")):
+            # static counts too: a locked-off default is as much a default as EP05's slow push (EP06 review round 1)
+            if n / len(planned) > MOVE_SHARE and not _answered(reasons.get(f"move:{mv}")):
                 _f(out, "EPISODE", "REPETITION", REVIEW, f"move {mv!r} in {n} of {len(planned)} sequences (over "
                                                          f"{MOVE_SHARE:.0%}); vary it or give "
                                                          f"brief.repetition_reasons['move:{mv}'] (CR-CRAFT-03)")
