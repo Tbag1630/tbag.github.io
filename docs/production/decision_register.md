@@ -44,6 +44,20 @@ Sources: `EP05_postmortem.md`, `defect_registry.json`, the EP05 ledger, and the 
 | B-10 | **Next-episode inputs** | No EP06 audio or script exists in `project/` | — | Provide the narration WAV, the script, and any new characters or rooms | Nothing starts without them | Files placed in `project/EP06/AUDIO/` and `INPUTS/` |
 | B-11 | **Make signatures mandatory** for every approval | §A-07 | Optional (today); mandatory | **Mandatory once B-05 is done**: approvals then cannot be transcribed by an agent | Each approval needs a signing step | A test-backed policy change (the lead implements it after your choice) |
 
+**Creative escalations (creative excellence mandate, 2026-10-15).**
+
+The story material is the client's, so it stays in the private creative package (`project/EP06/CREATIVE/`, sent to you directly) and never enters this public repository. Rows B-12 to B-18 say only what must be decided. Storyboards wait for a person's creative approval (gate SB-0).
+
+| # | Decision | Evidence | Options | Recommendation | Consequence | How it is recorded |
+|---|---|---|---|---|---|---|
+| B-12 | **Which story is the next episode** | The candidate manuscript is inferred from dates and callbacks. Its earlier-story callbacks match EP05's own; nothing names it EP06. | Confirm; name another | Confirm or correct before any creative approval | All creative work is provisional until then | A ledger `decision` by you |
+| B-13 | **Treatment** | Four materially different concepts compared against the written criteria, then three independent lens reviews (creative package §2) | The four concepts, or a direction of your own | The package's recommendation, after the lens reviews | Fixes the visual language, the key images and the shot plan | `contracts approve --kind creative` by you, after the reviews |
+| B-14 | **New character designs** | The candidate story introduces several new children. CR-01 implies client approval for any new look. | Design and send for client approval; reuse existing designs | Design from the original series style; client approval before any picture job | No picture job with a new character before approval | Client approval recorded, then the cast lock (B-01) extended |
+| B-15 | **A new location master** | The candidate story needs an outdoor location the series has not shown; its night scenes need the approved bedroom master (B-02's question, for that room) | Design a new master; reuse an existing room | Design one master and approve it before keyframes | A master is a release-blocking input (CLAUDE.md §1) | A ledger `decision` naming the master; the master hashed in `PENV/` |
+| B-16 | **Narration** | How EP05's narration was voiced is not on record. The candidate story quotes four speakers. It ends with a lesson section that may or may not be read aloud. | One narrator voice for all lines (as EP05 appears to be); several voices; is the lesson section read | One narrator voice unless the client wants otherwise; ask whether the lesson section is narrated | The narration is the clock: nothing is timed or segmented without it. Recording it is paid work needing authorization. | The WAV and its word transcript in `project/<EP>/AUDIO/` (B-10) |
+| B-17 | **Runtime and budget** | The candidate story runs about 692 s at EP05's pace (EP05: 463 s), about 64 sequences: about 1.5× EP05's video cost at the measured 45.6 credits/s | Proceed at full length; ask the client about length. **The words are never cut by us.** | Share the estimate with the client before the pilot | Sets the episode's budget envelope | A ledger `decision` naming the envelope |
+| B-18 | **A design dependency on MACA's original sheet** | The recommended treatment uses MACA's existing chest lights as a counting device. The original approved sheet has not been checked for how many lights it shows. | Confirm the lights on the original sheet; move the device elsewhere (visor, post) | Check the original sheet first. The device must use the approved design, never add to it. | No redesign under CR-01 | A note with the original sheet's hash |
+
 ## Launch status (2026-10-15 13:44Z): **BLOCKED**
 
 **Engineering controls, verified in this run:**
@@ -75,5 +89,13 @@ Both remaining items are human actions. Nothing else in engineering blocks the f
 - sign the pilot authorization: 1,000 credits, first clip only, 48 h (B-08).
 
 The EP05 sign-off (B-03) and the repository's privacy (B-07) do not block the pilot technically. I recommend you settle both first.
+
+**Creative gate (added 2026-10-15):** storyboards, and so the pilot, also wait for:
+- the story (B-12);
+- the treatment and the creative approval after the three lens reviews (B-13);
+- new character designs (B-14) and the location master (B-15);
+- the narration (B-16).
+
+None of these is an engineering block. Each is a creative or client decision.
 
 **Hard spending boundary until then: zero.** No paid job, keyframe or clip runs until B-08 exists, and B-08 is capped at 1,000 credits.

@@ -43,6 +43,7 @@ Stage gate SA-6 means walking this file line by line and signing it in the episo
 | M15 | The paid paths name their episode | `ULAC_PROJECT` in `ulac.prod` and `ulac.chain`, which no longer default to EP05 (CODE) | Implemented and regression-protected (2026-10-15) |
 | M16 | Generation authorizations expire | `contracts.authorize --hours` (48 h default, 7 days at most) (CODE) | Implemented and regression-protected (2026-10-15) |
 | M14 | A human review per item in `production_gates.md` §Human-review criteria, by a named person | RECORD | Process; none exists for EP05 |
+| M17 | A creative contract approved before any storyboard: concepts compared, the five answers per sequence, a fixed-vocabulary camera, three lens reviews with REJECT power, a person's approval (`creative_standard.md`, gate SB-0) | `ulac.creative`; `contracts.approve --kind creative` (CODE) + the producer's judgement (RECORD) | Implemented and regression-protected (2026-10-15); quality is never automated |
 
 ## Change-impact review: where each lesson applies
 
