@@ -52,3 +52,16 @@ def sign_cast(root):
     if not castlock.identity_files(root):
         (d / "identity_board.png").write_bytes(b"\x89PNG stand-in identity board")
     return castlock.sign(root, by="producer", statement="test fixture: these identity files stand in for the approved originals")
+
+
+def release_clips(root, clips):
+    """Approve the storyboard plan for `clips` as a person would (ulac.blueprint): a minimal clean report, then a
+    signed release. Real episodes build the report from their planning records."""
+    import json as _json
+    from ulac import blueprint
+    d = Path(root) / blueprint.OUT
+    d.mkdir(parents=True, exist_ok=True)
+    rep = {"episode": "TEST", "clips": {c: {"blocking": [], "review": []} for c in clips}, "totals": {}}
+    (d / "report.json").write_text(_json.dumps(rep))
+    return blueprint.sign(root, by="producer", clips=list(clips),
+                          statement="test fixture: the plan for these clips was reviewed and approved")

@@ -76,7 +76,7 @@ def read_ledger(root: Path) -> list[dict]:
 # Events that carry a human decision. They are written only by the function that checks the decision (video_qc_record,
 # approve_extra, video_accept_price, castlock.sign). EP05 had eight "video_qc" PASS events written straight through
 # record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
-GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked")
+GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released")
 
 
 def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:
@@ -340,7 +340,8 @@ def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: in
     (video_payload), and only after this returns. The platform's submit tool has no per-job cap, so this reservation is
     the enforcement: a job made without it is outside the firewall."""
     pilot = video_pilot(root)
-    why = gate_tooling(root) + castlock.problems(root)
+    from . import blueprint                    # storyboard-first: no video before a signed release of the plan
+    why = gate_tooling(root) + castlock.problems(root) + blueprint.release_problems(root, seq)
     if str(pilot.get("status", "")).upper() != "AUTHORIZED":
         why.append("no video pilot authorization is recorded (FIREWALL.json video_pilot)")
     scope = pilot.get("scope") or []

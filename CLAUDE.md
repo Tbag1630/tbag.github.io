@@ -112,7 +112,7 @@ Hard constraints are separated from preferences. Results are judged against the 
 |---|---|---|
 | Video credits | ~45.6 credits/s at 720p with audio, ~21.8k for 477 s | Same per second, ~21.8k |
 | Repairs | 4 extra renders for 37 clips; drift was carried down the chain | Fewer: each clip is pinned at both ends, and drift cannot propagate |
-| Keyframes | none | 38 image jobs, quoted before spend |
+| Keyframes | none | 40 image jobs for EP05 (N+1, plus one extra per scene change), quoted before spend |
 | Wall clock | ~7-8 min per clip, ~5 h for 37 | ~10 waves of 4 at ~8 min, ~80 min, plus the keyframe stage and the join check |
 
 Parallel saves wall-clock time and repair credits. It does not lower the per-second video price.
