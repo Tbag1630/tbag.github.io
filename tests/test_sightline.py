@@ -66,3 +66,18 @@ def test_an_unknown_size_is_reported_not_guessed():
 def test_field_of_view_matches_the_lens():
     assert round(SL.hfov_deg(36.0)) == 53               # 36 mm on a 36 mm-wide frame
     assert SL.hfov_deg(24) > SL.hfov_deg(85)
+
+
+def test_an_over_the_shoulder_shot_is_sized_on_the_far_subject_not_the_framing_figure():
+    c = cam(4.0, 0.6, 1.0, 0)                          # behind a figure at the door, looking up the room
+    shoulder = sub("SHOULDER", 4.2, 1.4, 1.5)          # 0.8 m away: frames the shot
+    room = sub("ROOM", 4.0, 9.0, 1.0)                  # what the wide is of
+    assert SL.check_setup(c, "WS", [shoulder, room], vantage="over_shoulder") == []
+    assert codes(SL.check_setup(c, "WS", [shoulder, room])) == ["LENS_RANGE"]   # sized on the shoulder: spurious
+
+
+def test_a_subject_can_be_named_as_the_one_that_sizes_the_shot():
+    c = cam(6.0, 10.0, 1.2, 270)
+    near = sub("NEAR", 5.0, 10.0, 1.2)
+    far = dict(sub("FAR", 3.2, 10.0, 1.2), sized=True)
+    assert SL.sized_subject(c, [near, far])["name"] == "FAR"

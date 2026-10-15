@@ -64,7 +64,7 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | Authorization stale after a code change, revoked, or without a cap | Section 10 | `test_authorization_needs_every_gate_and_voids_on_a_code_change_or_revocation`, `test_a_keyframe_needs_both_storyboards_and_its_own_authorization` | Refused |
 | Compiled prompt missing contract content | AUD-12 | `test_the_compiled_prompt_carries_every_contract_layer` | Linted by the repo's paid-prompt policy plus the contract checks |
 | **Accepted takes or history changed** by pipeline runs | Phase B, AUD-10 | `test_evidence.py::test_pipeline_runs_leave_every_protected_file_unchanged`, `test_a_changed_take_a_rewritten_ledger_and_a_missing_file_are_violations`, `test_protect_removes_write_permission_and_a_take_is_never_replaced`, `test_ep05_accepted_takes_and_records_match_the_frozen_manifest` (*EP05 data*) | Byte identity, or append-only growth, against the freeze |
-| A planned setup the room cannot produce: subject behind the camera, a lens the position lacks, a far-side subject below the table top (LL-43) | next-episode pre-production | `test_sightline.py` (9 tests) | `ulac.sightline.check_setup` reports OUT_OF_VIEW, LENS_RANGE or OCCLUDED |
+| A planned setup the room cannot produce: subject behind the camera, a lens the position lacks, a far-side subject below the table top (LL-43) | next-episode pre-production | `test_sightline.py` (11 tests) | `ulac.sightline.check_setup` reports OUT_OF_VIEW, LENS_RANGE or OCCLUDED |
 
 ## Gaps: known failures with no automated test yet
 

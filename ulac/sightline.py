@@ -15,7 +15,8 @@ Inputs are plain data, so a room authority can be checked before any image exist
 `check_setup` reports, for one setup:
 
   OUT_OF_VIEW   a subject outside the horizontal field of view of the position's widest lens
-  LENS_RANGE    the shot size needs a focal length outside the position's lens range at that distance
+  LENS_RANGE    the shot size needs a focal length outside the position's lens range at the sized subject's distance
+                (a subject marked "sized"; else the first; for over_shoulder or behind, the first one FOREGROUND_M away)
   OCCLUDED      a subject hidden behind a box: the sightline passes through it below its top
 
 Sizes are converted with the frame height each one covers on an adult (FRAME_H), on a 36 x 20.25 mm (16:9) frame.
@@ -31,6 +32,7 @@ SENSOR_H_MM = 20.25
 # Frame height in metres that each shot size covers on an adult subject (scale 1.0).
 FRAME_H = {"ECU": 0.12, "CU": 0.30, "MCU": 0.50, "MS": 0.85, "MWS": 1.30, "WS": 2.60, "EWS": 6.00, "INSERT": 0.25}
 LENS_SLACK = 1.25          # a required focal length within this factor of the range is a crop or a step, not a finding
+FOREGROUND_M = 2.0         # over-the-shoulder and from-behind setups: nearer subjects frame the shot, they do not size it
 
 
 def hfov_deg(focal_mm: float) -> float:
@@ -67,8 +69,21 @@ def occluded_by(cam: dict, sub: dict, box: dict, steps: int = 200) -> bool:
     return False
 
 
-def check_setup(cam: dict, size: str, subjects: list[dict], boxes: list[dict] = ()) -> list[dict]:
-    """Findings for one setup. The first subject is the primary one, whose distance sets the shot size."""
+def sized_subject(cam: dict, subjects: list[dict], vantage: str | None = None) -> dict | None:
+    """The subject whose distance sets the shot size: one marked `"sized": true`, else the first; for an
+    over-the-shoulder or from-behind setup, the first subject at least FOREGROUND_M away (the nearer ones frame it)."""
+    marked = [s for s in subjects if s.get("sized")]
+    if marked:
+        return marked[0]
+    if vantage in ("over_shoulder", "behind"):
+        far = [s for s in subjects if math.dist((cam["x"], cam["y"]), (s["x"], s["y"])) >= FOREGROUND_M]
+        if far:
+            return far[0]
+    return subjects[0] if subjects else None
+
+
+def check_setup(cam: dict, size: str, subjects: list[dict], boxes: list[dict] = (), vantage: str | None = None) -> list[dict]:
+    """Findings for one setup. The sized subject (`sized_subject`) is the one whose distance sets the shot size."""
     out: list[dict] = []
     if size not in FRAME_H:
         return [{"code": "SIZE_UNKNOWN", "detail": f"size {size!r} is not one of {sorted(FRAME_H)}"}]
@@ -84,8 +99,8 @@ def check_setup(cam: dict, size: str, subjects: list[dict], boxes: list[dict] = 
                 out.append({"code": "OCCLUDED", "subject": s["name"],
                             "detail": f"the sightline passes through {b['name']} below its top ({b['top']:g} m) "
                                       f"from a camera at {cam['z']:g} m"})
-    if subjects:
-        p = subjects[0]
+    p = sized_subject(cam, subjects, vantage)
+    if p is not None:
         d = math.dist((cam["x"], cam["y"], cam["z"]), (p["x"], p["y"], p["z"]))
         f = focal_for(size, d, p.get("scale", 1.0))
         if f > hi * LENS_SLACK or f < lo / LENS_SLACK:
