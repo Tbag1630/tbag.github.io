@@ -4,6 +4,14 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-15: Creative review round 4 (EP03, private package v5.2)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The private sightline adapter models every person as a body box to the shoulders plus a head box to the crown, tests people at the eyes, models hanging fixtures (lamps) with a bottom and a top, tests a pair named in a keyframe spec as both people, separates "below the lower frame edge" from "in frame", and lists near-misses and tangents for a person apart from findings | Round-4 reviews: heads ended at their centre, a child was tested at her crown, the lamps were missing, and one spec named a couple as one entry the check skipped (LL-51) | Private adapter v6; a calibration run on the reviewed version reproduces every geometric finding; port to `ulac/sightline.py` with tests after the pending environment job |
+| Environment edit specs are corrected before any reservation binds them: the fixture count is taken from the source image, and the approval line records what later framing depends on (fixture heights, a new counter's height and length) with a stated fallback | A spec said three lamps where the source has four; the approval line could not catch it | Private specs v4 (dusk) and v2 (open door), earlier versions kept read-only |
+| A producer decision whose geometry conflicts with a key frame goes back as options with the evidence (a bounded scan), not as a lead redesign | LL-52; the producer's own limit on the reviewers' fixes | Private open questions P-01, P-02 |
+
 ## 2026-10-15: Creative review round 3 (EP03, private package v5.1)
 
 | Change | Why | Evidence |
