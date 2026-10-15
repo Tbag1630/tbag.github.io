@@ -235,6 +235,7 @@ def validate_repair_extra(rep: dict) -> list[str]:
 
 # ---- reservations --------------------------------------------------------------------------------------------------
 AUDIO_KINDS = ("music", "sfx")
+ENV_KIND = "environment"       # an empty-room reference: outside the cast lock while it carries no cast (B-20)
 
 
 def other_committed(root: Path) -> float:
@@ -263,7 +264,12 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
     conf = load_conf(root)
     if closed:
         raise FirewallError(f"{tid} has already passed QC: it is not regenerated unless a material defect is shown")
-    if kind not in AUDIO_KINDS and castlock.applies(kind, tid, ref_hashes):        # the job shows the cast (CR-01)
+    if kind == ENV_KIND:                       # an empty-room reference is outside the cast lock (B-20) only while empty
+        from . import contracts
+        if castlock.applies(kind, tid, ref_hashes) or (why := contracts.env_target_problems(tid)):
+            raise FirewallError(f"{tid} is not an environment-only job: it names or references the cast; reserve it as "
+                                "the cast job it is, under the cast lock")
+    elif kind not in AUDIO_KINDS and castlock.applies(kind, tid, ref_hashes):      # the job shows the cast (CR-01)
         cast = castlock.problems(root) + castlock.ref_problems(root, ref_hashes)
         if cast:
             raise FirewallError(f"CAST LOCK refused {tid}: " + "; ".join(cast))
@@ -304,6 +310,8 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
             ok = True                         # keyframe_problems above already required an authorization naming it
         elif kind == "seq":
             ok = not contracts.authorization_problems(root, f"BOARD:{tid}")
+        elif kind == ENV_KIND:
+            ok = not contracts.authorization_problems(root, contracts.ENV_PREFIX + tid)
     if kind in AUDIO_KINDS and str(conf["authorization"].get("audio", "")).upper() != "AUTHORIZED":
         ok = False                     # paid music and sound effects need their own recorded user authorization
     rec = record(root, "reserved", target=tid, kind=kind, attempt=attempt, prompt_sha256=prompt_sha,

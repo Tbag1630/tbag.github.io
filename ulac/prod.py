@@ -1,6 +1,7 @@
 """Paid production jobs through the firewall: keyframe images (GPT Image) and first-last-frame video (Seedance 2.0).
 
   python3 -m ulac.prod img  <TID> <spec.json>     # reserve one keyframe attempt; writes PROD/<TID>/graph_aN.json
+  python3 -m ulac.prod env  <TID> <spec.json>     # reserve one empty-room environment reference (PENV_..., B-20)
   python3 -m ulac.prod flf  <TID> <spec.json>     # quote, accept (user's recorded authorization), reserve; writes graph
   python3 -m ulac.prod sent <TID> <attempt|rid> <job_id>   # record the submission
   python3 -m ulac.prod got  <TID> <attempt|rid> <file>     # record the downloaded output and its hash
@@ -59,6 +60,37 @@ def img(tid: str, spec_path: str) -> dict:
     out = _dir(tid) / f"graph_a{attempt}.json"
     out.write_text(json.dumps(g, indent=1))
     return {"tid": tid, "attempt": attempt, "graph": str(out), "est_credits": IMG_EST}
+
+
+ENV_REF_KEYS = ("master", "environment", "env", "room", "reference")
+
+
+def env(tid: str, spec_path: str) -> dict:
+    """An empty-room environment reference (PENV_<ROOM>_...): an image edit of a room master, with no character in it.
+    It is outside the cast lock (decision register B-20) and still needs a person's authorization naming ENV:<TID>.
+    The spec's refs are rooms only: a ref tagged as identity or cast, or not tagged as a room, is refused here, and the
+    firewall refuses the job again if it names or references the cast."""
+    spec = json.loads(Path(spec_path).read_text())
+    refs = [(t, n) for t, n in spec["refs"]]
+    bad = [t for t, _ in refs if not any(k in t.lower() for k in ENV_REF_KEYS)
+           or any(k in t.lower() for k in ("identity", "cast", "character"))]
+    if bad:
+        raise SystemExit(f"GATE: environment refs must be rooms only (tag them master/environment/room); refused: {bad}")
+    attempt = firewall.next_attempt(_root(), tid)
+    g = comfy.gpt_image(spec["prompt"], refs, prefix=f"ULAC/{_root().name}/ENV/{tid}_a{attempt}",
+                        size=spec.get("size", "1280x720"), quality=spec.get("quality", "high"),
+                        out_size=tuple(spec["out_size"]) if spec.get("out_size") else None)
+    psha = hashlib.sha256(spec["prompt"].encode()).hexdigest()
+    rec = firewall.reserve(_root(), tid=tid, kind=firewall.ENV_KIND, attempt=attempt, prompt_sha=psha,
+                           ref_hashes={t: n for t, n in refs}, config_hash=video.graph_sha256(g), seed=0,
+                           graph_sha256=video.graph_sha256(g), est_credits=spec.get("est_credits", IMG_EST),
+                           model=comfy.GPT_MODEL, workflow="gpt_image environment reference", closed=False)
+    if not rec.get("authorized"):
+        raise SystemExit(f"FIREWALL: environment reference {tid} attempt {attempt} is not authorized (a person "
+                         f"authorizes ENV:{tid})")
+    out = _dir(tid) / f"graph_a{attempt}.json"
+    out.write_text(json.dumps(g, indent=1))
+    return {"tid": tid, "attempt": attempt, "graph": str(out), "est_credits": rec.get("est_credits")}
 
 
 def frame(name: str | None) -> str | None:
@@ -236,7 +268,7 @@ def inspect(tid: str, rid: str, first: str = "", last: str = "") -> dict:
 
 if __name__ == "__main__":
     cmd, *a = sys.argv[1:]
-    res = {"img": img, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop, "sound": sound,
+    res = {"img": img, "env": env, "flf": flf, "sent": sent, "got": got, "inspect": inspect, "crop": crop, "sound": sound,
            "lock": lock, "contract": contract}[cmd](*a)
     if res is not None:
         print(json.dumps(res))

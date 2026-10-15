@@ -836,14 +836,29 @@ def release_plan(root: Path, *, clips: list[str], by: str, statement: str) -> di
 
 
 # --------------------------------------------------------------------------------------------- authorization gate
-def gate_common(root: Path) -> list[str]:
-    """Conditions every paid job needs, whatever its target."""
+ENV_PREFIX = "ENV:"
+
+
+def gate_common(root: Path, *, cast: bool = True) -> list[str]:
+    """Conditions every paid job needs, whatever its target. `cast=False` only for a scope of environment references
+    alone: an empty room carries no cast, so the cast lock (CR-01) does not apply to it (the producer's ruling of
+    2026-10-15, decision register B-20). Everything else here still applies."""
     from . import castlock, evidence, firewall, paidguard
     root = Path(root)
-    why = firewall.gate_tooling(root) + castlock.problems(root)
+    why = firewall.gate_tooling(root) + (castlock.problems(root) if cast else [])
     if not paidguard.installed():
         why.append("the paid-generation hook (ulac/paidguard.py) is not installed in .claude/settings.json")
     why += [f"evidence: {p}" for p in evidence.verify(root)]
+    return why
+
+
+def env_target_problems(target: str) -> list[str]:
+    """An environment reference is named as one (PENV_...) and never as the cast: a target that names a character or
+    the cast is a cast job, whatever it is called."""
+    t = (target or "").upper()
+    why = [] if t.startswith("PENV_") else [f"{target!r}: an environment reference is named PENV_<ROOM>_..."]
+    if "CHARACTER" in t or "CAST" in t or "IDENTITY" in t:
+        why.append(f"{target!r} names the cast: it is not an environment reference")
     return why
 
 
@@ -903,9 +918,12 @@ def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, stat
     if not (isinstance(hours, (int, float)) and 0 < hours <= AUTH_HOURS_MAX):
         raise ContractError(f"the authorization lasts between 0 and {AUTH_HOURS_MAX} hours (--hours)")
     led = _ledger(root)
-    why = gate_common(root)
+    env_only = all(t.startswith(ENV_PREFIX) for t in scope)
+    why = gate_common(root, cast=not env_only)
     for t in scope:
-        if t.startswith("SEQ_"):
+        if t.startswith(ENV_PREFIX):                 # an empty-room reference: named as an environment, never the cast
+            why += env_target_problems(t[len(ENV_PREFIX):])
+        elif t.startswith("SEQ_"):
             st, w = state(root, t, led=led, upto="RENDER_PLAN_RELEASED")
             if st != "RENDER_PLAN_RELEASED":
                 why.append(f"{t} is {st}: " + "; ".join(w[:3]))
@@ -1092,6 +1110,8 @@ def target_problems(root: Path, target: str, kind: str) -> list[str]:
             return release_problems(root, target)
         if kind == "keyframe":
             return keyframe_problems(root, target)
+        if kind == "environment":                    # an empty-room reference: a person named it, under a current cap
+            return env_target_problems(target) + authorization_problems(root, ENV_PREFIX + target)
         # boards and other image assets: the clip's audio must be locked and a person must have named the target
         why = authorization_problems(root, target)
         if target.startswith("SEQ_"):

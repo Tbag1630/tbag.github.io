@@ -11,7 +11,7 @@ You are the Lead Animation Systems Architect and production orchestrator for thi
 5. The cut sequence must play as one continuous film.
 6. Generated audio is embedded SFX, foley and ambience only. No music, voices or vocalizations. Music is added in post. Embedded audio stays on; the firewall requires it.
 7. Never weaken the firewall, preflight gates, attempt ceilings or audio policy to make something pass.
-8. No paid picture job until the producer has signed the cast lock against the original approved sheets (client requirement CR-01, `ulac/castlock.py`). Never tell the client anything about the cast, the fixes or the format that a record does not show.
+8. No paid picture job that shows or references the cast (keyframes, boards, titles, character assets, anything with an identity reference) until the producer has signed the cast lock against the original approved sheets (client requirement CR-01, `ulac/castlock.py`). Environment-only references (an empty room named `PENV_...`, with no identity reference) are outside the cast lock by the producer's ruling of 2026-10-15 (decision register B-20); they still need a person's authorization naming `ENV:<target>`, and the firewall refuses one that names or references the cast. Never tell the client anything about the cast, the fixes or the format that a record does not show.
 9. A transition needs a purpose and never covers an unresolved continuity break. EP05 v5 dissolved over 9 rendered breaks (EP05-C04, LL-30).
 10. Human visual review is mandatory wherever automation cannot establish correctness: room conformance to its master, duplicates, contact, positions and the emotional read. EP05's wrong-room joins passed every automated join check (EP05-C05, LL-31).
 11. Paid generation needs a person's separate authorization through `ulac.contracts`. A passing test count never unlocks it (EP05-G01).
@@ -164,6 +164,7 @@ Available now:
 | `python3 -m pytest -q tests` | Test suite. Must pass after any code change. |
 | `python3 -m ulac tooling-check project/<EP>` | Restamps tooling. The firewall refuses reservations after an unstamped code change. |
 | `ULAC_PROJECT=project/<EP> python3 -m ulac.prod img\|flf <TID> <spec.json>` | Keyframe or first-last-frame clip: preflight, quote, firewall reservation; prints the graph. The episode is named every time (no EP05 default). |
+| `ULAC_PROJECT=project/<EP> python3 -m ulac.prod env <PENV_TID> <spec.json>` | An empty-room environment reference (B-20): room refs only, no cast; reserved only under a person's authorization naming `ENV:<PENV_TID>`. |
 | `ULAC_PROJECT=project/<EP> python3 -m ulac.chain r2v ...` | Legacy reference-to-video. The render plan is FLF only, so the firewall refuses its graphs (PLAN_DIVERGENCE). |
 | `ULAC_PROJECT=project/<EP> python3 -m ulac.chain done <rid> <job_id>` | Records a submitted job in the firewall ledger. |
 | `python3 -m ulac.signing statement\|verify ...` | The exact statement a person signs for a contract approval, and signature verification (AUD-33). |

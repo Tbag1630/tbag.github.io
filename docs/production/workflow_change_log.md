@@ -2,6 +2,12 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: environment-only references outside the cast lock (B-20)
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| `environment` job kind and `ulac.prod env`: an empty-room reference (`PENV_...`, room refs only) is reserved without the cast lock, only under a person's authorization naming `ENV:<target>`, and counts against its cap. A job that names or references the cast is refused. `contracts.authorize` skips the cast lock only for a scope of `ENV:` targets alone. The paid-generation hook is unchanged: it defers to `contracts.target_problems`, which now answers for environment targets | The producer's ruling (B-20): the cast lock protects the cast, and a room image holds none. The only image command reserved every image as a keyframe, which the cast lock always blocks, so a ruling alone could not unblock room references | `tests/test_environment_refs.py` (7 tests; each change undone in turn makes a test fail) | Regression-protected |
+
 ## 2026-10-15: camera geometry checked before boards (next-episode pre-production)
 
 | Change | Why | Evidence | Status |
