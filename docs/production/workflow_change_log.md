@@ -2,6 +2,13 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: camera geometry checked before boards (next-episode pre-production)
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| `ulac/sightline.py`: for each planned setup, flags a subject outside the field of view, a shot size that needs a lens outside the position's range, or a subject hidden behind the table from a lower camera. Room authorities record camera positions as numbers (x, y, height, aim, lens range), and the floor plan is drawn from them. | A plan passed the structural check with setups the room cannot produce; an independent craft review found them by measuring a drawing (LL-43). On that plan the check flagged 53 of 75 setups, reproducing the review's findings independently. | `ulac/sightline.py`, `tests/test_sightline.py` | Regression-protected for the geometry it models. Not modelled: people occluding people, and vertical framing |
+| Per-setup duration floors inside each in-clip cut window (2 s; 3 s for a payoff; 8 s bound where possible) | The validator averages per sequence, so it cannot see a payoff shot shrunk to under a second by a model-placed cut | private plan data; LL-44 | Planned; checked by script, no shared test yet |
+
 ## 2026-10-15: creative excellence mandate (a creative gate before storyboards)
 
 | Change | Why | Evidence | Status |
