@@ -339,3 +339,64 @@ def test_video_reserve_refuses_a_graph_that_is_not_the_plan(tmp_path):
     with pytest.raises(firewall.FirewallError, match="PLAN_DIVERGENCE"):
         firewall.video_reserve(tmp_path, seq="SEQ_001", graph=other, prompt=prompt + " Extra.", seconds=e["seconds"],
                                segment_seconds=4.0)
+
+
+def test_the_plan_fixes_the_graph_shape_no_storyboard_reference_and_both_ends_pinned(tmp_path):
+    """EP05: 39 paid graphs (V01, V05-V42) carried the storyboard sheet as @image1 on the reference node, and V03/V04
+    ran first-last-frame with no last frame, so V03's end (in the delivered cut) was never pinned. Each shape is a
+    divergence from the released plan, even with the plan's own prompt and keyframes."""
+    import copy
+    from ulac import comfy
+    _stamp(tmp_path)
+    authorize_clips(tmp_path, CLIPS)
+    e = C.load(tmp_path, "render_plan")["body"]["clips"]["SEQ_001"]
+    prompt, s = e["prompt_layers"]["L4_compiled"]["text"], e["seconds"]
+    good = comfy.seedance_flf(prompt, "K0_cloud.png", "K1_cloud.png", seconds=s, prefix="t", resolution="720p")
+    check = lambda g: C.plan_match_problems(tmp_path, "SEQ_001", prompt=prompt, seconds=s, graph=g)
+    assert check(good) == []
+    node = next(k for k, n in good.items() if n["class_type"] == C.RENDER_CONFIG["node"])
+
+    board = copy.deepcopy(good)                                  # a storyboard riding along as an extra image
+    board["90"] = {"class_type": "LoadImage", "inputs": {"image": "storyboard_SEQ_001.png"}}
+    assert any("storyboard_SEQ_001.png" in w for w in check(board))
+
+    open_end = copy.deepcopy(good)                               # V03/V04: FLF with the last frame unwired
+    del open_end[node]["inputs"]["last_frame"]
+    assert any("last_frame" in w and "unwired" in w for w in check(open_end))
+
+    r2v = copy.deepcopy(good)                                    # V01, V05-V42: the reference node
+    r2v[node]["class_type"] = "ByteDance2ReferenceNodeV2"
+    assert any("must hold one ByteDance2FirstLastFrameNode" in w for w in check(r2v))
+
+    muted = copy.deepcopy(good)                                  # the audio policy and resolution are the plan's
+    muted[node]["inputs"]["model.generate_audio"] = False
+    muted[node]["inputs"]["model.resolution"] = "1080p"
+    assert len([w for w in check(muted) if "model." in w]) == 2
+
+
+@pytest.mark.skipif(not (EP / "VIDEO").exists(), reason="EP05 graphs not present")
+def test_ep05_paid_graphs_show_the_shapes_the_plan_now_refuses():
+    """Read only: the historical counts behind the rule above (EP05-S03, EP05-C07)."""
+    shapes = {}
+    for g in sorted((EP / "VIDEO").glob("V*.graph.json")):
+        G = json.loads(g.read_text())
+        G = G.get("prompt", G)
+        n = next((v for v in G.values() if isinstance(v, dict) and "ByteDance" in v.get("class_type", "")), None)
+        if n:
+            shapes[g.name[:3]] = (n["class_type"], "storyboard blueprint" in n["inputs"].get("model.prompt", ""),
+                                  "last_frame" in n["inputs"])
+    r2v_board = [r for r, (c, b, _) in shapes.items() if c == "ByteDance2ReferenceNodeV2" and b]
+    open_end = [r for r, (c, _, last) in shapes.items() if c == C.RENDER_CONFIG["node"] and not last]
+    assert len(shapes) == 67 and len(r2v_board) == 39 and open_end == ["V03", "V04"]
+
+
+@pytest.mark.skipif(not (EP / "SEQUENCES" / "SEQ_001" / "END_LOCK.sha256").exists(), reason="EP05 boards not present")
+def test_ep05_board_end_locks_chain_into_the_next_board():
+    """Success EP05-W06, recomputable: every same-room board's END_LOCK hash is the next board's start reference
+    (scene changes after SEQ_007 and SEQ_029 excluded)."""
+    matched = []
+    for i in [n for n in range(1, 37) if n not in (7, 29)]:
+        h = (EP / "SEQUENCES" / f"SEQ_{i:03d}" / "END_LOCK.sha256").read_text().split()[0]
+        pj = json.loads((EP / "SEQUENCES" / f"SEQ_{i + 1:03d}" / "prompt.json").read_text())
+        matched.append(h in json.dumps(pj.get("start_frame_ref") or pj.get("start_frame") or ""))
+    assert len(matched) == 34 and all(matched)

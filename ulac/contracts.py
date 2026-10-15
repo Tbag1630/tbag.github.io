@@ -896,16 +896,38 @@ def plan_match_problems(root: Path, seq: str, *, prompt: str, seconds: int, grap
             why.append("PLAN_DIVERGENCE: the prompt is not the plan's compiled L4 prompt")
         if int(seconds) != int(e["seconds"]):
             why.append(f"PLAN_DIVERGENCE: {seconds} s requested, the plan says {e['seconds']} s")
-        names = {str(n.get("inputs", {}).get("image")) for n in graph.values()
-                 if isinstance(n, dict) and n.get("class_type") == "LoadImage"}
+        nodes = {k: n for k, n in graph.items() if isinstance(n, dict)}
+        loads = {k: str(n.get("inputs", {}).get("image")) for k, n in nodes.items() if n.get("class_type") == "LoadImage"}
+        cfg = e.get("config") or RENDER_CONFIG
+        # EP05: 39 paid graphs carried the storyboard sheet as @image1 on the reference node, and V03/V04 ran FLF with
+        # no last frame. The graph's shape is part of the plan: one node of the plan's class, both ends wired to the
+        # plan's keyframes, no other image, and the plan's resolution and audio setting.
+        vid = [n for n in nodes.values() if "ByteDance" in str(n.get("class_type"))]
+        if len(vid) != 1 or vid[0].get("class_type") != cfg["node"]:
+            why.append(f"PLAN_DIVERGENCE: the graph must hold one {cfg['node']} node, not "
+                       f"{[n.get('class_type') for n in vid]}")
+        wired = vid[0].get("inputs", {}) if len(vid) == 1 else {}
+        for k, want in (("model.resolution", cfg["resolution"]), ("model.generate_audio", cfg["generate_audio"])):
+            if vid and wired.get(k) != want:
+                why.append(f"PLAN_DIVERGENCE: {k} is {wired.get(k)!r}, the plan says {want!r}")
+        pinned = set()
         for side in ("first_frame", "last_frame"):
             kf = e.get(side) or {}
             lk = Path(root) / kf["lock"] if kf.get("lock") else None
             cloud = bp._j(lk).get("cloud") if lk and lk.exists() else None
+            src = wired.get(side)
+            got = loads.get(str(src[0])) if isinstance(src, list) and src else None
             if not cloud:
                 why.append(f"PLAN_DIVERGENCE: {side} {kf.get('asset')} has no recorded cloud upload in its lock")
-            elif cloud not in names:
-                why.append(f"PLAN_DIVERGENCE: the graph does not load the plan's {side} {kf.get('asset')} ({cloud})")
+            elif got != cloud:
+                why.append(f"PLAN_DIVERGENCE: the node's {side} is not the plan's {kf.get('asset')} ({cloud}); "
+                           f"it is {got or 'unwired'}")
+            if got:
+                pinned.add(str(src[0]))
+        extra = sorted(loads[k] for k in loads if k not in pinned)
+        if extra:
+            why.append(f"PLAN_DIVERGENCE: images outside the plan's two keyframes are loaded {extra}; a storyboard or "
+                       "any other reference never rides along")
         return why
     except Exception as ex:
         return [f"plan match could not be evaluated for {seq}: {type(ex).__name__}: {ex}"]

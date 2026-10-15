@@ -1,5 +1,7 @@
 # EP05 "The Family Drawing": production postmortem
 
+> **2026-10-15:** `EP05_postmortem.md` re-derives this episode from its records, and several figures here are now corrected. Examples: the chain was 40 submissions ending 10:07:19; the ledgered total is 33,984.92; the "fixed" items rest on non-person passes; and L10/L11 are dissolved in v5. The corrections are dated entries in `defect_registry.json`. This document is kept as written.
+
 Written 2026-10-13, after delivery of v5 (1080p) to the client on 2026-10-12. It is adversarial by design: it records what failed and why, then the control that now prevents each failure and the evidence that the control works. Praise is not part of it.
 
 **Records:**

@@ -2,6 +2,17 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: EP05 postmortem and knowledge lock
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| The plan match fixes the graph's shape: one FLF node, both ends wired to the plan's keyframes, no other image, 720p and audio on | 39 paid graphs carried the storyboard as "the authoritative blueprint"; V03 and V04 had no last frame (EP05-S03, C07) | `test_the_plan_fixes_the_graph_shape_no_storyboard_reference_and_both_ends_pinned` | Regression-protected |
+| The predecessor gate counts only a person's `video_qc` PASS | EP05 holds eight lead passes and two unattributed ones that would have opened the chain (P02, P03) | `test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain` | Regression-protected. **Tightening.** |
+| `decision` is a guarded event (`firewall.decision`: a person and a quote) | The v5 delivery decision was written by "lead" (ledger line 852) | `test_a_decision_names_a_person_and_quotes_them` | Regression-protected; AUD-33 still open |
+| Metrics count a provider job once | The BOY grid was billed twice (EP05-G02) | `test_metrics.py` | Regression-protected |
+| `defect_ledger.md` is rendered from the register (`python3 -m ulac.registry render`) | The view had fallen 12 entries behind | `test_the_readable_ledger_is_rendered_from_the_register` | Regression-protected |
+| Register: 6 defects, RC22–RC23, 8 status updates, 10 corrections; lessons LL-34 and LL-35 and nine re-grades; human-review criteria H1–H8; readiness blockers B7–B10 | Evidence-based postmortem (`EP05_postmortem.md`) | `test_registry.py` | Recorded |
+
 ## 2026-10-15: enforceable production law (contracts, paid-generation hook, evidence protection)
 
 | Change | Why | Evidence | Status |

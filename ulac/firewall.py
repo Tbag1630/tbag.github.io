@@ -77,7 +77,7 @@ def read_ledger(root: Path) -> list[dict]:
 # approve_extra, video_accept_price, castlock.sign). EP05 had eight "video_qc" PASS events written straight through
 # record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
 GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released",
-                  "contract_approved", "render_plan_released", "generation_authorized")
+                  "contract_approved", "render_plan_released", "generation_authorized", "decision")
 
 
 def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:
@@ -125,6 +125,16 @@ def next_attempt(root: Path, tid: str, state_count: int = 0) -> int:
 
 def approved(root: Path, tid: str, attempt: int) -> dict | None:
     return next((a for a in load_conf(root)["approvals"] if a["target"] == tid and a["attempt"] == attempt), None)
+
+
+def decision(root: Path, target: str, *, by: str, quote: str, **fields) -> dict:
+    """Record a person's production decision (room authority, credit balance, scope). EP05's delivery decision was
+    written by "lead" (ledger line 852); a decision now names the person and quotes their own words."""
+    if not _user(by):
+        raise FirewallError(f"a decision must come from a person, not {by!r}")
+    if len(str(quote).strip()) < 8:
+        raise FirewallError("quote the person's decision (their own words)")
+    return record(root, "decision", _sanctioned=True, target=target, by=by, quote=str(quote).strip(), **fields)
 
 
 def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str, requires_fail: bool = False) -> dict:
@@ -441,9 +451,12 @@ def predecessor_qc_problems(root: Path, seq: str) -> list[str]:
     if not rids:
         return []
     last = rids[-1]
-    verdicts = [str(e.get("verdict", "")) for e in read_ledger(root)
-                if e.get("event") == "video_qc" and e.get("rid") == last]   # notes are unguarded agent text: never a PASS
-    if not any(v.upper().startswith("PASS") for v in verdicts):
+    qcs = [e for e in read_ledger(root) if e.get("event") == "video_qc" and e.get("rid") == last]
+    verdicts = [str(e.get("verdict", "")) for e in qcs]          # notes are unguarded agent text: never a PASS
+    # EP05 holds eight video_qc PASS events by "lead (picture QC)" and two with no reviewer, written before the guard:
+    # only a person's PASS opens the next clip.
+    if not any(str(e.get("verdict", "")).upper().startswith("PASS") and _user(e.get("reviewer") or "automated")
+               for e in qcs):
         return [f"{seq} chains from {prev}'s last take {last}, which has no PASS QC record "
                 f"({verdicts or 'none'}): review it before paying for the next clip"]
     return []

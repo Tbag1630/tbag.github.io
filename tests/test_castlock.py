@@ -124,6 +124,24 @@ def test_a_chained_clip_needs_its_predecessor_reviewed(tmp_path):
     assert firewall.predecessor_qc_problems(tmp_path, "SEQ_002") == []
 
 
+@pytest.mark.parametrize("reviewer", ["lead (picture QC)", None])
+def test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain(tmp_path, reviewer):
+    """EP05 ledger lines 591-659: eight video_qc PASS events by 'lead (picture QC)', and V44/V45 with no reviewer, were
+    written before the guard. A predecessor gate that counted any PASS would open the next clip on them."""
+    _video(tmp_path, "V01-a", "SEQ_001", [{"event": "video_qc", "rid": "V01-a", "verdict": "PASS", "reviewer": reviewer}])
+    assert "no PASS QC record" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]
+
+
+def test_a_decision_names_a_person_and_quotes_them(tmp_path):
+    """EP05 ledger line 852: the delivery decision was recorded by 'lead'. A decision is now a guarded event."""
+    with pytest.raises(firewall.FirewallError, match="from a person"):
+        firewall.decision(tmp_path, "EP05_v5_delivery", by="lead", quote="User chose 'Wrap up now'")
+    with pytest.raises(firewall.FirewallError, match="quote"):
+        firewall.decision(tmp_path, "ROOM_AUTHORITY_HALL", by="producer", quote="ok")
+    rec = firewall.decision(tmp_path, "ROOM_AUTHORITY_HALL", by="producer", quote="Use the dressed hall master for EP06")
+    assert rec["event"] == "decision" and rec["by"] == "producer"
+
+
 def test_a_stored_reservation_cannot_be_sent_without_the_cast_lock(tmp_path):
     """EP05 V67 was reserved before the cast lock existed; its stored payload must not reach a submit."""
     (tmp_path / "VIDEO").mkdir()

@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "root_causes": {
   "RC1": "Client cast requirement and identity provenance existed only in prose; nothing enforced them before spend.",
   "RC2": "Environment master never wired into video graphs; the model invented rooms (later accepted as a deviation).",
@@ -17,7 +17,13 @@
   "RC14": "Planning images (pencil END_LOCKs) reachable as frame sources.",
   "RC15": "Audio-locked slot arithmetic ignored in audit/splice plans.",
   "RC16": "Readers of shared records not updated when a record format grows.",
-  "RC17": "Process-matching shell patterns match the watcher itself."
+  "RC17": "Process-matching shell patterns match the watcher itself.",
+  "RC18": "Segmentation was validated on raw planner times, then rounded to the 24 fps frame grid without a re-check; cuts placed at zero-gap word junctions shipped 10-15 ms inside a word.",
+  "RC19": "Storyboards were picture sheets, not executable timed contracts: no panel times on the narration, no positions, facing or prop holders, and a fixed 2x2 grid whatever the clip length.",
+  "RC20": "Approvals were stored statuses written by the agent, bound to no input hashes; handoff checks compared copied state files, so they passed by construction.",
+  "RC21": "The edit chose transitions by pixel difference (dissolve every non-matching join), so dissolves covered rendered continuity breaks instead of exposing them.",
+  "RC22": "Graph shape was chosen per job by the builder, not fixed by an approved plan: the reference node carried the storyboard sheet as @image1 (39 graphs) and two first-last-frame jobs ran with no last frame.",
+  "RC23": "No terminal-record rule: reservations, executed takes and acceptance files could stay open or contradict each other, so totals and rejection counts read from the records are wrong until someone reconciles them by hand."
  },
  "defects": [
   {
@@ -994,12 +1000,923 @@
    "status": "lesson",
    "root_cause": "RC17",
    "observed": "pgrep/pkill wait loops matched their own command line (killed the shell twice; one loop never ended)"
+  },
+  {
+   "id": "EP05-T01",
+   "where": "ends of SEQ_025, SEQ_028, SEQ_035, SEQ_036",
+   "category": "timing",
+   "severity": "MATERIAL",
+   "stage_origin": "segmentation",
+   "stage_should_detect": "segmentation",
+   "stage_detected": "post_delivery",
+   "symptom": "Four clip boundaries sit 10-15 ms inside a spoken word ('part.', 'time.', 'less.', 'real.').",
+   "evidence": "project/EP05_plan/cuts.json vs stored global_end; transcript_word.json; BLUEPRINT/contracts/audio_ledger.json",
+   "fact_class": "verified",
+   "root_cause": "RC18",
+   "contributing_factors": [
+    "cuts aimed at zero-gap word junctions"
+   ],
+   "failed_safeguards": [
+    "packer raw-time check",
+    "blueprint 10 ms tolerance (missed SEQ_025)"
+   ],
+   "rework": "none paid; the boundaries shipped (narration audio itself is continuous, so the defect is picture-cut placement)",
+   "corrective_action": "packer re-check after rounding; 5 ms tolerance; audio ledger cannot be approved",
+   "regression_test": [
+    "tests/test_blueprint.py::test_the_packer_rechecks_a_cut_after_frame_rounding",
+    "tests/test_blueprint.py::test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words",
+    "tests/test_contracts.py::test_a_mid_word_cut_cannot_be_approved"
+   ],
+   "status": "regression-protected (EP05 boundaries themselves unchanged)",
+   "remaining_risk": "none for new episodes",
+   "lesson": "LL-27",
+   "lesson_class": "Prevent",
+   "process_change": "Segmentation is validated on the shipped frame grid.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15 audit, after delivery)"
+  },
+  {
+   "id": "EP05-T02",
+   "where": "37 of 37 clips",
+   "category": "timing",
+   "severity": "MATERIAL",
+   "stage_origin": "storyboard",
+   "stage_should_detect": "storyboard",
+   "stage_detected": "post_delivery",
+   "symptom": "71 of 111 interior beat-window boundaries used by production fall inside spoken words; windows were template positions 0/3/10/13 s, unscaled for clips of 13.5 s or more.",
+   "evidence": "SEQUENCES/*/prompt.json visual_windows vs transcript_word.json (measured 2026-10-15)",
+   "fact_class": "verified",
+   "root_cause": "RC19",
+   "contributing_factors": [
+    "video prompts carry no timing by policy"
+   ],
+   "failed_safeguards": [
+    "board QC (drawings only)"
+   ],
+   "rework": "not separable from RC6 model-limit repairs",
+   "corrective_action": "storyboard contract requires authored panel times on word gaps",
+   "regression_test": [
+    "tests/test_blueprint.py::test_panel_boundaries_never_sit_inside_a_word",
+    "tests/test_contracts.py::test_storyboards_wait_for_a_locked_ledger_and_untimed_boards_are_refused"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "beat timing inside a generated clip is still the model's",
+   "lesson": "LL-28",
+   "lesson_class": "Prevent",
+   "process_change": "Panels are timed on the narration before approval.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15 postmortem)"
+  },
+  {
+   "id": "EP05-T03",
+   "where": "SEQ_001 P03 (derived timing)",
+   "category": "timing",
+   "severity": "MINOR",
+   "stage_origin": "remediation",
+   "stage_should_detect": "storyboard",
+   "stage_detected": "post_delivery",
+   "symptom": "The blueprint's derived P03/P04 boundary (11.772 s) sat inside the 1.04 s word 'Draw'.",
+   "evidence": "BLUEPRINT/shots.json (before the fix); transcript 11.26-12.30 s",
+   "fact_class": "verified",
+   "root_cause": "RC19",
+   "contributing_factors": [
+    "0.5 s snap tolerance shorter than half the word"
+   ],
+   "failed_safeguards": [],
+   "rework": "none (tool artifact; production prompts carried no panel times)",
+   "corrective_action": "derived boundaries leave a word at its nearer edge; authored ones BLOCK",
+   "regression_test": [
+    "tests/test_blueprint.py::test_panel_boundaries_never_sit_inside_a_word"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "none",
+   "lesson": "LL-28",
+   "lesson_class": "Detect",
+   "process_change": "none beyond LL-28",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (research audit)"
+  },
+  {
+   "id": "EP05-S01",
+   "where": "37 of 37 boards",
+   "category": "storyboard",
+   "severity": "MATERIAL",
+   "stage_origin": "storyboard",
+   "stage_should_detect": "storyboard",
+   "stage_detected": "post_delivery",
+   "symptom": "Every board is a 2x2 grid for clips of 7.4-15 s; panels carry no times, no facing field, no prop holder (452 of 452 prop rows without owner or placement); prop rows identical across panels.",
+   "evidence": "storyboard_plan.json and PANEL_LEDGER.json (all 37); BLUEPRINT/report.json PANELS_NOT_TIMED_TO_AUDIO 37",
+   "fact_class": "verified",
+   "root_cause": "RC19",
+   "contributing_factors": [
+    "board prompt template fixed at four panels"
+   ],
+   "failed_safeguards": [
+    "board gates A-F checked format and drawing, not executability"
+   ],
+   "rework": "contributes to RC6 repairs (31 defects); share not separable",
+   "corrective_action": "storyboard contract",
+   "regression_test": [
+    "tests/test_contracts.py::test_missing_camera_unknown_characters_and_missing_references_block",
+    "tests/test_contracts.py::test_ep05_contracts_refuse_what_its_production_later_paid_for"
+   ],
+   "status": "regression-protected (EP05 boards remain non-compliant)",
+   "remaining_risk": "facing, regions and holders are REVIEW, not BLOCK",
+   "lesson": "LL-28",
+   "lesson_class": "Prevent",
+   "process_change": "Storyboard approval needs timed, positioned panels.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15 audit, after delivery)"
+  },
+  {
+   "id": "EP05-S02",
+   "where": "SEQ_001-037 acceptances",
+   "category": "process",
+   "severity": "MATERIAL",
+   "stage_origin": "storyboard",
+   "stage_should_detect": "storyboard",
+   "stage_detected": "post_delivery",
+   "symptom": "Board acceptances were signed by the agent (SEQ_011-029, SEQ_036-037 'claude-code') or left draft (16); HANDOFF_AUDIT.json predates the 2026-10-12 state edits and counts drafts as accepted. No person approved a storyboard before video spend.",
+   "evidence": "SEQUENCES/*/ACCEPTANCE.json; project/EP05/HANDOFF_AUDIT.json mtime; ledger line 395 and 496 state edits",
+   "fact_class": "supported",
+   "root_cause": "RC20",
+   "contributing_factors": [
+    "the agent was builder and approver"
+   ],
+   "failed_safeguards": [
+    "gates.sign accepts any name",
+    "audit.py ignores ACCEPTANCE status"
+   ],
+   "rework": "not separable",
+   "corrective_action": "person-only contract approvals bound to hashes",
+   "regression_test": [
+    "tests/test_contracts.py::test_a_status_field_cannot_be_flipped_and_agents_cannot_approve"
+   ],
+   "status": "regression-protected for the new path; gates.sign itself still accepts any name (AUD-26)",
+   "remaining_risk": "legacy gates record agent decisions (no longer gating spend)",
+   "lesson": "LL-29",
+   "lesson_class": "Prevent",
+   "process_change": "Only a person approves; approvals bind input hashes.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "post_delivery (research audit)"
+  },
+  {
+   "id": "EP05-C01",
+   "where": "38 joins (40 keyframes counting 2 scene changes)",
+   "category": "continuity",
+   "severity": "MATERIAL",
+   "stage_origin": "continuity_planning",
+   "stage_should_detect": "continuity_planning",
+   "stage_detected": "post_delivery",
+   "symptom": "No join has a registered, locked colour keyframe; the only boundary images are pencil END_LOCKs. Repair keyframes (PROD/K_*) exist for 17 repair clips but no BOUNDARIES.json registry ties any to a join.",
+   "evidence": "BLUEPRINT/contracts continuity findings (38 NO_COLOUR_BOUNDARY_FRAME); project/EP05/BOUNDARIES.json absent",
+   "fact_class": "verified",
+   "root_cause": "RC3",
+   "contributing_factors": [
+    "chain method used the previous clip's last frame"
+   ],
+   "failed_safeguards": [],
+   "rework": "J1-J3 and R6 repairs were the keyframe stage done afterwards",
+   "corrective_action": "continuity contract requires the keyframe; keyframe generation gated on approved storyboards",
+   "regression_test": [
+    "tests/test_contracts.py::test_a_join_without_a_locked_colour_frame_cannot_be_approved",
+    "tests/test_contracts.py::test_a_keyframe_needs_both_storyboards_and_its_own_authorization"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "keyframe quality is a human review",
+   "lesson": "LL-05",
+   "lesson_class": "Prevent",
+   "process_change": "Keyframes before video, registered per join.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15 audit, after delivery)"
+  },
+  {
+   "id": "EP05-C02",
+   "where": "SEQ_001-037 (15 clips each for DRAWING, PAPER, BUCKETS)",
+   "category": "prop",
+   "severity": "MATERIAL",
+   "stage_origin": "references",
+   "stage_should_detect": "references",
+   "stage_detected": "post_delivery",
+   "symptom": "45 missing prop references: the drawing, the paper roll and the crayon buckets have no approved image.",
+   "evidence": "BLUEPRINT/report.json MISSING_REFERENCE 45; registry RC5 defects (L17, R6-A3, R6-D1, R6-M-DRAW)",
+   "fact_class": "verified",
+   "root_cause": "RC5",
+   "contributing_factors": [
+    "props described in text only"
+   ],
+   "failed_safeguards": [],
+   "rework": "R6 drawing keyframes K_DRAW_US* and failed edits (LL-11)",
+   "corrective_action": "MISSING_REFERENCE blocks storyboard approval; PROPS.json registry",
+   "regression_test": [
+    "tests/test_blueprint.py::test_full_build_blocks_what_paper_should_settle_and_passes_what_it_did"
+   ],
+   "status": "regression-protected (EP05 props still missing)",
+   "remaining_risk": "prop look is a human review",
+   "lesson": "LL-10",
+   "lesson_class": "Prevent",
+   "process_change": "Every story-critical prop has a locked image.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15 audit)"
+  },
+  {
+   "id": "EP05-C03",
+   "where": "BRAIDS, JERSEY in hall clips",
+   "category": "identity",
+   "severity": "MINOR",
+   "stage_origin": "references",
+   "stage_should_detect": "references",
+   "stage_detected": "post_delivery",
+   "symptom": "Fixed occupants recorded by seat (state 'O') were left out of the reference manifest, so their sheets (BRAIDS_grid.png, JERSEY_grid.png) were never required.",
+   "evidence": "BLUEPRINT/references.json (no character:BRAIDS/JERSEY rows); IDENTITY/CHARACTERS",
+   "fact_class": "verified",
+   "root_cause": "RC1",
+   "contributing_factors": [
+    "two state vocabularies (P names, O traits)"
+   ],
+   "failed_safeguards": [],
+   "rework": "none measured",
+   "corrective_action": "storyboard contracts attach every present character's sheet, seats included",
+   "regression_test": [
+    "tests/test_contracts.py::test_missing_camera_unknown_characters_and_missing_references_block"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "none",
+   "lesson": "LL-29",
+   "lesson_class": "Detect",
+   "process_change": "One character vocabulary across state records.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "pre_generation (2026-10-15)"
+  },
+  {
+   "id": "EP05-C04",
+   "where": "SEQ_005->006, 008->009, 009->010, 010->011, 012->013, 013->014, 014->015, 019->020, 034->035",
+   "category": "edit",
+   "severity": "MATERIAL",
+   "stage_origin": "assembly_qc",
+   "stage_should_detect": "assembly_qc",
+   "stage_detected": "post_delivery",
+   "symptom": "Nine rendered joins differ (7-35 of 64 dHash bits) and v5 covers each with an 8-frame crossfade.",
+   "evidence": "BLUEPRINT/boundaries.json rendered verdict BREAK; EDIT/v5/master/joins.json join_out xfade 8; BLUEPRINT/transitions.json masked_break",
+   "fact_class": "verified",
+   "root_cause": "RC21",
+   "contributing_factors": [
+    "LL-20 rule"
+   ],
+   "failed_safeguards": [
+    "join classification looked at structure, not continuity"
+   ],
+   "rework": "none yet (would be repairs or re-pins)",
+   "corrective_action": "masked breaks recorded; per-join rule documented",
+   "regression_test": [
+    "tests/test_blueprint.py::test_a_dissolve_over_a_rendered_break_is_recorded_as_a_masked_break",
+    "tests/test_blueprint.py::test_ep05_v5_masks_nine_rendered_breaks_with_dissolves"
+   ],
+   "status": "open (AUD-31: edit.join_plan not yet changed; the 9 joins are in the delivered v5)",
+   "remaining_risk": "the delivered film contains 9 masked breaks",
+   "lesson": "LL-30",
+   "lesson_class": "Detect",
+   "process_change": "A transition never covers an unresolved break.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "post_delivery (2026-10-15)"
+  },
+  {
+   "id": "EP05-C05",
+   "where": "SEQ_003-005 (V05, V06, V07)",
+   "category": "environment",
+   "severity": "MATERIAL",
+   "stage_origin": "prompt_config",
+   "stage_should_detect": "continuity_planning",
+   "stage_detected": "post_generation",
+   "symptom": "The wrong-room clips match each other at their joins (V05->V06 3/64 bits, colour 3.3; V06->V07 3/64, 3.5), so a rendered-join check passes them. Frames show bare wood and grey windows where the dressed master has barred windows, a floral cloth and a paper runner.",
+   "evidence": "recomputed 2026-10-15 with blueprint._frame_hash; frames V05 f60, V47 f40 vs PENV_HALL_DRESSED_MASTER",
+   "fact_class": "verified",
+   "root_cause": "RC2",
+   "contributing_factors": [
+    "no environment reference in the graphs (L01)"
+   ],
+   "failed_safeguards": [
+    "join dHash (blind to consistent errors)"
+   ],
+   "rework": "J2 V46-V48 fixed the table blocking (L03-L05); the room look remains the L01 accepted deviation",
+   "corrective_action": "room conformance made an explicit human-review item (SB-7) at keyframe and continuity approval",
+   "regression_test": [],
+   "status": "human review (cannot be automated reliably)",
+   "remaining_risk": "room conformance depends on a person's check",
+   "lesson": "LL-31",
+   "lesson_class": "Detect",
+   "process_change": "Check keyframes against the room master, not only joins against each other.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem"
+  },
+  {
+   "id": "EP05-C06",
+   "where": "34 same-room joins",
+   "category": "continuity",
+   "severity": "MATERIAL",
+   "stage_origin": "continuity_planning",
+   "stage_should_detect": "continuity_planning",
+   "stage_detected": "post_delivery",
+   "symptom": "state_after(N) and state_before(N+1) are copies edited together, so the handoff check passes by construction.",
+   "evidence": "SEQ_004/state_after vs SEQ_005/state_before diff; ledger line 395 'changed' lists both files",
+   "fact_class": "verified",
+   "root_cause": "RC20",
+   "contributing_factors": [],
+   "failed_safeguards": [
+    "state.py strict equality"
+   ],
+   "rework": "not separable",
+   "corrective_action": "continuity contract binds the boundary image bytes, not only the state text",
+   "regression_test": [
+    "tests/test_contracts.py::test_a_changed_boundary_keyframe_voids_its_continuity_approval"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "state text can still be edited in pairs; the image binding is the control",
+   "lesson": "LL-29",
+   "lesson_class": "Detect",
+   "process_change": "Handoffs are proven by a shared image, not by copied text.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "post_delivery (research audit)"
+  },
+  {
+   "id": "EP05-G01",
+   "where": "every paid job",
+   "category": "process",
+   "severity": "BLOCKING",
+   "stage_origin": "spend_control",
+   "stage_should_detect": "spend_control",
+   "stage_detected": "post_delivery",
+   "symptom": "Paid jobs were MCP tool calls no code gated; code wrote 73 'user' price acceptances; submitted reservations could be released and re-sent; agent notes cleared the chain gate; graphs were not bound to an approved plan.",
+   "evidence": "production_audit.md AUD-01..03, AUD-16..21; CREDIT_LEDGER video_price_accepted (73, all 'user')",
+   "fact_class": "verified",
+   "root_cause": "RC9",
+   "contributing_factors": [
+    "firewall was a library, not a gate"
+   ],
+   "failed_safeguards": [
+    "firewall (callable, skippable)"
+   ],
+   "rework": "P04 71.55 unattributed credits",
+   "corrective_action": "PreToolUse hook; contracts gate; derived acceptances; re-spend routes closed",
+   "regression_test": [
+    "tests/test_paidguard.py::test_p04_a_direct_submit_without_a_reservation_is_refused",
+    "tests/test_paidguard.py::test_only_the_reserved_authorized_graph_passes_and_only_once",
+    "tests/test_contracts.py::test_video_reserve_refuses_a_graph_that_is_not_the_plan"
+   ],
+   "status": "regression-protected with residuals R1-R5 (production_gate_report.md)",
+   "remaining_risk": "web UI, other clients, code run from a file, AUD-30 git revert, AUD-33 signing route",
+   "lesson": "LL-16",
+   "lesson_class": "Prevent",
+   "process_change": "Paid calls pass the hook; only a person authorizes.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem",
+   "detection_note": "post_delivery (2026-10-15 audit)"
+  },
+  {
+   "id": "EP05-S03",
+   "where": "39 paid video graphs (V01, V05-V42)",
+   "category": "storyboard",
+   "severity": "MATERIAL",
+   "stage_origin": "prompt_config",
+   "stage_should_detect": "prompt_config",
+   "stage_detected": "post_delivery",
+   "symptom": "The storyboard sheet was attached as @image1 to ByteDance2ReferenceNodeV2, and the prompt opened 'Use @image1 as the authoritative director-approved storyboard blueprint'. The law now forbids attaching a storyboard.",
+   "evidence": "project/EP05/VIDEO/V10-4aac6a91e690.graph.json node 10 (image_1 = 97bb2418...png, a board crop also listed in SEQ_008/SEQ_009 attempt refs); 39 of 67 graphs counted 2026-10-15; docs/EP05_DELIVERY.md line 75",
+   "fact_class": "verified",
+   "root_cause": "RC22",
+   "contributing_factors": [
+    "the reference node cannot pin the last frame, so the board was the only staging carrier",
+    "video.preflight required image_1 to be wired to the storyboard on reference graphs"
+   ],
+   "failed_safeguards": [
+    "video.preflight (checked that slots were filled, not which images)",
+    "no plan bound the graph shape"
+   ],
+   "rework": "not separable; whether the board caused sketch-led staging in V05-V42 is a hypothesis",
+   "corrective_action": "A paid graph must equal the released plan's shape: one FLF node, both ends wired to the plan's keyframes, no other image (contracts.plan_match_problems via firewall.video_reserve).",
+   "regression_test": [
+    "tests/test_contracts.py::test_the_plan_fixes_the_graph_shape_no_storyboard_reference_and_both_ends_pinned",
+    "tests/test_contracts.py::test_ep05_paid_graphs_show_the_shapes_the_plan_now_refuses"
+   ],
+   "status": "regression-protected (the legacy chain r2v builder still wires a storyboard; it cannot pass the plan match)",
+   "remaining_risk": "A future RENDER_CONFIG that admits references must restate this rule.",
+   "lesson": "LL-35",
+   "lesson_class": "Prevent",
+   "process_change": "The render plan fixes the node and the image set; nothing rides along.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-C07",
+   "where": "V03 (SEQ_002, in the delivered cut), V04 (SEQ_003)",
+   "category": "continuity",
+   "severity": "MATERIAL",
+   "stage_origin": "prompt_config",
+   "stage_should_detect": "prompt_config",
+   "stage_detected": "post_delivery",
+   "symptom": "ByteDance2FirstLastFrameNode ran with first_frame only: last_frame unwired, so the clip's end was never pinned to a keyframe.",
+   "evidence": "project/EP05/VIDEO/V03-35c2d1e8d341.graph.json and V04-307c43d3c84b.graph.json (one LoadImage each); EDIT/v5/edl.json line 331 (V03 in SEQ_002)",
+   "fact_class": "verified",
+   "root_cause": "RC22",
+   "contributing_factors": [],
+   "failed_safeguards": [
+    "no check that both FLF ends were wired"
+   ],
+   "rework": "none recorded; the picture effect of the free end is not established",
+   "corrective_action": "plan_match_problems requires the node's first_frame and last_frame to load the plan's two keyframes.",
+   "regression_test": [
+    "tests/test_contracts.py::test_the_plan_fixes_the_graph_shape_no_storyboard_reference_and_both_ends_pinned"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "V03's end join in v5 is unverified against a keyframe.",
+   "lesson": "LL-35",
+   "lesson_class": "Prevent",
+   "process_change": "Both ends pinned, checked on the graph itself.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-C08",
+   "where": "SEQ_001 -> SEQ_002 handoff (V01 f336)",
+   "category": "continuity",
+   "severity": "MATERIAL",
+   "stage_origin": "generation",
+   "stage_should_detect": "generation",
+   "stage_detected": "post_delivery",
+   "symptom": "The chain's first opening frame came from pilot V01, whose inspection recommended FAIL and recorded no verdict; the handoff record itself says 'non-approved on design grounds'.",
+   "evidence": "CREDIT_LEDGER lines 198 (video_inspected: recommended FAIL, verdict_owner user), 199 (start_frame_handoff), 205 (chain authorized 2026-10-12 03:47)",
+   "fact_class": "verified",
+   "root_cause": "RC3",
+   "contributing_factors": [
+    "the pilot verdict was left to the user and never recorded"
+   ],
+   "failed_safeguards": [
+    "no predecessor-QC gate at the time"
+   ],
+   "rework": "V02 rejected (pencil end frame, EP05-L33); the hall drift ran down the chain (RC3)",
+   "corrective_action": "firewall.predecessor_qc_problems refuses a chained clip whose predecessor has no QC pass.",
+   "regression_test": [
+    "tests/test_castlock.py::test_a_chained_clip_needs_its_predecessor_reviewed"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "Keyframe-first FLF removes the clip-to-clip handoff altogether.",
+   "lesson": "LL-06",
+   "lesson_class": "Prevent",
+   "process_change": "A failed or unjudged pilot stops the chain; it is never its opening frame.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-G02",
+   "where": "CREDIT_LEDGER lines 942-943",
+   "category": "cost",
+   "severity": "MINOR",
+   "stage_origin": "spend_control",
+   "stage_should_detect": "spend_control",
+   "stage_detected": "post_delivery",
+   "symptom": "One provider job (BOY grid, 8ab13883, 37.84) was billed twice, as CHARACTER_GRID__BOY and CHARACTER_GRID:BOY, overstating image spend and the ledgered total by 37.84.",
+   "evidence": "CREDIT_LEDGER lines 1-2 (backfilled twice) and 942-943 (billed twice, same job_id); BILLING_JOBS.json one row",
+   "fact_class": "verified",
+   "root_cause": "RC11",
+   "contributing_factors": [
+    "two spellings of one target",
+    "the backfill keyed bills by target, not by provider job"
+   ],
+   "failed_safeguards": [
+    "metrics.other_metrics keyed billed amounts by (target, attempt)"
+   ],
+   "rework": "none (reporting error only)",
+   "corrective_action": "metrics counts a provider job once and lists the duplicates; the ledger lines stay as written.",
+   "regression_test": [
+    "tests/test_metrics.py::test_a_provider_job_billed_under_two_targets_counts_once",
+    "tests/test_metrics.py::test_ep05_image_spend_counts_the_boy_grid_once"
+   ],
+   "status": "regression-protected (metrics); ledger unchanged (append-only)",
+   "remaining_risk": "Other readers that sum the ledger by target would still double count.",
+   "lesson": "LL-15",
+   "lesson_class": "Detect",
+   "process_change": "Spend is summed per provider job id.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-G03",
+   "where": "project/EP05/EVENTS.jsonl line 2 (cast_ref_01)",
+   "category": "identity",
+   "severity": "MINOR",
+   "stage_origin": "references",
+   "stage_should_detect": "references",
+   "stage_detected": "post_delivery",
+   "symptom": "The record that 'verified' cast_ref_01 (58f07ab2...) by a LoadImage->SaveImage round trip cites job 87d24c1d, which the billing feed records as the scribe_v2 narration transcription (11.94 credits, 10:16:18).",
+   "evidence": "EVENTS.jsonl line 2; BILLING_JOBS.json 87d24c1d (scribe_v2); docs/EP05_REPAIR_PLAN.md line 19 (58f07ab2 matches no local file, dropped); 0 of 67 video graphs load 58f07ab2",
+   "fact_class": "supported",
+   "root_cause": "RC1",
+   "contributing_factors": [
+    "the record cites an 8-character job prefix only"
+   ],
+   "failed_safeguards": [
+    "verification claims were free text; nothing checked the cited job"
+   ],
+   "rework": "none; the reference was dropped before any video graph used it",
+   "corrective_action": "Identity references are hash-locked to the producer-signed original sheets (cast lock).",
+   "regression_test": [
+    "tests/test_castlock.py::test_a_signed_episode_still_refuses_an_unsigned_identity_reference"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "Free-text 'verified' notes still exist in old records.",
+   "lesson": "LL-01",
+   "lesson_class": "Prevent",
+   "process_change": "A verification names the full job id and a hash, or it is not a verification.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-G04",
+   "where": "V33, V67 reservations; V02, V04, V06, V41, V42; 16 board ACCEPTANCE files; RUN_STATE.json",
+   "category": "process",
+   "severity": "MINOR",
+   "stage_origin": "generation",
+   "stage_should_detect": "assembly_qc",
+   "stage_detected": "post_delivery",
+   "symptom": "V33 (684.6) and V67 (365.1) were reserved and never closed; five executed takes left out of the cut (3,157.38) carry no verdict, so metrics count 3 rejections where 8 takes failed or were replaced; 16 board ACCEPTANCE files stay 'draft' with template failures although EVENTS records an approve; RUN_STATE says COMPLETE with VIDEO_STAGE pending, last updated 2026-10-11 18:35.",
+   "evidence": "CREDIT_LEDGER lines 339, 828; metrics/EP05.json video.status; SEQUENCES/SEQ_001-010 and SEQ_030-035 ACCEPTANCE.json; RUN_STATE.json updated_utc",
+   "fact_class": "verified",
+   "root_cause": "RC23",
+   "contributing_factors": [
+    "402 mid-batch",
+    "wrap-up decision at 20:41"
+   ],
+   "failed_safeguards": [
+    "freeze recorded the state without refusing open records"
+   ],
+   "rework": "none; reporting and audit cost only",
+   "corrective_action": "Proposed: at freeze, refuse an open reservation, an executed take without a verdict or 'replaced by', and two acceptance statuses for one board.",
+   "regression_test": [],
+   "status": "open (no terminal-record check at freeze; releasing V33/V67 is a person's decision)",
+   "remaining_risk": "Committed spend reads 1,049.70 high until V33/V67 are released.",
+   "lesson": "LL-34",
+   "lesson_class": "Detect",
+   "process_change": "Every record that opens an action is closed before the episode is frozen.",
+   "episode": "EP05",
+   "added": "2026-10-15 postmortem (research pass 2)",
+   "detection_note": "post_delivery (research audit, pass 2)"
   }
  ],
  "corrections": [
   {
    "date": "2026-10-13",
    "note": "P04 relabelled from 'spend outside the firewall' to 'unattributed spend' after checking EVENTS/RUN_STATE/SEQUENCES records; commit 3b5abcf's message used the earlier wording."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "production_postmortem.md section 1",
+    "EP05-F2"
+   ],
+   "note": "The original chain was 40 submissions (V02-V42 without V33, which was reserved at 08:43:56 and never submitted), from 03:47:52 to 10:07:19 on 2026-10-12; not 41 clips ending at 09:58."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P04"
+   ],
+   "note": "The six unattributed jobs (71.55) also appear in docs/production/EP05/records/billing_feed_2026-10-13.txt, not only in BILLING_JOBS.json. Only 2 of the 6 (12:52, 12:54) fall inside commit d3cfb63's HEAD window (12:47:55-13:28:48), so 'board-stage tests around d3cfb63' stays a hypothesis."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "cost_and_retry_ledger.md"
+   ],
+   "note": "V25 is labelled 'provider rejected' but the ledger holds no provider verdict for it; metrics record no_output."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "cost_and_retry_ledger.md",
+    "EP05-P05"
+   ],
+   "note": "The BOY grid was billed twice (EP05-G02). Ledgered 34,022.76 -> 33,984.92; episode billed 34,106.25 -> 34,068.41; pre-reservation backfill 1,934.75 -> 1,896.91. Committed (34,362.71) is unaffected."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-W01"
+   ],
+   "note": "14 of 17 pinned repair clips passed (V43 FAIL_MATERIAL_PARTIAL, V61 and V62 FAIL). Of the 14 passes, V55-V60 are reviewer-agent picture checks marked 'Not a user QC verdict', V44 and V45 carry no reviewer and the rest say 'lead (picture QC)'. No person recorded a QC verdict on any pinned clip."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-S02"
+   ],
+   "note": "Re-counted: all 37 boards have an EVENTS 'approve' by claude-code; 21 ACCEPTANCE files are signed by claude-code; 16 remain 'draft'. A research claim that 16 sequences had no ACCEPTANCE file was wrong."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P05"
+   ],
+   "note": "The Oct 13 backfill wrote 47 video and 80 image billed rows (79 provider jobs; the BOY grid twice), not '47 video and 40 image'. production_postmortem F7's '80 images' counts rows."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-W02"
+   ],
+   "note": "Four EDL files exist (EDIT/edl.json, v3, v4, v5), not five; the 11,110-frame narration body is unchanged in each."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-W06"
+   ],
+   "note": "Recomputed and now a test: 34 of 34 same-room board END_LOCK hashes equal the next board's start reference (tests/test_contracts.py::test_ep05_board_end_locks_chain_into_the_next_board)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-W08"
+   ],
+   "note": "The one changed file of 536 is the append-only credit ledger; evidence.verify on 2026-10-15 reports 0 violations. The 1080p file The_Family_Drawing_EP05_1080p.mp4 is not in the manifest; hashed 2026-10-15 as bb6782b25334f9479ce070f33881b882b156487a05a37d91086f24a320abd8dc. The watch-page rendition the client received has no recorded hash."
+  }
+ ],
+ "append_only": {
+  "rule": "Entries are never edited or removed. A changed status or a correction is a new entry in 'corrections' or 'status_updates', citing the entry it amends.",
+  "v1_count": 83,
+  "v1_sha256": "f5e54ea3d9101abb2b0e3305e73856177a726269da0c44d23f7ac50c02a077a3",
+  "fields_v2": [
+   "id",
+   "episode",
+   "where",
+   "category",
+   "severity",
+   "stage_origin",
+   "stage_should_detect",
+   "stage_detected",
+   "symptom",
+   "evidence",
+   "fact_class",
+   "root_cause",
+   "contributing_factors",
+   "failed_safeguards",
+   "rework",
+   "corrective_action",
+   "regression_test",
+   "status",
+   "remaining_risk",
+   "lesson",
+   "lesson_class",
+   "process_change"
+  ],
+  "stages": [
+   "audio",
+   "segmentation",
+   "storyboard",
+   "references",
+   "continuity_planning",
+   "prompt_config",
+   "generation",
+   "audio_post",
+   "assembly_qc",
+   "remediation",
+   "spend_control"
+  ],
+  "fact_classes": [
+   "verified",
+   "supported",
+   "hypothesis",
+   "missing"
+  ],
+  "lesson_classes": [
+   "Prevent",
+   "Detect",
+   "Recover",
+   "Optimize",
+   "Preserve"
+  ]
+ },
+ "causal_chains": {
+  "RC18": {
+   "chain": "planner cuts placed at zero-gap junctions -> packer checks raw time only -> frame rounding moves 4 cuts into words -> blueprint 10 ms tolerance hides SEQ_025 -> 4 boundaries ship mid-word",
+   "why_introduced": "The cut planner aimed at word ends, and some word ends touch the next word.",
+   "why_allowed": "pack_from_cuts checked the raw time, then rounded without re-checking.",
+   "why_undetected": "No later stage validated stored boundaries until the 2026-10-15 blueprint; its 10 ms tolerance still missed SEQ_025.",
+   "earlier_evidence": "Re-check the shipped frame against the transcript at packing time (free).",
+   "control_now": "packer re-check after rounding; 5 ms tolerance; audio ledger BOUNDARY_MID_WORD blocks."
+  },
+  "RC19": {
+   "chain": "boards drawn as 2x2 sheets with template beat windows 0/3/10/13 s -> no timing or positions on panels -> prompts carry beats without timing -> the model chooses timing and blocking -> 71 of 111 beat boundaries sit inside words; positions, props and hands drift",
+   "why_introduced": "The board stage was designed as a picture deliverable, not a timed specification.",
+   "why_allowed": "Board QC checked drawings against the plan, not against the narration or state.",
+   "why_undetected": "Nothing compared panel times with word timestamps before generation.",
+   "earlier_evidence": "Panel t_in/t_out on word gaps; zones, facing and prop holders per panel.",
+   "control_now": "storyboard contract (PANELS_NOT_TIMED_TO_AUDIO, PANEL_BOUNDARY_MID_WORD, CAMERA/ACTION/ZONE checks) blocks approval; REVIEW codes for facing, regions and holders."
+  },
+  "RC20": {
+   "chain": "agent signs acceptances and notes -> status fields stored, no input hashes -> state files edited after signing (2026-10-12) -> approvals stay 'signed' -> chained clips start from unreviewed or changed inputs",
+   "why_introduced": "Speed: the agent was both builder and approver.",
+   "why_allowed": "_user() checked role words only; gates read stored statuses.",
+   "why_undetected": "No check recomputed what an approval covered.",
+   "earlier_evidence": "An approval that records the hashes of its inputs fails as soon as one changes.",
+   "control_now": "contracts: approvals bind content hashes, states are computed, the hook refuses agent signing; a person's video_qc PASS only."
+  },
+  "RC21": {
+   "chain": "join classified by pixel difference -> non-matching joins dissolved by rule -> 9 rendered breaks covered by 8-frame crossfades -> breaks shipped as soft cuts",
+   "why_introduced": "LL-20 treated a dissolve as the remedy for any non-matching join.",
+   "why_allowed": "No rule required a break to be resolved before choosing a transition.",
+   "why_undetected": "The transition record read the EDL, which did not list the applied dissolves.",
+   "earlier_evidence": "Compare rendered join frames before choosing the transition; record the applied join.",
+   "control_now": "transitions.json marks masked_break from joins.json; per-join rule in assembly_audio_qc_plan.md (code change AUD-31 still open)."
+  },
+  "RC22": {
+   "chain": "R2V chain designed around a storyboard slot -> video.preflight required image_1 = storyboard -> 39 paid graphs told the model the sheet was 'the authoritative director-approved storyboard blueprint' -> sketch-led staging and invented coverage risk; separately V03/V04 ran FLF with the last frame unwired",
+   "why_introduced": "The storyboard was treated as the shot's staging authority inside the video model, before the keyframe-first law existed.",
+   "why_allowed": "No approved plan fixed the node class, the reference set or the pinned ends; preflight checked that slots were filled, not which images were allowed.",
+   "why_undetected": "QC looked at the output frames; nobody audited the graphs' inputs against the law until this postmortem.",
+   "earlier_evidence": "A lint over VIDEO/*.graph.json at reservation time (node class, LoadImage set, end pins).",
+   "control_now": "firewall.video_reserve -> contracts.plan_match_problems: one FLF node, both ends wired to the plan's keyframe uploads, no other image, the plan's resolution and audio setting."
+  },
+  "RC23": {
+   "chain": "reservation or take created -> work moved on (402, replacement, wrap-up) -> no closing record -> metrics and the cost ledger read open or contradictory records -> committed spend, rejection count and board status misstated",
+   "why_introduced": "Records were written at the start of an action and only sometimes at its end.",
+   "why_allowed": "Neither the freeze nor the metrics refuse an open reservation, a take without a verdict, or two records that disagree.",
+   "why_undetected": "Totals were reconciled against the billing feed, not against the record lifecycle.",
+   "earlier_evidence": "At freeze: every reservation released, billed or not executed; every executed take has a verdict or 'replaced by'; one acceptance status per board.",
+   "control_now": "None in code. Metrics report never_submitted and duplicate billed jobs; closing V33/V67 is a person's release decision."
+  }
+ },
+ "successes": [
+  {
+   "id": "EP05-W01",
+   "what": "Keyframe-pinned FLF repairs between reviewer-locked keyframes",
+   "evidence": "J1-J3 and R6 QC records (docs/EP05_reviews/*)",
+   "measure": "14 of 17 pinned clips passed picture QC (registry v1 postmortem; re-verified by the 2026-10-15 research audit, see corrections)",
+   "lesson": "LL-05",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W02",
+   "what": "Narration-locked edit",
+   "evidence": "ulac/edit.py; tests/test_recovery.py",
+   "measure": "11,110 body frames identical across v1-v5; five EDL variants moved no boundary",
+   "lesson": "LL-19",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W03",
+   "what": "Machine finish QC",
+   "evidence": "project/EP05/EDIT/v5_final/qc.json",
+   "measure": "20 PASS, 0 FAIL, 2 WARN, 2 UNKNOWN (no human listen)",
+   "lesson": "LL-25",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W04",
+   "what": "Image and keyframe reviews before video spend",
+   "evidence": "registry stage_detected pre_generation",
+   "measure": "12 of 83 v1 defects caught before video spend",
+   "lesson": "LL-14",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W05",
+   "what": "Firewall discipline for every video reservation",
+   "evidence": "CREDIT_LEDGER video_quoted/video_reserved",
+   "measure": "67 video reservations quoted and capped; extra attempts carried 31 approved_extra events; no automatic retry",
+   "lesson": "LL-15",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W06",
+   "what": "Board END_LOCK hash chain",
+   "evidence": "SEQUENCES/*/END_LOCK.sha256 = next prompt.json start_frame_ref",
+   "measure": "34 of 34 same-room board joins hash-matched (research audit)",
+   "lesson": "LL-29",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W07",
+   "what": "Music screen",
+   "evidence": "regression/audio_music_labels.json; tests/test_musicscreen.py",
+   "measure": "recall 0.75, precision 0.857 on the EP05 corpus",
+   "lesson": "LL-13",
+   "lesson_class": "Preserve"
+  },
+  {
+   "id": "EP05-W08",
+   "what": "Evidence freeze",
+   "evidence": "docs/production/EP05/evidence_manifest.json; ulac/evidence.py",
+   "measure": "535 of 536 frozen files byte-identical two days later; the ledger only appended",
+   "lesson": "LL-32",
+   "lesson_class": "Recover"
+  },
+  {
+   "id": "EP05-W09",
+   "what": "Independent read-only research before code changes",
+   "evidence": "production_audit.md second pass",
+   "measure": "found the 4th mid-word cut, 3 re-spend routes and 2 guard holes the first audit missed",
+   "lesson": "LL-33",
+   "lesson_class": "Detect"
+  }
+ ],
+ "status_updates": [
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L03",
+    "EP05-L04",
+    "EP05-L05"
+   ],
+   "note": "'fixed' refers to the table blocking (separate tables, sink counter, boy's side, extra children), repaired by V46-V48 in v5. The room look in those clips remains the L01 accepted deviation (grey hall; frames V05 f60, V47 f40 checked against PENV_HALL_DRESSED_MASTER)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P04"
+   ],
+   "note": "Paid jobs are now refused at the hook unless reserved and authorized (EP05-G01). P04's 71.55 credits stay unattributed."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L10",
+    "EP05-L11"
+   ],
+   "note": "The record says the straight cut was kept because a dissolve would hide the error. The delivered v5 dissolves both joins (EDIT/v5/master/joins.json: SEQ_012 and SEQ_013 join_out xfade, 8 frames); they are two of the 9 masked breaks in EP05-C04. 'accepted' no longer describes the render."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L09",
+    "EP05-L12"
+   ],
+   "note": "L09's dissolve is a motivated plan (BLUEPRINT/transitions.json), not a repair, and no person approved it (PROD/ACCEPTED.json 'joins': {}). L12's trim holds, but its seam is an xfade over a rendered break (SEQ_014->015, EP05-C04)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L06",
+    "EP05-L07",
+    "EP05-L07b",
+    "EP05-L21",
+    "EP05-L22",
+    "EP05-L23",
+    "EP05-R6-D2",
+    "EP05-R6-D4",
+    "EP05-R6-D6"
+   ],
+   "note": "'fixed' rests on a non-person PASS: 'lead (picture QC)' (V46-V51), no reviewer (V44, V45) or a reviewer-agent note marked 'Not a user QC verdict' (V56, V58, V59, V60). No person has QC'd these takes (gate SE-3). L21-L23 also sit in the L01 grey-hall range; R6-D6 ships with an unlistened chord mute."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L18",
+    "EP05-L19"
+   ],
+   "note": "The V37 composite frames in the SEQ_032 row have no QC record (evidence_manifest qc: []); the only check is the recovery's 2 fps visual audit."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L30"
+   ],
+   "note": "Partial: scene floors were matched; the quietest takes (V05, V10, V20) could not be raised (EP05_FINAL_REPORT line 78), and finish QC has no clip-level loudness check."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-L31"
+   ],
+   "note": "The correction lives in EP05_RECOVERY_REPORT only; EP05_DELIVERY line 56 and EP05_CONTINUITY_AUDIT line 54 still call those trims free."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P02"
+   ],
+   "note": "Until 2026-10-15 the predecessor gate accepted any video_qc PASS, so EP05's eight 'lead (picture QC)' events would have opened the next clip. It now requires a person's PASS (test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P03"
+   ],
+   "note": "Partially prevented: 'decision' was not a guarded event (the v5 delivery decision, ledger line 852, is by 'lead'); it is guarded from 2026-10-15 (test_a_decision_names_a_person_and_quotes_them). _sanctioned is still a keyword any caller can pass, and gates.sign and five other recorders accept any name (AUD-26). An agent can still transcribe by='user' with a quote; a person-only route is AUD-33."
   }
  ]
 }

@@ -168,7 +168,12 @@ def _snap(t: float, W: list, a: float, b: float, tol: float = 0.5) -> float:
     """Move a panel boundary to the nearest gap between words (within tol), so a panel change never lands mid-word."""
     cands = [w["end"] for w in W if a < w["end"] < b] + [w["start"] for w in W if a < w["start"] < b]
     near = [c for c in cands if abs(c - t) <= tol]
-    return min(near, key=lambda c: abs(c - t)) if near else t
+    if near:
+        return min(near, key=lambda c: abs(c - t))
+    inside = next((w for w in W if w["start"] < t < w["end"]), None)     # a long word: leave it at its nearer edge
+    if inside:                                                             # (EP05 SEQ_001 P03 sat inside "Draw")
+        return min((inside["start"], inside["end"]), key=lambda c: abs(c - t))
+    return t
 
 
 def shot_specs(root: Path, audio: dict) -> dict:
@@ -244,8 +249,8 @@ def shot_specs(root: Path, audio: dict) -> dict:
         for p in panels[:-1]:                     # a beat change inside a spoken word reads as a mistimed cut
             t = a + p["t_out"]
             w = next((w for w in W if w["start"] < t - 0.005 and w["end"] > t + 0.005), None)
-            if w:
-                _f(problems, s, "PANEL_BOUNDARY_MID_WORD", REVIEW,
+            if w:                                 # authored timing must sit on word gaps (storyboard skill); BLOCK there
+                _f(problems, s, "PANEL_BOUNDARY_MID_WORD", BLOCK if src == "authored" else REVIEW,
                    f"{p['id']} ends at {round(t, 3)} s inside '{w['word']}' ({w['start']}-{w['end']} s)")
         if src != "authored":
             _f(problems, s, "PANELS_NOT_TIMED_TO_AUDIO", BLOCK,
@@ -524,8 +529,13 @@ def dependency_graph(root: Path, boundaries: dict, report: dict, concurrency: in
 
 
 # ------------------------------------------------------------------------------------------------------ H. transitions
-def transition_plan(root: Path, boundaries: dict, final_edl: dict | None) -> dict:
+def transition_plan(root: Path, boundaries: dict, final_edl: dict | None, joins: list | None = None) -> dict:
+    """The intended join at every boundary, and (after rendering) what the edit actually applied, from the render's
+    joins.json: EP05 v5 put 8-frame crossfades over its 9 rendered breaks, which the EDL itself does not record."""
     root = Path(root)
+    applied = {}
+    for j in joins or []:                       # the last segment of a clip carries that clip's outgoing join
+        applied[j.get("seq")] = j.get("join_out")
     spot = _j(root.parent.parent / "docs" / f"{root.name}_MUSIC_SPOTTING.json") \
         if (root.parent.parent / "docs" / f"{root.name}_MUSIC_SPOTTING.json").exists() else {}
     cues = spot.get("cues") or spot.get("spotting") or []
@@ -548,9 +558,16 @@ def transition_plan(root: Path, boundaries: dict, final_edl: dict | None) -> dic
                "audio": {"narration": "continuous (master clock; never retimed)",
                          "fx": "equal-power crossfade over the transition" if kind in ("dissolve", "dip") else "10 ms crossfade at the cut",
                          "music": music or "no cue change"}}
+        did = applied.get(b.get("a"))
+        if did is not None:
+            rec["applied"] = did                                 # what the rendered edit actually did at this join
         rend = (b.get("rendered") or {}).get("verdict")
         if rend == "BREAK":                                   # the finding itself is RENDERED_BOUNDARY_BREAK
-            rec["rendered_join"] = "dissolve applied by the edit over a continuity break: documented, not motivated"
+            masked = (did or {}).get("kind") in ("xfade", "dissolve", "dip")
+            rec["rendered_join"] = ("the edit applied a %s over a continuity break: a masked break, not a motivated "
+                                    "transition" % (did or {}).get("kind")) if masked else \
+                "a continuity break left as a plain cut: visible, unresolved"
+            rec["masked_break"] = masked
         out.append(rec)
     return {"transitions": out, "problems": problems}
 
@@ -564,7 +581,8 @@ def build(root: Path, final_edl_path: Path | None = None, reels: tuple[str, ...]
     shots = shot_specs(root, audio)
     bnd = boundary_ledger(root, shots, edl)
     refs = reference_manifest(root, shots, bnd)
-    trans = transition_plan(root, bnd, edl)
+    jp = (root / final_edl_path).parent / "master" / "joins.json" if final_edl_path else None
+    trans = transition_plan(root, bnd, edl, _j(jp) if jp and jp.exists() else None)
     problems = audio["problems"] + shots["problems"] + bnd["problems"] + refs["problems"] + trans["problems"]
     cast = castlock.problems(root)
     clips = {}

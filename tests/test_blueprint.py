@@ -75,9 +75,9 @@ def _episode(root: Path, authored: bool = True) -> Path:
                                                           "detected_panels": [[0, 0, 10, 10]] * 3}))
         if s == "SEQ_003" and authored:
             (d / "shot_manifest.json").write_text(json.dumps({"panels": [
-                {"id": "P01", "t_in": 0.0, "t_out": 1.0, "action": "the window darkens"},
-                {"id": "P02", "t_in": 1.0, "t_out": 2.5, "action": "night falls over the window, stars appear"},
-                {"id": "P03", "t_in": 2.5, "t_out": 3.5, "action": "Maria yawns"}]}))
+                {"id": "P01", "t_in": 0.0, "t_out": 1.4, "action": "the window darkens"},       # boundaries on word
+                {"id": "P02", "t_in": 1.4, "t_out": 2.25, "action": "night falls over the window, stars appear"},
+                {"id": "P03", "t_in": 2.25, "t_out": 3.5, "action": "Maria yawns"}]}))       # gaps: 9.9 s, 10.75 s
     _png(root / "IDENTITY" / "identity_board.png", 10)
     _png(root / "IDENTITY" / "CHARACTERS" / "MARIA_grid.png", 11)
     _png(root / "PENV" / "PENV_A_DRESSED_MASTER.png", 12)                  # PENV_B's master is missing
@@ -221,3 +221,40 @@ def test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words():
     _, errs = packer.pack_from_cuts(words, cuts, audio_duration=462.922, fps=24)
     rounded = sorted(e.split("(")[1].split(")")[0] for e in errs if "rounds to frame" in e)
     assert len(rounded) == 4, errs                     # the ends of SEQ_025, SEQ_028, SEQ_035 and SEQ_036
+
+
+@needs_ffmpeg
+def test_panel_boundaries_never_sit_inside_a_word(tmp_path):
+    """EP05: 71 of 111 production beat boundaries fell inside spoken words (template windows 0/3/10/13 s), and the
+    derived SEQ_001 P03 boundary sat inside the 1.04 s word "Draw". Derived boundaries now leave a word at its nearer
+    edge; an authored manifest with a boundary inside a word is blocked."""
+    root = _episode(tmp_path)
+    words = [{"word": w, "start": a, "end": b} for w, a, b in WORDS]
+    assert bp._snap(8.5, words, 4.0, 12.0, tol=0.1) in (8.3, 8.7)          # inside "table" (8.3-8.7)
+    m = root / "SEQUENCES/SEQ_003/shot_manifest.json"
+    man = json.loads(m.read_text())
+    man["panels"][0]["t_out"] = man["panels"][1]["t_in"] = 1.6               # 10.1 s: inside "falls" (10.0-10.6)
+    m.write_text(json.dumps(man))
+    shots = bp.shot_specs(root, bp.audio_ledger(root))
+    bad = [p for p in shots["problems"] if p["code"] == "PANEL_BOUNDARY_MID_WORD"]
+    assert bad and bad[0]["clip"] == "SEQ_003" and bad[0]["severity"] == "BLOCK"
+
+
+def test_a_dissolve_over_a_rendered_break_is_recorded_as_a_masked_break():
+    """EP05 v5 applied 8-frame crossfades over all 9 rendered breaks; the EDL did not record them, so the transition
+    plan said "cut". The applied join now comes from the render's joins.json."""
+    bnd = {"boundaries": [{"boundary": "SEQ_005->SEQ_006", "a": "SEQ_005", "b": "SEQ_006", "scene_change": False,
+                           "b_interval": [60.0, 70.0], "rendered": {"verdict": "BREAK"}},
+                          {"boundary": "SEQ_006->SEQ_007", "a": "SEQ_006", "b": "SEQ_007", "scene_change": False,
+                           "b_interval": [70.0, 80.0], "rendered": {"verdict": "MATCH"}}]}
+    joins = [{"seq": "SEQ_005", "join_out": {"kind": "xfade", "frames": 8}}, {"seq": "SEQ_006", "join_out": {"kind": "match"}}]
+    t = {x["boundary"]: x for x in bp.transition_plan(Path("/nonexistent/EPX"), bnd, None, joins)["transitions"]}
+    assert t["SEQ_005->SEQ_006"]["masked_break"] is True and t["SEQ_005->SEQ_006"]["applied"]["kind"] == "xfade"
+    assert "masked_break" not in t["SEQ_006->SEQ_007"]
+
+
+@pytest.mark.skipif(not (EP / bp.OUT / "transitions.json").exists(), reason="EP05 blueprint not built here")
+def test_ep05_v5_masks_nine_rendered_breaks_with_dissolves():
+    t = json.loads((EP / bp.OUT / "transitions.json").read_text())["transitions"]
+    masked = sorted(x["boundary"] for x in t if x.get("masked_break"))
+    assert len(masked) == 9 and "SEQ_005->SEQ_006" in masked and "SEQ_034->SEQ_035" in masked

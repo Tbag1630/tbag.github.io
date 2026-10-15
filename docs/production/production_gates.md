@@ -53,8 +53,8 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SC-4 | **Every pinned clip** (story, repair or title) states `requires.end_state`; its keyframes are reviewer-passed, locked and carry **`contract_checks`** for every required state | **CODE** (`repairlint` in `prod.flf` for every spec; `prod.lock`; `prod.contract` addendum) | `PROD/K_*/LOCK.json`, `CONTRACT*.json` |
 | SC-5 | Repair names its fix and required states; a shared-prop change only with its neighbours | **CODE** (`repairlint`, `r6_accept`) | spec `requires`, `with_neighbours` |
 | SC-0 | **Render plan released and generation authorized** (GENERATION_AUTHORIZED). The plan is compiled only from approved contracts; a person releases it and signs an authorization with a scope and a cap. Code, plan or input changes void it. | **CODE** (`contracts.release_problems` in `video_reserve`; `keyframe_problems` in `reserve`; the hook) | `render_plan.json`, `render_plan_released`, `generation_authorized` |
-| SC-6 | A chained clip's predecessor has a person's `video_qc` PASS. An agent's `video_qc_note` never counts (changed 2026-10-15). | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` |
-| SC-10 | The graph sent is the plan's own: same compiled L4 prompt, same length, and both pinned keyframes' recorded uploads | **CODE** (`contracts.plan_match_problems` in `video_reserve`) | refusal `PLAN_DIVERGENCE` |
+| SC-6 | A chained clip's predecessor has a person's `video_qc` PASS. An agent's `video_qc_note` never counts (changed 2026-10-15). A `video_qc` PASS by the lead, or with no reviewer, does not count either (enforced in code from the EP05 postmortem). | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` |
+| SC-10 | The graph sent is the plan's own: same compiled L4 prompt, same length, one node of the plan's class, `first_frame` and `last_frame` wired to the plan's keyframe uploads, no other image (never a storyboard), and the plan's resolution and audio setting (shape added by the EP05 postmortem: S03, C07) | **CODE** (`contracts.plan_match_problems` in `video_reserve`) | refusal `PLAN_DIVERGENCE` |
 | SC-11 | Protected evidence unchanged since the freeze (takes, keyframes, records; the ledger only appended) | **CODE** (`evidence.verify` in `video_reserve` and `authorize`) | refusal `evidence:` |
 | SC-12 | No paid tool call outside a reservation; no rerun by `from_prompt_id`; a reserved graph is sent once; a submitted reservation cannot be released | **CODE** (`ulac/paidguard.py` hook; `firewall.release_reservation`, `video_payload`) | `project/PAIDGUARD_LOG.jsonl` |
 | SC-7 | Credit balance confirmed with the producer to cover the whole batch | PROCESS (no balance read available; LL-17) | ledger `decision` naming the confirmed balance |
@@ -81,7 +81,23 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SE-3 | **A person watches the whole film in real time and listens on headphones**: identity, story beats against the script, music policy, sync | **RECORD, BLOCKING**. Not yet in code: client release happens outside this repo. | signed watch-and-listen note: who, when, which file hash, defects found |
 | SE-4 | Every claim in the client message checked against evidence (cast, fixes, format) | RECORD | the message draft with the evidence for each claim |
 | SE-5 | The master and mix leave the container through a planned channel; playback confirmed in a real browser | PROCESS (LL-18) | storage link and hash |
-| SE-6 | Outstanding defects listed, with explicit human approval for any that ship | RECORD | `defect_registry.json` status, plus a ledger `decision` |
+| SE-6 | Outstanding defects listed, with explicit human approval for any that ship | RECORD | `defect_registry.json` status, plus a ledger `decision` (a guarded event from 2026-10-15: `firewall.decision` needs a person and their quote) |
+| SE-7 | Records closed before the freeze: every reservation released, billed or not executed; every executed take has a verdict or "replaced by"; one acceptance status per board (LL-34) | PROCESS (proposed CODE in `freeze`) | open-record list in the freeze |
+
+## Human-review criteria (EP05 postmortem, 2026-10-15)
+
+Automation cannot judge these items. Each record names the person, the date, the hashes of what was looked at, a PASS or FAIL, and a note on what was seen. A note from the lead, the reviewer agent or any other agent never stands in for it (EP05: no pinned clip, board or mix was passed by a person).
+
+| Item | Stage | What the person checks | PASS when | Record |
+|---|---|---|---|---|
+| H1 Audio ledger | SA-8 | Listens across every cut | No cut clips a word or breath; each boundary has a dramatic reason | `contract_approved` (audio) |
+| H2 Storyboard | SB-5, SB-7 | Positions, left and right, hands, facing, who holds each prop, cast count, emotional read; each panel against its narration words | Nothing contradicts the state files or the narration | `contract_approved` (storyboard) |
+| H3 Boundary keyframe | SB-6, SB-7 | The keyframe against the room master and the identity sheets: architecture, furniture, palette, seats, facing, cast count, no sketch look, 1280×720 | Matches the master and the sheets; matching the neighbour clip is not enough (EP05-C05) | keyframe lock plus `contract_approved` (continuity) |
+| H4 Clip | SD-1 | The whole clip with sound: action against the contract, duplicates, contact through people or furniture, invented cuts, identity, music or voices | No MATERIAL finding; the listening items confirmed | `firewall.video_qc_record` |
+| H5 Join and transition | SD-5 | The rendered join frames, and the transition chosen | No dissolve over a break; a break is repaired or approved as motivated | continuity contract; ledger `decision` |
+| H6 Mute windows | SD-2 | Each proposed mute by ear | The mute removes only music or voice, and no needed foley | listening note per window |
+| H7 Whole film | SE-3 | Real time, on headphones: identity, story beats against the script, music policy, sync | No open BLOCKING finding | signed watch-and-listen note with the file hash |
+| H8 Client message | SE-4 | Every claim against its record | Each claim cites a record | message draft with evidence |
 
 ## EP05 against these gates (retroactive)
 
@@ -95,6 +111,10 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SC-4 and SC-5 | **FAIL** (V61, V62) |
 | SC-6 | **FAIL** (V02–V42) |
 | SC-7 | **FAIL** (402 mid-batch) |
+| SC-10 | **FAIL** (39 graphs with the storyboard as a reference; V03 and V04 with no last frame) |
+| SB-5, SB-6 | **FAIL** (37 untimed boards; 38 joins without a colour keyframe; no person approval) |
+| SD-5 | **FAIL** (9 rendered breaks under dissolves, EP05-C04) |
+| SE-7 | **FAIL** (V33 and V67 never closed; 5 replaced takes without verdicts) |
 | SD-2 | Mitigated by hand |
 | SE-1 | PASS |
 | SE-3 | **FAIL** (no human watch or listen) |

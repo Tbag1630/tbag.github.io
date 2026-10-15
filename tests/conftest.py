@@ -98,9 +98,9 @@ def clean_episode(root, clips=("SEQ_001", "SEQ_002"), seconds=4.0, rate=16000):
                                                     "sfx": "pencil on paper", "cut_reason": "a pause in the narration"}))
         (d / "storyboard_plan.json").write_text(_json.dumps({"panels": []}))
         (d / "shot_manifest.json").write_text(_json.dumps({"panels": [
-            {"id": "P01", "t_in": 0.0, "t_out": seconds / 2, "action": "Maria draws the sun", "camera": "wide",
+            {"id": "P01", "t_in": 0.0, "t_out": seconds * 0.75, "action": "Maria draws the sun", "camera": "wide",
              "lens": "28mm", "characters": ["MARIA"]},
-            {"id": "P02", "t_in": seconds / 2, "t_out": seconds, "action": "Maria holds up her drawing", "camera": "close",
+            {"id": "P02", "t_in": seconds * 0.75, "t_out": seconds, "action": "Maria holds up her drawing", "camera": "close",
              "lens": "85mm", "characters": ["MARIA"]}]}))
         for which in ("before", "after"):
             (d / f"state_{which}.json").write_text(_json.dumps({"X": st}))

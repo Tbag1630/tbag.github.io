@@ -55,8 +55,9 @@ def video_metrics(root: Path, edl: dict, reels: tuple[str, ...]) -> dict:
 
 
 def other_metrics(root: Path) -> dict:
-    """Non-video jobs: every reservation, plus billed jobs that predate the firewall (ledger `backfilled`)."""
-    live, billed, kinds, failed = {}, {}, {}, 0
+    """Non-video jobs: every reservation, plus billed jobs that predate the firewall (ledger `backfilled`). A provider
+    job is counted once: EP05's backfill billed the BOY grid (one job) under two target spellings."""
+    live, billed, kinds, failed, jobs, dup = {}, {}, {}, 0, {}, []
     for line in (Path(root) / "CREDIT_LEDGER.jsonl").read_text().splitlines():
         e = json.loads(line)
         key = (e.get("target"), e.get("attempt"))
@@ -68,17 +69,22 @@ def other_metrics(root: Path) -> dict:
         elif e["event"] == "released":
             live.pop(key, None)
         elif e["event"] == "billed":
+            if e.get("job_id") and jobs.setdefault(e["job_id"], key) != key:
+                dup.append({"job_id": e["job_id"], "counted_as": list(jobs[e["job_id"]]), "repeated_as": list(key),
+                            "credits": float(e.get("credits") or 0)})
+                live.pop(key, None)
+                continue
             billed[key] = float(e.get("credits") or 0)
             kinds.setdefault(key, e.get("kind"))
         elif e["event"] == "failed":
             failed += 1
-    keys = set(live) | set(billed)
+    keys = (set(live) | set(billed)) - {tuple(d["repeated_as"]) for d in dup}
     img = [k for k in keys if kinds.get(k) not in AUDIO_KINDS]
     aud = [k for k in keys if kinds.get(k) in AUDIO_KINDS]
     return {"image_jobs": len(img), "image_billed_credits": round(sum(billed.get(k, 0) for k in img), 2),
             "image_unbilled": sum(1 for k in img if k not in billed),
             "audio_jobs": len(aud), "audio_billed_credits": round(sum(billed.get(k, 0) for k in aud), 2),
-            "failed_events": failed}
+            "failed_events": failed, "duplicate_billed_jobs": dup}
 
 
 def defect_metrics(registry: dict, episode: str) -> dict:
@@ -92,6 +98,39 @@ def defect_metrics(registry: dict, episode: str) -> dict:
             "continuity_and_identity": sum(d["category"] in ("continuity", "identity", "prop", "environment") for d in ds),
             "audio_and_sync": sum(d["category"] == "audio" for d in ds),
             "open": len(open_), "open_high_severity": sorted(d["id"] for d in high)}
+
+
+def planning_metrics(root: Path) -> dict:
+    """Pre-generation measurements from the storyboard blueprint and the contracts (zero spend, known values only).
+    They are the baseline a storyboard-first episode is compared against."""
+    root = Path(root)
+    b = root / "BLUEPRINT"
+    if not (b / "audio_ledger.json").exists():
+        return {}
+    a = json.loads((b / "audio_ledger.json").read_text())
+    W = json.loads((root / "AUDIO" / "transcript_word.json").read_text())["words"]
+    inside = total = 0
+    for d in sorted((root / "SEQUENCES").glob("SEQ_*")):
+        pj = json.loads((d / "prompt.json").read_text())
+        for t in sorted({v[0] for v in (pj.get("visual_windows") or {}).values()} - {0}):
+            g = pj["global_start"] + t
+            if g < pj["global_end"] - 1e-3:
+                total += 1
+                inside += any(w["start"] < g - 0.005 and w["end"] > g + 0.005 for w in W)
+    rep = json.loads((b / "report.json").read_text()) if (b / "report.json").exists() else {}
+    tr = json.loads((b / "transitions.json").read_text())["transitions"] if (b / "transitions.json").exists() else []
+    out = {"clips": len(a["clips"]), "boundary_kinds": dict(Counter(c["end_boundary"]["kind"] for c in a["clips"])),
+           "timestamp_suspects": len(a["timestamp_suspects"]),
+           "words_uncovered": sum(p["code"] == "WORDS_UNCOVERED" for p in a["problems"]),
+           "beat_boundaries_inside_words": {"inside": inside, "of": total},
+           "blueprint_findings": rep.get("totals", {}),
+           "masked_breaks": sum(bool(x.get("masked_break")) for x in tr)}
+    try:
+        from . import contracts
+        out["clip_states"] = dict(Counter(v["state"] for v in contracts.status(root).values()))
+    except Exception as e:                       # contracts not built: say so rather than guess
+        out["clip_states"] = f"unavailable: {type(e).__name__}"
+    return out
 
 
 def episode(root: Path, final_edl: Path, reels: tuple[str, ...] = (), runtime_s: float | None = None,
@@ -111,6 +150,8 @@ def episode(root: Path, final_edl: Path, reels: tuple[str, ...] = (), runtime_s:
                ["base"] if (root / "EDIT" / "edl.json").exists() else [])}
     if registry:
         out["defects"] = defect_metrics(json.loads(Path(registry).read_text()), root.name)
+    if plan := planning_metrics(root):
+        out["planning"] = plan
     return out
 
 

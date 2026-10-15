@@ -53,3 +53,32 @@ def test_ep05_metrics_record_matches_a_fresh_computation():
                         rec["runtime_s"], ROOT / "docs" / "production" / "defect_registry.json")
     for k in ("first_pass_acceptance_rate", "paid_retries", "clips_in_final_cut"):
         assert m["video"][k] == rec["video"][k], k
+
+
+def test_a_provider_job_billed_under_two_targets_counts_once(tmp_path):
+    """EP05's backfill billed one BOY grid job (8ab13883, 37.84) as CHARACTER_GRID__BOY and CHARACTER_GRID:BOY."""
+    _write(tmp_path, [{"event": "backfilled", "target": "G__BOY", "attempt": 1, "kind": "asset", "job_id": "j1"},
+                      {"event": "backfilled", "target": "G:BOY", "attempt": 1, "kind": "asset", "job_id": "j1"},
+                      {"event": "billed", "target": "G__BOY", "attempt": 1, "credits": 37.84, "job_id": "j1"},
+                      {"event": "billed", "target": "G:BOY", "attempt": 1, "credits": 37.84, "job_id": "j1"},
+                      {"event": "billed", "target": "K_1", "attempt": 1, "credits": 15.0, "job_id": "j2"}])
+    o = metrics.other_metrics(tmp_path)
+    assert o["image_billed_credits"] == 52.84 and o["image_jobs"] == 2
+    assert [d["job_id"] for d in o["duplicate_billed_jobs"]] == ["j1"]
+
+
+@pytest.mark.skipif(not (ROOT / "project" / "EP05" / "CREDIT_LEDGER.jsonl").exists(), reason="EP05 not present")
+def test_ep05_image_spend_counts_the_boy_grid_once():
+    o = metrics.other_metrics(ROOT / "project" / "EP05")
+    assert [d["job_id"][:8] for d in o["duplicate_billed_jobs"]] == ["8ab13883"]
+    assert o["image_billed_credits"] == 3680.11                 # 3,717.95 recorded on 2026-10-15 minus 37.84
+
+
+@pytest.mark.skipif(not (ROOT / "project" / "EP05" / "BLUEPRINT" / "audio_ledger.json").exists(),
+                    reason="EP05 blueprint not built here")
+def test_ep05_planning_baseline_is_measured_not_estimated():
+    """The pre-generation baseline a storyboard-first episode is compared against (postmortem 2026-10-15)."""
+    p = metrics.planning_metrics(ROOT / "project" / "EP05")
+    assert p["clips"] == 37 and p["boundary_kinds"]["mid_word"] == 4 and p["words_uncovered"] == 0
+    assert p["beat_boundaries_inside_words"] == {"inside": 71, "of": 111}
+    assert p["masked_breaks"] == 9 and p["clip_states"] == {"AUDIO_DRAFT": 37}
