@@ -3,6 +3,15 @@
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
 
+
+## 2026-10-15: Creative review round 3 (EP03, private package v5.1)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The private sightline adapter skips only a subject's own box, checks the frame's height, reads per-setup lens bounds, keeps a point of view at its owner's eye height, tests every "out of frame" claim in keyframe specs, and models the open door's leaf | Round-3 reviews found an exemption wider than its stated rule and four undisclosed choices (LL-49) | Private adapter v5; port to `ulac/sightline.py` with tests after the pending environment job |
+| A set piece's states become separate environment references (the door open and closed) | LL-50 | Private specs |
+| Environment quotes use the live estimate (33–34 credits for a full-resolution GPT Image 2.5 edit), not an assumed figure | The earlier 24-credit assumption was low | `estimate_credits`, recorded in the private specs |
+
 ## 2026-10-15: Creative review round 2 (EP03, private package v5)
 
 | Change | Why | Evidence |
