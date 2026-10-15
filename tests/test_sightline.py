@@ -81,3 +81,24 @@ def test_a_subject_can_be_named_as_the_one_that_sizes_the_shot():
     near = sub("NEAR", 5.0, 10.0, 1.2)
     far = dict(sub("FAR", 3.2, 10.0, 1.2), sized=True)
     assert SL.sized_subject(c, [near, far])["name"] == "FAR"
+
+
+def test_a_close_shot_cannot_hold_subjects_spread_across_the_room():
+    c = cam(3.0, 8.0, 1.4, 180)
+    a, b = sub("A", 2.2, 5.0, 1.2), sub("B", 3.8, 5.0, 1.2)       # 1.6 m apart, 3 m away
+    assert "FRAME_SPREAD" in codes(SL.check_setup(c, "MCU", [a, b]))
+    assert "FRAME_SPREAD" not in codes(SL.check_setup(c, "WS", [a, b]))
+
+
+def test_the_camera_can_be_aimed_at_the_middle_of_its_subjects():
+    c = cam(0.0, 0.0, 1.0, 0)
+    aim = SL.aim_toward(c, [sub("A", 1.0, 1.0, 1.0), sub("B", -1.0, 1.0, 1.0)])
+    assert abs(((aim + 180) % 360) - 180) < 1e-6                    # straight ahead, between them
+
+
+def test_background_subjects_may_be_hidden_but_key_subjects_may_not():
+    c = cam(3.0, 8.0, 1.0, 180)
+    blocker = {"name": "HEAD", "x": [2.8, 3.2], "y": [5.8, 6.2], "top": 1.2}
+    behind = sub("FAR", 3.0, 3.0, 1.0)
+    assert codes(SL.check_setup(c, "WS", [behind], [blocker])) == ["OCCLUDED"]
+    assert SL.check_setup(c, "WS", [dict(behind, required=False)], [blocker]) == []

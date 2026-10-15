@@ -8,8 +8,10 @@ camera somewhere undeclared or by changing the set, the EP05-C05 failure. This m
 Inputs are plain data, so a room authority can be checked before any image exists:
 
   camera   {"x", "y", "z", "aim", "lens": [min_mm, max_mm]}   metres; aim in degrees, 0 = +y, 90 = +x
-  subject  {"name", "x", "y", "z", "scale"}                    z is the point to see (a face, hands, feet);
-                                                               scale is the subject's size against an adult (1.0)
+  subject  {"name", "x", "y", "z", "scale", "required"}        z is the point to see (a face, hands, feet);
+                                                               scale is the subject's size against an adult (1.0);
+                                                               required False marks background (a crowd member
+                                                               who may be partly hidden): it is not checked
   box      {"name", "x": [x0, x1], "y": [y0, y1], "top"}       an occluder from the floor to `top` (a table)
 
 `check_setup` reports, for one setup:
@@ -18,6 +20,8 @@ Inputs are plain data, so a room authority can be checked before any image exist
   LENS_RANGE    the shot size needs a focal length outside the position's lens range at the sized subject's distance
                 (a subject marked "sized"; else the first; for over_shoulder or behind, the first one FOREGROUND_M away)
   OCCLUDED      a subject hidden behind a box: the sightline passes through it below its top
+  FRAME_SPREAD  the subjects span a wider angle than the frame at the focal length the shot size needs, so they cannot
+                all be in one frame of that size (over_shoulder and behind setups exclude their foreground figures)
 
 Sizes are converted with the frame height each one covers on an adult (FRAME_H), on a 36 x 20.25 mm (16:9) frame.
 The checks are deliberately simple and conservative; a finding is a reason to re-plan or to look, never a verdict on
@@ -42,6 +46,21 @@ def hfov_deg(focal_mm: float) -> float:
 def focal_for(size: str, distance_m: float, scale: float = 1.0) -> float:
     """Focal length (mm) that makes `size` at `distance_m` fill the frame height on a subject of `scale`."""
     return SENSOR_H_MM * distance_m / (FRAME_H[size] * scale)
+
+
+def bearing(cam: dict, x: float, y: float) -> float:
+    """Compass bearing (degrees, 0 = +y, 90 = +x) from the camera to (x, y)."""
+    return math.degrees(math.atan2(x - cam["x"], y - cam["y"])) % 360.0
+
+
+def aim_toward(cam: dict, subjects: list[dict]) -> float:
+    """The bearing that points the camera at the middle of its subjects' angular spread."""
+    bs = [bearing(cam, s["x"], s["y"]) for s in subjects]
+    if not bs:
+        return cam["aim"]
+    ref = bs[0]
+    rel = [((b - ref + 180.0) % 360.0) - 180.0 for b in bs]
+    return (ref + (max(rel) + min(rel)) / 2.0) % 360.0
 
 
 def bearing_off_axis(cam: dict, x: float, y: float) -> float:
@@ -85,6 +104,7 @@ def sized_subject(cam: dict, subjects: list[dict], vantage: str | None = None) -
 def check_setup(cam: dict, size: str, subjects: list[dict], boxes: list[dict] = (), vantage: str | None = None) -> list[dict]:
     """Findings for one setup. The sized subject (`sized_subject`) is the one whose distance sets the shot size."""
     out: list[dict] = []
+    subjects = [s for s in subjects if s.get("required", True)]
     if size not in FRAME_H:
         return [{"code": "SIZE_UNKNOWN", "detail": f"size {size!r} is not one of {sorted(FRAME_H)}"}]
     lo, hi = cam["lens"]
@@ -106,4 +126,15 @@ def check_setup(cam: dict, size: str, subjects: list[dict], boxes: list[dict] = 
         if f > hi * LENS_SLACK or f < lo / LENS_SLACK:
             out.append({"code": "LENS_RANGE", "subject": p["name"],
                         "detail": f"{size} at {d:.1f} m needs about {f:.0f} mm; the position allows {lo:g}-{hi:g} mm"})
+        framed = [s for s in subjects if vantage not in ("over_shoulder", "behind")
+                  or math.dist((cam["x"], cam["y"]), (s["x"], s["y"])) >= FOREGROUND_M]
+        if len(framed) > 1:
+            bs = [bearing(cam, s["x"], s["y"]) for s in framed]
+            rel = [((b - bs[0] + 180.0) % 360.0) - 180.0 for b in bs]
+            spread = max(rel) - min(rel)
+            fov = hfov_deg(min(max(f, lo), hi))
+            if spread > fov * 0.9:
+                out.append({"code": "FRAME_SPREAD", "subject": ", ".join(s["name"] for s in framed),
+                            "detail": f"the subjects span {spread:.0f} deg; a {size} needs about {min(max(f, lo), hi):.0f} mm, "
+                                      f"which frames {fov:.0f} deg"})
     return out

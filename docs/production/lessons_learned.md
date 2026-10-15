@@ -59,6 +59,7 @@ These are durable production rules. Each has a status, and nothing is promoted w
 | LL-42 | **Creative quality needs a gate with the power to refuse, before storyboards.** EP05's correctness gates passed a generic act; no concept was compared and no reviewer could reject. | Regression-protected (storyboards wait for a person's creative approval; agent REJECT blocks; edits never clear it); review identity is not authenticated (R11) | `creative_standard.md`; `test_creative.py` | Every episode |
 | LL-43 | **The structural check does not see occupancy or geometry.** A plan can pass `validate` with a setup that omits a named character standing beside the subject, a camera position that cannot see what its setup claims, or a "continuous" join whose two sides are different frames. A pre-production check of the next episode found all three before any spend. | Observed (one episode). **Camera geometry is now regression-protected** (`ulac/sightline.py`, `test_sightline.py`: field of view, lens range, table occlusion). Occupancy and join agreement are still checked by hand and by script | `test_sightline.py`; private creative package | Every multi-character plan |
 | LL-44 | **A cut inside a first-last-frame clip is timed by the model, whichever join method is used.** Pinning both ends fixes the frames, not the moment of the cut. Cuts tied to a word need a measured tolerance or a split at the word gap. | Hypothesis: the next pilot measures in-clip cut timing against a prompted window | `decision_register.md` B-19 | Every clip with two setups |
+| LL-45 | **Derive a room's layout from its master before planning cameras.** A plan drawn before the master was read had the windows on the wrong side, the chairs more than twice as far apart as the master shows (1.5 m against about 0.66 m) and the door more than twice as far from the main character (8 m against about 3.7 m); once the layout was measured from the master, and the seated people modelled as occluders, every setup could be re-planned to pass the sightline check. | Observed (one episode); the check is regression-protected, the order is a process rule | `ulac/sightline.py`; private creative package | Every episode with an existing room |
 
 ## Lesson classes (2026-10-15)
 
@@ -70,7 +71,7 @@ These are durable production rules. Each has a status, and nothing is promoted w
 
 | Class | Lessons |
 |---|---|
-| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42, LL-43, LL-44 |
+| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42, LL-43, LL-44, LL-45 |
 | Detect | LL-07, LL-12, LL-13, LL-15, LL-25, LL-30, LL-31, LL-33, LL-34, LL-39 |
 | Recover | LL-17, LL-18, LL-32 |
 | Optimize | LL-11, LL-24 |
