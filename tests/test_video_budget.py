@@ -76,7 +76,8 @@ def test_refuses_without_authorization_and_writes_nothing(tmp_path):
     with pytest.raises(firewall.FirewallError, match="no video pilot authorization"):
         _reserve(tmp_path)
     assert [e["event"] for e in firewall.read_ledger(tmp_path) if e["event"] not in ("cast_locked", "storyboard_released", "contract_approved",
-                                                                         "render_plan_released", "generation_authorized")] == ["video_quoted"]
+                                                                         "render_plan_released", "generation_authorized",
+                                                                         "creative_review")] == ["video_quoted"]
     assert not (tmp_path / firewall.VIDEO_DIR).exists()
 
 

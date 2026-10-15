@@ -35,6 +35,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 
 | # | Check | Enforcement | Evidence |
 |---|---|---|---|
+| SB-0 | **Creative contract approved** (added 2026-10-15, `creative_standard.md`). The structural checks cover: three or more materially different concepts compared; distinction demonstrated; visual language and audio direction written; every sequence answering the five questions with a fixed-vocabulary camera plan. Story, craft and audience lenses reviewed the current version, and no REJECT is open (agents can only REJECT or NO_REJECT). A person approves; storyboards wait for it. | **CODE** (`ulac.creative`; `contracts.approve --kind creative`) + **RECORD** (the quality judgement is the person's) | `BLUEPRINT/contracts/creative.json`, `creative_review`, `contract_approved` |
 | SB-1 | Intent contract, panel-state ledger, prompt and reference lint, acceptance contract, frozen config (firewall board gates A–F) | **CODE** (`gates.py`, `firewall.gate_config`) | `INTENT.json`, `PANEL_LEDGER.json`, `ACCEPTANCE.json` |
 | SB-2 | Spatial and character continuity: seats, facing, one instance per character, props | PROCESS (reviewer agent; board QC) | board review record |
 | SB-3 | Board error detection: wrong occupancy, floating limbs, geography; preventions written into the prompt | PROCESS | prompt "preventions" lines |

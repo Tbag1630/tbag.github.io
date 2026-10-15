@@ -77,11 +77,21 @@ Approvals run in order, and each needs the previous one to be current. In the ap
 
 ```
 python3 -m ulac.contracts approve project/EP05 --kind audio --by <your name> --statement "listened to ...; boundaries ..."
+python3 -m ulac.creative status   project/EP05                          # findings, lens coverage, open REJECTs
+python3 -m ulac.contracts approve project/EP05 --kind creative --by <your name> --statement "read the brief, the intents and the reviews ..." [--overrule CRV-…:"reason"]
 python3 -m ulac.contracts approve project/EP05 --kind storyboard --ids SEQ_001,SEQ_002 --by <your name> --statement "..."
 python3 -m ulac.contracts approve project/EP05 --kind continuity --ids "START->SEQ_001,SEQ_001->SEQ_002,SEQ_002->SEQ_003" --by <your name> --statement "..."
 python3 -m ulac.contracts plan    project/EP05                          # compile; excluded clips say why
 python3 -m ulac.contracts release project/EP05 --clips SEQ_001,SEQ_002 --by <your name> --statement "..."
 ```
+
+**The creative approval (added 2026-10-15).** Storyboards wait for it. It needs all of these:
+- the brief and every sequence's `CREATIVE.json` answered;
+- no blocking structural finding;
+- a review from each of the three lenses (story, craft, audience) on the current version;
+- no open REJECT.
+
+Reviewers record only REJECT or NO_REJECT (`python3 -m ulac.creative review ...`). To overrule a REJECT, pass `--overrule <review id>:"reason"` and name the review id in your statement. Editing the brief or an intent never clears a REJECT. Read `docs/production/creative_standard.md` before approving: the code checks structure, and the quality judgement is yours.
 
 A clip whose take is in the delivered cut stays out of the plan unless an open defect justifies replacing it:
 

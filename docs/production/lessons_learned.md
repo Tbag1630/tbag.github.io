@@ -53,6 +53,10 @@ These are durable production rules. Each has a status, and nothing is promoted w
 | LL-36 | **Production code takes the episode as an input, never a constant.** `ulac.prod` and `ulac.chain` defaulted to project/EP05; the next episode's paid jobs would have been recorded in EP05's ledger. | Regression-protected | EP05-G07; RC25; `test_the_paid_paths_name_their_episode` | Every tool |
 | LL-37 | **Every spend authorization has a lifetime and a closing step.** EP05's pilot (cap 39,500) was still AUTHORIZED three days after delivery. Closing only restricts; reopening is a person's new authorization. | Regression-protected | EP05-G05; RC24; `test_a_generation_authorization_expires_and_cannot_be_open_ended` | Every authorization |
 | LL-38 | **Client material never enters a public repository; it holds hashes, and the media stays in private storage.** 38 EP05 frames and sheets were committed. | Regression-protected for additions; the existing files are the owner's decision | EP05-G08; RC26; `test_no_client_media_is_added_to_the_public_repository` | Every episode |
+| LL-39 | **A camera plan written as free text drifts to one default; enumerate it and check repetition.** 17 of 37 EP05 plans contain a slow push. 35 of 66 sampled bedroom-act frames show one eye-level bedside two-shot. | Regression-protected for detection (the quality judgement stays with the lenses) | `EP05_creative_retro.md`; `test_ep05s_camera_plan_trips_the_repetition_and_hold_checks` | Every plan |
+| LL-40 | **A plan that records only what happens produces a film that illustrates the words. Every sequence must say what the picture adds.** EP05 SEQ_010 and SEQ_018 show exactly what the narration says at that moment. | Regression-protected for presence (`picture_adds` required); the truth of the answer is reviewed | `EP05_creative_retro.md`; CR-CRAFT-01 | Every sequence |
+| LL-41 | **Memorable images came from the few plans with a deliberate angle and depth** (SEQ_005c, SEQ_006, SEQ_028b). | Hypothesis: test by recall in the EP06 whole-film watch | `EP05_creative_retro.md` | Key images |
+| LL-42 | **Creative quality needs a gate with the power to refuse, before storyboards.** EP05's correctness gates passed a generic act; no concept was compared and no reviewer could reject. | Regression-protected (storyboards wait for a person's creative approval; agent REJECT blocks; edits never clear it); review identity is not authenticated (R11) | `creative_standard.md`; `test_creative.py` | Every episode |
 
 ## Lesson classes (2026-10-15)
 
@@ -64,9 +68,9 @@ These are durable production rules. Each has a status, and nothing is promoted w
 
 | Class | Lessons |
 |---|---|
-| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37 |
-| Detect | LL-07, LL-12, LL-13, LL-15, LL-25, LL-30, LL-31, LL-33, LL-34 |
+| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42 |
+| Detect | LL-07, LL-12, LL-13, LL-15, LL-25, LL-30, LL-31, LL-33, LL-34, LL-39 |
 | Recover | LL-17, LL-18, LL-32 |
 | Optimize | LL-11, LL-24 |
-| Preserve | LL-05, LL-19, LL-20 (push-ins, and the shared-frame match rule now tested through `join_plan` in `test_xfade.py`), LL-38 |
+| Preserve | LL-05, LL-19, LL-20 (push-ins, and the shared-frame match rule now tested through `join_plan` in `test_xfade.py`), LL-38, LL-41 |
 | No longer applies | LL-26 (Rejected) |

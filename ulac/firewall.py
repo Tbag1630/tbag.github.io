@@ -127,7 +127,7 @@ def read_ledger(root: Path) -> list[dict]:
 # record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
 GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released",
                   "contract_approved", "render_plan_released", "generation_authorized", "decision",
-                  "video_released", "take_disposition")
+                  "video_released", "take_disposition", "creative_review")
 
 
 def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:

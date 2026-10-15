@@ -150,7 +150,8 @@ Results are kept whether the experiment wins or loses:
 
 | Check | Finding | Severity |
 |---|---|---|
-| The brief exists; at least three concepts; every pair differs in at least two strategy fields; the chosen concept exists | `BRIEF_MISSING`, `CONCEPTS_TOO_FEW`, `CONCEPTS_NOT_DISTINCT` | BLOCK |
+| The brief exists; at least three concepts; every pair differs in at least two strategy fields | `BRIEF_MISSING`, `CONCEPTS_TOO_FEW`, `CONCEPTS_NOT_DISTINCT` | BLOCK |
+| Every concept has an id, title and the four strategy fields; the chosen concept exists, with its reason; visual language and audio direction are answered | `BRIEF_INCOMPLETE` | BLOCK |
 | At least three distinction choices and three key images, each naming real sequences | `DISTINCTION_THIN`, `KEY_IMAGES_FEW` | BLOCK |
 | Every sequence has its intent with all fields answered | `CREATIVE_MISSING`, `FIELD_MISSING` | BLOCK |
 | Camera values come from the vocabulary | `CAMERA_VALUE_UNKNOWN` | BLOCK |
@@ -160,6 +161,10 @@ Results are kept whether the experiment wins or loses:
 | Reviews: three lenses on the current hash; REJECTs cite criteria and evidence; open REJECTs block; only a person overrules | — | — |
 
 **The code cannot judge whether a concept is original, an answer is true, a staging choice is right, or a film is moving.** Passing it means the work is complete enough to be judged. The judging is done by the three lenses and the producer.
+
+**Residual R11: review identity is not authenticated.** A review records the reviewer's name, the lens and the hash, but any session that can run Python can record a review under any lens.
+- **Rule:** the lead never records a review, its own or a clearing NO_REJECT. Reviews come only from separate reviewer runs, and each report is kept beside the record.
+- **Control:** the producer reads `python3 -m ulac.creative status` (open REJECTs, who cleared what) before approving. A person's approval, not the review record, is the gate.
 
 A REVIEW finding does not block on its own. Either it is answered in the sequence's `repetition_reason` or `hold_reason`, or it is material for a REJECT.
 

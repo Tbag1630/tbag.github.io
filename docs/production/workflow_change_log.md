@@ -2,6 +2,14 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: creative excellence mandate (a creative gate before storyboards)
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| Written creative criteria (25, stable ids) and the creative standard, committed before any concept | A generic film passed every correctness gate (EP05 creative retro) | `creative_criteria.json`, `creative_standard.md`, `EP05_creative_retro.md` (commit `b685199`) | Recorded |
+| Creative contract and three-lens review in code. Storyboards wait for a person's creative approval. Agents can only REJECT or NO_REJECT. Edits never clear a REJECT. Overrules happen only inside a person's approval, with a reason named in the statement. | Mandate section 5: a reviewer must be able to reject; agreement among agents is not proof | `ulac/creative.py`, `contracts.approve --kind creative`, `test_creative.py` | Regression-protected |
+| Structural checks: fixed camera vocabulary; REPETITION, LONG_HOLD and BOILERPLATE (REVIEW); concept count and distinctness, distinction and key images (BLOCK) | EP05: 35 of 66 sampled bedroom-act frames show one setup; 17 of 37 plans contain a slow push; free-text plans could not be counted reliably | `test_ep05s_camera_plan_trips_the_repetition_and_hold_checks` | Regression-protected; structure only, never quality (R11: review identity not authenticated) |
+
 ## 2026-10-15: next-episode readiness (engineering gaps closed; decisions prepared)
 
 | Change | Why | Evidence | Status |

@@ -4,7 +4,9 @@
 project/<EP>/BLUEPRINT/contracts/:
 
   audio_ledger.json                     A. the timing authority: one segment per clip, measured against the narration
-  storyboard_contract_<SEQ>.json        B. panels timed to the ledger, with zones, camera, props and the outgoing state
+  creative.json                         the creative brief and every sequence's creative intent (ulac.creative); a
+                                        person approves it after three lens reviews, and storyboards wait for it
+  storyboard_contract_<SEQ>.json       B. panels timed to the ledger, with zones, camera, props and the outgoing state
   continuity_contract_<A>_to_<B>.json   C. the exact boundary images (by sha256) and the states on both sides of a join
   render_plan.json                      compiled (`compile_plan`) only from contracts a person approved
 
@@ -29,7 +31,8 @@ when an agent runs them, and `firewall._user` refuses role names.
 
   python3 -m ulac.contracts build     project/EP05 [--final-edl EDIT/v5/edl.json]
   python3 -m ulac.contracts status    project/EP05
-  python3 -m ulac.contracts approve   project/EP05 --kind audio|storyboard|continuity [--ids A,B] --by <person> --statement "..."
+  python3 -m ulac.contracts approve   project/EP05 --kind audio|creative|storyboard|continuity [--ids A,B] --by <person> --statement "..."
+                                      [--overrule CRV-…:"reason"]   (creative only; name the review id in the statement)
   python3 -m ulac.contracts plan      project/EP05 [--replace SEQ_005:EP05-R6-D1]
   python3 -m ulac.contracts release   project/EP05 --clips SEQ_001,SEQ_002 --by <person> --statement "..."
   python3 -m ulac.contracts authorize project/EP05 --scope SEQ_001,K_X --cap 1200 --by <person> --statement "..." [--hours 48]
@@ -441,6 +444,9 @@ def build(root: Path, final_edl_path: Path | None = None, *, samples=None, sil=N
     refs = bp.reference_manifest(root, shots, bnd)
     A = audio_contract(root, audio)
     _write(root, "audio_ledger", A)
+    from . import creative
+    K = creative.creative_contract(root)
+    _write(root, "creative", K)
     sbs = {}
     for s in bp.sequences(root):
         sbs[s] = storyboard_contract(root, s, A, shots, refs, bnd)
@@ -449,7 +455,7 @@ def build(root: Path, final_edl_path: Path | None = None, *, samples=None, sil=N
     for rec in bnd["boundaries"]:
         ccs[rec["boundary"]] = continuity_contract(root, rec, sbs, refs)
         _write(root, cc_name(rec["boundary"]), ccs[rec["boundary"]])
-    return {"audio_ledger": A["sha256"], "storyboards": {k: v["sha256"] for k, v in sbs.items()},
+    return {"audio_ledger": A["sha256"], "creative": K["sha256"], "storyboards": {k: v["sha256"] for k, v in sbs.items()},
             "continuity": {k: v["sha256"] for k, v in ccs.items()}}
 
 
@@ -478,6 +484,9 @@ def stale(root: Path, doc: dict | None) -> list[str]:
         for r in b.get("references", []):
             if r.get("sha256") and r.get("path") and _fsha(root / r["path"]) != r["sha256"]:
                 why.append(f"{b['clip']}: reference {r['path']} changed")
+    elif doc["contract"] == "creative":
+        from . import creative
+        why += creative.stale(root, doc)
     elif doc["contract"] == "continuity":
         for side in ("upstream", "downstream"):
             clip = b[side]
@@ -516,7 +525,9 @@ def _blocking(findings: list[dict], waivers: dict | None = None) -> list[dict]:
 def _findings_now(root: Path, doc: dict) -> list[dict]:
     """Findings recomputed from the body, plus the cast lock, which is live state."""
     from . import castlock
-    fn = {"audio_ledger": validate_audio, "storyboard": validate_storyboard, "continuity": validate_continuity}[doc["contract"]]
+    from . import creative
+    fn = {"audio_ledger": validate_audio, "storyboard": validate_storyboard, "continuity": validate_continuity,
+          "creative": creative.validate}[doc["contract"]]
     out = fn(doc["body"])
     if doc["contract"] == "storyboard":
         out += [{"clip": doc["id"], "code": "CAST_LOCK", "severity": BLOCK, "detail": c} for c in castlock.problems(root)]
@@ -525,7 +536,8 @@ def _findings_now(root: Path, doc: dict) -> list[dict]:
 
 def current(root: Path, kind: str, id_: str, *, led: list | None = None, clip: str | None = None) -> list[str]:
     """Why the approval of one contract does not hold now. Empty: approved, current and clear."""
-    name = {"audio_ledger": lambda: "audio_ledger", "storyboard": lambda: sb_name(id_), "continuity": lambda: cc_name(id_)}[kind]()
+    name = {"audio_ledger": lambda: "audio_ledger", "storyboard": lambda: sb_name(id_), "continuity": lambda: cc_name(id_),
+            "creative": lambda: "creative"}[kind]()
     doc = load(root, name)
     why = stale(root, doc)
     if doc is None:
@@ -544,6 +556,9 @@ def current(root: Path, kind: str, id_: str, *, led: list | None = None, clip: s
     open_ = _blocking(fs, (ap or {}).get("waivers"))
     if open_:
         why.append(f"{kind} {id_} has blocking findings: {sorted({p['code'] for p in open_})}")
+    if kind == "creative":                          # a REJECT recorded after the approval still blocks
+        from . import creative
+        why += creative.review_problems(led, doc["sha256"])
     return why
 
 
@@ -586,13 +601,18 @@ def _signature_problems(ap: dict, kind: str, id_: str, sha: str) -> list[str]:
 
 
 def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement: str,
-            waivers: dict | None = None, signature: str | None = None) -> list[dict]:
-    """A person approves contracts. Order is enforced: storyboards need the audio ledger locked, continuity needs both
-    storyboards approved. Waivers cover only WAIVABLE codes and need a reason. `signature`: the person's SSH signature
-    over `python3 -m ulac.signing statement ...` (AUD-33); it is verified against the registered signers."""
+            waivers: dict | None = None, signature: str | None = None, overrules: dict | None = None) -> list[dict]:
+    """A person approves contracts. Order is enforced: the creative contract needs the audio ledger locked, storyboards
+    need the audio ledger locked and the creative contract approved (creative_standard.md), continuity needs both
+    storyboards approved. Waivers cover only WAIVABLE codes and need a reason. `overrules` ({review id: reason}, creative
+    only) is a person's ruling against an agent's REJECT; each id must also appear in the statement. `signature`: the
+    person's SSH signature over `python3 -m ulac.signing statement ...` (AUD-33); it is verified against the registered
+    signers."""
     from .firewall import record
     root = Path(root)
     _person(by, statement, f"{kind} approval")
+    if overrules and kind != "creative":
+        raise ContractError("only a creative approval overrules a review")
     waivers = waivers or {}
     for i, w in waivers.items():
         bad = [c for c in w if c not in WAIVABLE]
@@ -603,10 +623,17 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
     led = _ledger(root)
     if kind == "audio":
         targets = [("audio_ledger", "audio_ledger", "audio_ledger")]
+    elif kind == "creative":
+        targets = [("creative", "creative", "creative")]
+        if why := current(root, "audio_ledger", "audio_ledger", led=led):
+            raise ContractError("the creative contract waits for a locked audio ledger: " + "; ".join(why))
     elif kind == "storyboard":
         targets = [("storyboard", c, sb_name(c)) for c in ids or []]
         if why := current(root, "audio_ledger", "audio_ledger", led=led):
             raise ContractError("storyboards wait for a locked audio ledger: " + "; ".join(why))
+        if why := current(root, "creative", "creative", led=led):
+            raise ContractError("storyboards wait for an approved creative contract (creative_standard.md): "
+                                + "; ".join(why))
     elif kind == "continuity":
         targets = [("continuity", j, cc_name(j)) for j in ids or []]
     else:
@@ -628,6 +655,16 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
         open_ = _blocking(_findings_now(root, doc), waivers.get(i))
         if open_:
             raise ContractError(f"{i} has blocking findings: " + "; ".join(f"{p['code']}: {p['detail']}" for p in open_[:6]))
+        extra = {}
+        if k == "creative":
+            from . import creative
+            try:
+                creative.check_overrules(led, overrules, statement)
+            except creative.CreativeError as e:
+                raise ContractError(str(e)) from e
+            if why := creative.review_problems(led, doc["sha256"], extra_overrules=overrules):
+                raise ContractError("the creative contract is not cleared by its reviews: " + "; ".join(why))
+            extra = {"overrules": {r: str(v).strip() for r, v in (overrules or {}).items()}}
         prev = _approval(led, k, i)
         impact = None
         if k == "audio_ledger" and prev and prev["sha256"] != doc["sha256"]:
@@ -635,7 +672,7 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
         out.append(record(root, "contract_approved", _sanctioned=True, kind=k, id=i, sha256=doc["sha256"], by=by,
                           statement=statement.strip(), waivers=waivers.get(i, {}),
                           supersedes=prev["sha256"] if prev and prev["sha256"] != doc["sha256"] else None, impact=impact,
-                          **sig))
+                          **extra, **sig))
     return out
 
 
@@ -910,7 +947,7 @@ def state(root: Path, clip: str, *, led: list | None = None, upto: str = STATES[
     if why := stale(root, sb):
         return cur, why
     cur = "STORYBOARD_DRAFT"
-    if why := current(root, "storyboard", clip, led=led):
+    if why := current(root, "creative", "creative", led=led) + current(root, "storyboard", clip, led=led):
         return cur, why
     cur = "STORYBOARD_APPROVED"
     if stop <= STATES.index(cur):
@@ -1095,8 +1132,9 @@ def _main(a: list[str]) -> None:
                 wv.setdefault(tid, {})[code] = why[0] if why else ""
         ids = get("--ids").split(",") if get("--ids") else None
         sig = Path(get("--signature")).read_text() if get("--signature") else None
+        ov = dict(a[i + 1].split(":", 1) for i, x in enumerate(a) if x == "--overrule" and ":" in a[i + 1])
         print(json.dumps(approve(ep, kind=get("--kind"), ids=ids, by=get("--by"), statement=get("--statement"),
-                                 waivers=wv, signature=sig), indent=1))
+                                 waivers=wv, signature=sig, overrules=ov or None), indent=1))
     elif cmd == "plan":
         rep = dict(x.split(":", 1) for i, x in enumerate(a) if i and a[i - 1] == "--replace")
         d = compile_plan(ep, replace=rep)
