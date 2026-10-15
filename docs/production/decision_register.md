@@ -58,6 +58,14 @@ The story material is the client's, so it stays in the private creative package 
 | B-17 | **Runtime and budget** | The candidate story runs about 692 s at EP05's pace (EP05: 463 s), about 64 sequences: about 1.5× EP05's video cost at the measured 45.6 credits/s | Proceed at full length; ask the client about length. **The words are never cut by us.** | Share the estimate with the client before the pilot | Sets the episode's budget envelope | A ledger `decision` naming the envelope |
 | B-18 | **A design dependency on MACA's original sheet** | The recommended treatment uses MACA's existing chest lights as a counting device. The original approved sheet has not been checked for how many lights it shows. | Confirm the lights on the original sheet; move the device elsewhere (visor, post) | Check the original sheet first. The device must use the approved design, never add to it. | No redesign under CR-01 | A note with the original sheet's hash |
 
+**Update (2026-10-15, later): the producer directed the next episode.**
+- **B-12 is superseded.** The producer chose EP03 as the next production. It has a ceiling of about 41,000 credits, which is a ceiling and not a spending authorization: every paid job still needs B-08's scoped authorization. The EP06 package is parked with its open review findings.
+- **B-13 to B-18 were written for EP06.** EP03's own decisions are D-1 to D-9 in the private EP03 package, sent to you directly. EP03 still needs B-10's inputs, above all its narration audio.
+
+| # | Decision | Evidence | Options | Recommendation | Consequence | How it is recorded |
+|---|---|---|---|---|---|---|
+| B-19 | **How clips join inside one room** | CLAUDE.md §1 shares one keyframe at every join inside a room, so each join is continuous and every cut falls inside a clip, timed by the model. `contracts.py` allows a two-keyframe join only at a change of room (`scene_cut` needs `scene_change`). A plan that wants cuts on word gaps inside one room therefore needs a method change. | M1: as written (N+1 keyframes); M2: a hard cut at each join inside a room, with two keyframes per join | **M2**, built as a new `hard_cut` continuity method after your approval: the closing and opening states must agree, a person checks the room against its master, and tests cover it. Cuts inside clips stay model-timed under both methods; the pilot measures them (LL-44). | About one extra keyframe per join (about 26 credits each at 1.5 attempts); a CLAUDE.md §1 amendment | Your decision in the ledger, then the code change with tests, then a tooling restamp |
+
 ## Launch status (2026-10-15 13:44Z): **BLOCKED**
 
 **Engineering controls, verified in this run:**
@@ -95,6 +103,8 @@ The EP05 sign-off (B-03) and the repository's privacy (B-07) do not block the pi
 - the treatment and the creative approval after the three lens reviews (B-13);
 - new character designs (B-14) and the location master (B-15);
 - the narration (B-16).
+
+For EP03 (the update after B-18), read B-12 to B-18 as D-1 to D-9 in the private EP03 package, plus the join method (B-19).
 
 None of these is an engineering block. Each is a creative or client decision.
 

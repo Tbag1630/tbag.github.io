@@ -57,6 +57,8 @@ These are durable production rules. Each has a status, and nothing is promoted w
 | LL-40 | **A plan that records only what happens produces a film that illustrates the words. Every sequence must say what the picture adds.** EP05 SEQ_010 and SEQ_018 show exactly what the narration says at that moment. | Regression-protected for presence (`picture_adds` required); the truth of the answer is reviewed | `EP05_creative_retro.md`; CR-CRAFT-01 | Every sequence |
 | LL-41 | **Memorable images came from the few plans with a deliberate angle and depth** (SEQ_005c, SEQ_006, SEQ_028b). | Hypothesis: test by recall in the EP06 whole-film watch | `EP05_creative_retro.md` | Key images |
 | LL-42 | **Creative quality needs a gate with the power to refuse, before storyboards.** EP05's correctness gates passed a generic act; no concept was compared and no reviewer could reject. | Regression-protected (storyboards wait for a person's creative approval; agent REJECT blocks; edits never clear it); review identity is not authenticated (R11) | `creative_standard.md`; `test_creative.py` | Every episode |
+| LL-43 | **The structural check does not see occupancy or geometry.** A plan can pass `validate` with a setup that omits a named character standing beside the subject, a camera position that cannot see what its setup claims, or a "continuous" join whose two sides are different frames. A pre-production check of the next episode found all three before any spend. | Observed (one episode). Checked by hand and by a scratch script; no regression test yet | private creative package; the next-episode handoff records | Every multi-character plan |
+| LL-44 | **A cut inside a first-last-frame clip is timed by the model, whichever join method is used.** Pinning both ends fixes the frames, not the moment of the cut. Cuts tied to a word need a measured tolerance or a split at the word gap. | Hypothesis: the next pilot measures in-clip cut timing against a prompted window | `decision_register.md` B-19 | Every clip with two setups |
 
 ## Lesson classes (2026-10-15)
 
@@ -68,7 +70,7 @@ These are durable production rules. Each has a status, and nothing is promoted w
 
 | Class | Lessons |
 |---|---|
-| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42 |
+| Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42, LL-43, LL-44 |
 | Detect | LL-07, LL-12, LL-13, LL-15, LL-25, LL-30, LL-31, LL-33, LL-34, LL-39 |
 | Recover | LL-17, LL-18, LL-32 |
 | Optimize | LL-11, LL-24 |
