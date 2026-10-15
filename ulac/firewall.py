@@ -68,6 +68,25 @@ def save_conf(root: Path, conf: dict) -> None:
     (Path(root) / CONF).write_text(json.dumps(conf, indent=2, ensure_ascii=False) + "\n")
 
 
+def grant_from_authorization(root: Path, rec: dict) -> dict:
+    """Write the firewall's video grant for the person's generation authorization, so one signed act authorizes a
+    pilot (EP05's grants were written by hand from quoted chat). It is written only from the ledger's current
+    authorization record, so a grant cannot be made up: its scope, cap and expiry are the person's."""
+    from . import contracts
+    a = contracts._authorization(read_ledger(root))
+    if not a or a.get("utc") != rec.get("utc") or a.get("scope") != rec.get("scope"):
+        raise FirewallError("a grant is written only from the ledger's current generation authorization")
+    conf = load_conf(root)
+    prev = {k: v for k, v in (conf.get("video_pilot") or {}).items() if k != "previous"}
+    seqs = [t for t in a["scope"] if t.startswith("SEQ_")]
+    conf["video_pilot"] = {"status": "AUTHORIZED", "scope": seqs, "cap_credits": a["cap_credits"],
+                           "max_attempts": video_state(root)["attempts"] + len(seqs), "authorized_by": a["by"],
+                           "source": f"generation_authorized {a['utc']}: {a['statement']}",
+                           "expires_utc": a.get("expires_utc"), **({"previous": prev} if prev else {})}
+    save_conf(root, conf)
+    return conf["video_pilot"]
+
+
 def close_authorizations(root: Path, *, reason: str, evidence: str) -> dict:
     """Close every standing spend authorization in FIREWALL.json: image boards, audio, video, the video pilot and its
     1080p title scope. It only restricts. Nothing in this module reopens an authorization: that is a person's new
@@ -279,6 +298,12 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
                                 "production cap")
     ok = (bool(conf["authorization"].get("sequence_boards")) and attempt <= conf["max_attempts"]
           or bool(approved(root, tid, attempt)))
+    if not ok and attempt <= conf["max_attempts"]:
+        from . import contracts               # a person's current generation authorization naming this image job
+        if kind == "keyframe":
+            ok = True                         # keyframe_problems above already required an authorization naming it
+        elif kind == "seq":
+            ok = not contracts.authorization_problems(root, f"BOARD:{tid}")
     if kind in AUDIO_KINDS and str(conf["authorization"].get("audio", "")).upper() != "AUTHORIZED":
         ok = False                     # paid music and sound effects need their own recorded user authorization
     rec = record(root, "reserved", target=tid, kind=kind, attempt=attempt, prompt_sha256=prompt_sha,

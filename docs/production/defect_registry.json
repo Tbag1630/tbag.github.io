@@ -2100,6 +2100,13 @@
     "EP05-P03"
    ],
    "note": "firewall.decision from the shell is refused by the guard candidate (decision B-04); signed approvals (ulac/signing.py) make an approval verifiable after the fact once a key is registered (B-05)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-G06"
+   ],
+   "note": "The candidate also refuses detached checkouts or switches to a revision, revert and cherry-pick. Residual R10 stays open: a branch checkout, rebase or merge that lands on an older guard cannot be told apart from ordinary work at the hook (tests/test_paidguard_candidate.py::test_residual_r10_a_branch_checkout_is_not_refused). The first-clip rehearsal also found that pilot grants had no person command; contracts.authorize now writes them (tests/test_pilot_rehearsal.py)."
   }
  ]
 }

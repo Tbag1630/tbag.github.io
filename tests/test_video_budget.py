@@ -34,14 +34,16 @@ def _plan_match_tested_elsewhere(monkeypatch):
 
 
 def _pilot(root, **over):
+    """The contracts authorization writes its own grant (firewall.grant_from_authorization); these tests then set the
+    pilot they examine (status, cap, attempt limit) over it."""
     pilot = {"status": "AUTHORIZED", "scope": ["SEQ_001"], "cap_credits": 700, "max_attempts": 1,
              "authorized_by": "user", **over}
-    (root / firewall.CONF).write_text(json.dumps({"video_pilot": pilot}))
     (root / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "test"}))
     if not (root / "CAST_LOCK.json").exists():
         sign_cast(root)
     if not (root / "BLUEPRINT").exists():
         authorize_clips(root, ["SEQ_001", "SEQ_002"])
+    (root / firewall.CONF).write_text(json.dumps({"video_pilot": pilot}))
 
 
 def _quote(root, graph=GRAPH, credits=639.0):
@@ -267,14 +269,14 @@ def test_one_production_budget_counts_images_and_audio_and_audio_needs_its_own_a
     (tmp_path / firewall.CONF).write_text(json.dumps(conf))
     kw = dict(prompt_sha="p", ref_hashes={}, config_hash="c", seed=0, model="m", workflow="w", closed=False)
     from ulac import contracts                                        # boundary keyframes K1, K2 of the clean episode
-    contracts.authorize(tmp_path, scope=["SEQ_001", "SEQ_002", "K1", "K2"], cap_credits=100000, by="producer",
+    contracts.authorize(tmp_path, scope=["SEQ_001", "SEQ_002", "K1", "K2"], cap_credits=700, by="producer",
                         statement="test fixture: keyframes K1 and K2 may be generated for these two clips")
     firewall.reserve(tmp_path, tid="K1", kind="keyframe", attempt=1, est_credits=80, **kw)
     m = firewall.reserve(tmp_path, tid="MUS_1", kind="music", attempt=1, est_credits=20, **kw)
     assert m["authorized"] is False                                   # no audio authorization recorded yet
     _quote(tmp_path)
     _accept(tmp_path)
-    with pytest.raises(firewall.FirewallError, match="exceed the 700-credit cap"):
+    with pytest.raises(firewall.FirewallError, match=r"exceed the 700(\.0)?-credit cap"):
         _reserve(tmp_path)                                            # 100 already committed + 639 > 700
     with pytest.raises(firewall.FirewallError, match="production cap"):
         firewall.reserve(tmp_path, tid="K2", kind="keyframe", attempt=1, est_credits=650, **kw)

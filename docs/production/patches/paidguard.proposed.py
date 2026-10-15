@@ -49,6 +49,10 @@ operator out of fixing it.
 Every decision is appended to project/PAIDGUARD_LOG.jsonl.
 
 Residual bypasses the repository cannot close:
+  * moving HEAD to a tree that holds an older guard by a branch checkout, a rebase, a merge, or a push of an old commit
+    to a new ref that is then checked out (R10). An older tree changes the tooling hash; EP05's legacy grants are
+    closed; and contracts authorizations are bound to the tooling hash and expire. The boundary that holds against a
+    determined agent is outside the repository: the provider account's balance and a person's authorization;
   * the Comfy web UI, and any client that does not load this repository's settings;
   * a person disabling hooks or editing .claude/settings.json (the test suite asserts the hook is installed, so the
     tooling stamp, and with it every reservation, fails);
@@ -109,6 +113,10 @@ GIT_PLUMBING = re.compile(GIT + r"(update-index|hash-object|read-tree|commit-tre
                           r"filter-repo|replace)\b")
 GIT_HARD_RESET = re.compile(GIT + r"reset\b[^|;&]*--hard\b")
 GIT_TREE_RESTORE = re.compile(GIT + r"(checkout|restore)\b[^|;&]*\s(--\s+)?(\.|:/|\*)(\s|$|[|;&])")
+# Moving HEAD to an older revision brings back an older guard with it (AUD-30 by another road). The forms that name a
+# revision are refused; a branch checkout, a rebase or a merge cannot be told apart from ordinary work (residual R10).
+GIT_HEAD_BACK = re.compile(GIT + r"((checkout|switch)\b[^|;&]*(\s--detach\b|\s(HEAD|@)[~^]\S*|\s[0-9a-f]{7,40}(\s|$))|"
+                           r"(revert|cherry-pick)\b)")
 PATCHERS = re.compile(GIT + r"(?:apply|am)\b([^|;&]*)|(?:^|[\s;&|(])patch\b([^|;&]*)")
 
 
@@ -287,6 +295,9 @@ def decide_bash(cmd: str) -> tuple[bool, str, dict]:
         return False, f"{name} is protected evidence, an approval record or the guard itself: it is appended to only by ulac code", {}
     if GIT_PLUMBING.search(cmd):
         return False, "git plumbing can rewrite the guard or a record without naming it (AUD-30): a person runs it", {}
+    if GIT_HEAD_BACK.search(cmd):
+        return False, ("moving HEAD back to a revision, or reverting or cherry-picking a commit, can bring back an older "
+                       "guard (AUD-30): a person runs it"), {}
     if GIT_HARD_RESET.search(cmd) or GIT_TREE_RESTORE.search(cmd):
         return False, ("a hard reset or whole-tree restore can bring back an older guard (AUD-30): use `git checkout -B "
                        "<branch> <remote ref>` or name the files outside the protected set"), {}

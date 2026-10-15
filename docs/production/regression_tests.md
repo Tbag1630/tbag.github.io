@@ -2,7 +2,7 @@
 
 `python3 -m pytest -q tests` runs everything. `python3 -m ulac tooling-check project/<EP>` runs the suite and stamps the tooling, and the firewall refuses reservations without a fresh stamp.
 
-Last run (2026-10-15 13:30Z, tooling stamp `21f53e0d`): **574 passed, 2 skipped, 6 xfailed**. The 6 xfails are strict: AUD-30 and the five other live-guard gaps, all closed by the candidate in `patches/`. The 2 skips are opt-in `ULAC_PROJECT_STATE=1` checks; run opt-in, all 24 tests in `test_recovery.py` pass. Earlier runs: 436 passed (stamp `552bcb54`) and 415 passed (`f1da318a`).
+Last run (2026-10-15 13:44Z, tooling stamp `6dfa85f9`): **586 passed, 2 skipped, 6 xfailed**. The 6 xfails are strict: AUD-30 and the five other live-guard gaps, all closed by the candidate in `patches/`. The 2 skips are opt-in `ULAC_PROJECT_STATE=1` checks; run opt-in, all 24 tests in `test_recovery.py` pass. Earlier runs: 574 passed (stamp `21f53e0d`), 436 passed (stamp `552bcb54`) and 415 passed (`f1da318a`).
 
 Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere they skip, and a skip is not a pass.
 
@@ -24,6 +24,8 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | A next-episode job recorded in EP05's ledger | EP05-G07 | `test_episode_root.py::test_the_paid_paths_name_their_episode` | `ulac.prod` and `ulac.chain` refuse without `ULAC_PROJECT` |
 | An agent-transcribed approval | AUD-33 | `test_signing.py` (7 tests; real `ssh-keygen` fixtures) | Signed approvals bind the contract hash; other keys, namespaces, principals and tampered statements are refused; a withdrawn key voids the approval |
 | Routes around the hook (AUD-30, session spawn, GitHub edits of the guard, Artifact connectors, remote agents, shell decisions) | EP05-G06 | `test_paidguard.py` strict xfails (live gaps); `test_paidguard_candidate.py` (the whole live suite plus the routes, against the candidate) | The candidate closes every listed route without losing a live protection |
+| A pilot that cannot run on person commands, or a cap that is not hard | Readiness rehearsal | `test_pilot_rehearsal.py` (2 tests) | Board, keyframes and clip reserve from signed authorizations alone; the cap refuses an over-cap image and a second video; no grant without its authorization |
+| An empty signature recorded as an approval | Readiness review | `test_signing.py::test_an_empty_or_garbled_signature_never_becomes_an_unsigned_approval` | Empty or garbled signatures are refused |
 | Client media committed to the public repository | EP05-G08 | `test_public_repo.py::test_no_client_media_is_added_to_the_public_repository` | Tracked media never grows beyond the frozen baseline |
 | One provider job billed twice | EP05-G02 | `test_metrics.py::test_a_provider_job_billed_under_two_targets_counts_once`, `test_ep05_image_spend_counts_the_boy_grid_once` (*EP05 data*) | Spend is summed per provider job; EP05 image spend is 3,680.11 |
 | A success claim that cannot be recomputed | EP05-W06 | `test_contracts.py::test_ep05_board_end_locks_chain_into_the_next_board` (*EP05 data*) | 34 of 34 same-room END_LOCK hashes chain |

@@ -558,8 +558,10 @@ def _person(by: str, statement: str, what: str) -> None:
 def _signed(root: Path, kind: str, items: list[tuple[str, str]], by: str, statement: str, signature: str | None) -> dict:
     """Fields a signed approval carries (AUD-33). The statement is rebuilt from the current hashes, so a signature made
     over another version of a contract does not verify."""
-    if not signature:
+    if signature is None:                          # no --signature given: an ordinary approval
         return {}
+    if not str(signature).strip():                  # --signature given but empty: never an unsigned approval
+        raise ContractError("the signature file is empty: sign the statement (ssh-keygen -Y sign -n ulac-approval)")
     from . import signing
     msg = signing.statement(project=Path(root).name, action="contract_approved", kind=kind, items=items, by=by,
                             text=statement)
@@ -870,15 +872,19 @@ def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, stat
             st, w = state(root, t, led=led, upto="RENDER_PLAN_RELEASED")
             if st != "RENDER_PLAN_RELEASED":
                 why.append(f"{t} is {st}: " + "; ".join(w[:3]))
+        elif t.startswith("BOARD:"):                 # a storyboard sheet: its clip's timing must be locked first
+            why += [f"{t}: {w}" for w in current(root, "audio_ledger", "audio_ledger", led=led)]
         else:
             why += keyframe_problems(root, t, led=led, need_authorization=False)
     if why:
         raise ContractError("generation cannot be authorized: " + "; ".join(why))
     plan = load(root, "render_plan")
-    return firewall.record(root, "generation_authorized", _sanctioned=True, scope=sorted(scope), cap_credits=float(cap_credits),
-                           by=by, statement=statement.strip(), tooling_sha256=firewall.tooling_hash(),
-                           render_plan_sha256=plan["sha256"] if plan else None,
-                           expires_utc=utc_iso(utc_now() + _dt.timedelta(hours=float(hours))))
+    rec = firewall.record(root, "generation_authorized", _sanctioned=True, scope=sorted(scope), cap_credits=float(cap_credits),
+                          by=by, statement=statement.strip(), tooling_sha256=firewall.tooling_hash(),
+                          render_plan_sha256=plan["sha256"] if plan else None,
+                          expires_utc=utc_iso(utc_now() + _dt.timedelta(hours=float(hours))))
+    firewall.grant_from_authorization(root, rec)       # one signed act: the firewall's grant mirrors it exactly
+    return rec
 
 
 def revoke(root: Path, *, by: str, reason: str) -> dict:

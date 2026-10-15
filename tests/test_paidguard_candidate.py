@@ -58,10 +58,18 @@ SIGNED = "python3 -m ulac.contracts approve project/EP06 --kind audio --by glenn
     "python3 -c \"import shutil; shutil.copy('/tmp/a.py', 'ulac/paidguard.py')\"",
     "git update-index --cacheinfo 100644,abc,ulac/paidguard.py",                # rewrites the index without the file
     "git reset --hard HEAD~3", "git checkout HEAD~3 -- .",
+    "git checkout HEAD~5", "git switch --detach HEAD~5", "git checkout 0123abc4",          # HEAD moved back (AUD-30)
+    "git revert 0123abcd", "git cherry-pick 0123abcd",
     "echo 'glenn ssh-ed25519 AAAA' >> docs/production/allowed_signers",          # a key only the person registers
 ])
 def test_the_candidate_cannot_be_switched_off_from_the_agent_shell(cmd):
     assert not _bash(cmd)
+
+
+def test_residual_r10_a_branch_checkout_is_not_refused():
+    """Stated, not hidden: a branch checkout, rebase or merge that lands on a tree with an older guard cannot be told
+    apart from ordinary work at the hook (R10). The mitigation is outside the hook (README, decision register)."""
+    assert _bash("git checkout old-branch-with-an-old-guard")
 
 
 def test_a_patch_file_is_read_before_it_is_applied(tmp_path):
@@ -75,6 +83,7 @@ def test_a_patch_file_is_read_before_it_is_applied(tmp_path):
 @pytest.mark.parametrize("cmd", [
     'git commit -m "replace the update-index note and checkout docs"', "git show HEAD:ulac/paidguard.py | head",
     "git diff ulac/paidguard.py", "git checkout -B claude/x origin/main", "git pull origin claude/x", "git status --short",
+    "git checkout claude/comfy-ui-mcp-connect-ej9ezx", "git switch main", "git rebase origin/main",
     "python3 -c \"from ulac import firewall; firewall.close_authorizations(r, reason='a', evidence='b')\"",
     SIGNED,                                                                         # AUD-33: approve verifies the signature
 ])

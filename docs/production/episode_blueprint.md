@@ -17,6 +17,8 @@ It does not start an episode or authorize spend. The stage gates are in `product
 | Evidence (freeze, verify, protect, open-record refusal) | Built and tested |
 | Guard hardening (AUD-30, session and artifact routes) and signed approvals (AUD-33) | Candidate ready; **a person applies it** (`patches/README.md`) |
 | Not built (CLAUDE.md §6): `keyframes plan/build`, `flf batch`, `joins check` | Not needed for the first clip, which runs one keyframe pair through `ulac.prod`. Build `joins check` before any batch. |
+| Music authorization | Paid music still uses the legacy FIREWALL.json `audio` grant, which has no person command. It is not needed for the pilot; it must be built before the music stage. |
+| Rehearsal | The whole first-clip path ran on a fixture with person commands only (`tests/test_pilot_rehearsal.py`), and the 1,000-credit cap refused an over-cap image and a second video. |
 
 ## 2. Mandatory versus experimental (decided from EP05's evidence)
 
@@ -82,7 +84,7 @@ One clip first. A second clip only after the first passes and the plan is update
 | 5 | Validate the incoming and outgoing boundary contracts | Both keyframes are generated, H3-reviewed, locked and hashed; the transition is recorded | A keyframe fails H3 twice: stop and review the prompt or the references |
 | 6 | Compile and inspect the exact generation plan | `contracts plan` shows the clip; I show you the exact graph (node, both pins, prompt, length) | PLAN_DIVERGENCE |
 | 7 | Run every free check | Full suite green; `tooling-check`; `evidence verify` = 0; quote recorded | Any failure |
-| 8 | Human approvals and a spending authorization | You sign approvals and `authorize --scope <clip and its keyframes> --cap 1000 --hours 48` (B-08) | No authorization means no job |
+| 8 | Human approvals and spending authorizations | You sign the approvals, then one authorization per paid step, each capped at 1,000 credits with a 48 h expiry (B-08): `BOARD:<SEQ>` for the storyboard sheet once the ledger is locked; `<K…>` for the two keyframes once the storyboards are approved; `<SEQ>` for the clip once the plan is released. Each one writes its own firewall grant; nothing is written by hand. | No authorization means no job |
 | 9 | Generate the one approved clip | One send through the guard; ledgered; billed amount reconciled | A refusal at any gate is reported, never worked around |
 | 10 | Inspect frame by frame, with its audio | First and last frames compared with both keyframes; every frame checked for duplicates, contact, invented cuts and identity; audio screened, then **heard** (H4, H6) | MATERIAL finding: record it, find its cause, and update the blueprint **before** a second clip |
 | 11 | Update the workflow from what was observed | Registry entry; any lesson change; the second clip planned with what was learned | — |

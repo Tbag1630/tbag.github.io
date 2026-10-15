@@ -22,11 +22,11 @@ Evidence for every line is in `EP05_postmortem.md` and `defect_registry.json` (s
 | 2 | Decide a person-only signing route for cloud sessions (AUD-33). The probe is in `operator_guide.md`. | Producer | A route is recorded, or sessions are run locally |
 | 3 | Apply the guard's git-revert patch (AUD-30, in `production_gate_report.md`), then remove the xfail mark | Producer (the guard refuses the agent) | `test_the_guard_cannot_be_switched_off_from_the_agent_shell` passes without xfail |
 | 4 | Decide each room's look and record its master (B3) | Producer | Ledger `decision`; master hashed in `PENV/` |
-| 5 | Make `edit.join_plan` read the continuity contracts, so no transition covers a break (AUD-31, LL-30) | Lead, before the assembly stage | A test that refuses a dissolve over a BREAK join |
+| 5 | ~~Make `edit.join_plan` read the continuity contracts~~ **Done 2026-10-15** (AUD-31, LL-30) | — | `test_a_break_without_an_approved_transition_is_cut_and_flagged_never_dissolved` |
 | 6 | Confirm the credit balance for the planned batch (B4) | Producer | Ledger `decision` naming the balance |
 | 7 | Move the EP05 masters and `project/EP05` evidence out of the container to private storage (B5); never into this public repository | Producer | Storage link plus matching hashes |
 | 8 | Record the owed EP05 human reviews: 17 pinned clips, 11 mute windows, 9 masked joins, the whole-film watch (B2, B9) | Producer | Dated records naming the person |
-| 9 | Close or keep the open records (B10): V33 and V67, plus verdicts for V02, V04, V06, V41 and V42. A video-reservation close function is needed first. | Producer, then lead | `freeze.open_records` empty, or a `decision` per item |
+| 9 | ~~Close or keep the open records (B10)~~ **Done 2026-10-15** with evidence (V33 and V67 released; the five takes recorded as superseded). QC verdicts on those takes stay the producer's (B9). | — | `freeze.open_records` empty |
 | 10 | Approve the EP05 lessons gate (`EP05_postmortem.md` §10) | Producer | A ledger `decision` quoting the approval |
 | 11 | Run the episode-start test set (section 7) | Lead | All green; tooling stamped |
 

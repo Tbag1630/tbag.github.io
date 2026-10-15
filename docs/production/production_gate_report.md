@@ -67,6 +67,7 @@ No paid job was submitted, queued or reserved during this work, and no credits w
 | R7 | **2026-10-15:** GitHub-connector writes to the guard, its settings, the signers or CI workflows, then a pull | Refused by the guard candidate; open until it is applied |
 | R8 | **2026-10-15:** an Artifact page declaring a generation connector; an Agent with remote isolation | No matcher today; the candidate settings add a fail-closed `Artifact|Agent` matcher |
 | R9 | **2026-10-15:** `firewall.decision(...)` from the shell writes a person's decision | Refused by the guard candidate; signed approvals (`ulac/signing.py`) make approvals verifiable |
+| R10 | **2026-10-15:** moving HEAD to a tree holding an older guard: a branch checkout, rebase or merge, or an old commit pushed to a new ref and checked out | Not closable at the hook (it cannot be told apart from ordinary work; the candidate refuses the revision-naming forms). The tooling hash changes; legacy grants are closed; contracts authorizations expire and bind the tooling hash. The provider balance and a person's authorization are the outer boundary. |
 
 ## Open operational questions
 

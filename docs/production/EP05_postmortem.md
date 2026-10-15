@@ -332,6 +332,8 @@ Automation cannot judge these items. The authority is `production_gates.md` §"H
 - **B8:** settle the person-only signing route (AUD-33).
 - **B10:** close or keep V33 and V67, record verdicts for the five takes, and freeze EP05's open video authorization.
 
+> **2026-10-15, readiness review:** the transition rule, the freeze refusal and a video-reservation close are now built and tested (`decision_register.md` A-03 to A-06). The verdict above is unchanged.
+
 Before the first story clip, the lead must also build:
 
 - the transition rule in code (AUD-31);

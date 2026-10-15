@@ -8,7 +8,8 @@ by any route: not by shell, not by git, and not through the GitHub connector.
 
 | Route | Live guard | Candidate |
 |---|---|---|
-| AUD-30: restoring the guard from git (`git checkout <rev> -- ulac/paidguard.py`), plus links, script writes, patch files, index plumbing, hard resets | open | refused |
+| AUD-30: restoring the guard from git (`git checkout <rev> -- ulac/paidguard.py`), plus links, script writes, patch files, index plumbing, hard resets, detached checkouts or switches to a revision, revert, cherry-pick | open | refused |
+| AUD-30 residual (R10): a branch checkout, rebase or merge that lands on a tree with an older guard; pushing an old commit to a new ref and checking it out | open | **still open**: it cannot be told apart from ordinary work. An older tree changes the tooling hash, EP05's legacy grants are closed, and contracts authorizations expire and bind the tooling hash. The boundary against a determined agent is outside the repository: the provider balance and your authorization. |
 | Editing the guard, its settings, the signers file or CI workflows through the GitHub connector, then pulling | open | refused |
 | Starting or driving another session (`create_session`, `send_message`, scheduled tasks), which need not load these hooks | open | refused |
 | An Artifact page that declares a generation connector (the viewer's browser would call it) | open (no matcher) | refused |
@@ -18,6 +19,10 @@ by any route: not by shell, not by git, and not through the GitHub connector.
 
 Everything the live guard already refuses stays refused. `tests/test_paidguard_candidate.py` re-runs the entire live
 suite against the candidate. The strict xfails in `tests/test_paidguard.py` record each gap that is open today.
+
+## Before you apply
+
+Open `docs/production/allowed_signers` and confirm it holds only comment lines, or your own key. Until the candidate is live, the agent can write that file.
 
 ## How to apply
 

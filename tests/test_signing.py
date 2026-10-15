@@ -90,3 +90,20 @@ def test_a_signed_contract_approval_is_bound_to_the_hash_it_names(tmp_path, monk
     assert rec["signer"].startswith("SHA256:") and C.current(tmp_path, "audio_ledger", "audio_ledger") == []
     signers.write_text("")                                          # the key is withdrawn: the approval stops holding
     assert "no longer verifies" in " ".join(C.current(tmp_path, "audio_ledger", "audio_ledger"))
+
+
+def test_an_empty_or_garbled_signature_never_becomes_an_unsigned_approval(tmp_path):
+    """The guard candidate passes an approval from the agent's shell only with --signature; an empty or garbled file must
+    then be refused, not recorded as an ordinary approval."""
+    import json
+    from conftest import clean_episode, sign_cast
+    from ulac import contracts as C, firewall
+    (tmp_path / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "t"}))
+    samples, sil = clean_episode(tmp_path, ["SEQ_001", "SEQ_002"])
+    sign_cast(tmp_path)
+    C.build(tmp_path, samples=samples, sil=sil)
+    st = "listened to every cut and checked the word timings against the waveform"
+    for bad in ("", "   \n", "I approve"):
+        with pytest.raises(C.ContractError, match="empty|does not verify"):
+            C.approve(tmp_path, kind="audio", ids=None, by="glenn", statement=st, signature=bad)
+    assert not [e for e in firewall.read_ledger(tmp_path) if e["event"] == "contract_approved"]
