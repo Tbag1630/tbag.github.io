@@ -558,7 +558,26 @@ def tooling_check(root: Path, timeout: int = 900) -> dict:
     return stamp
 
 
+HOOK_SETTINGS = (REPO / ".claude" / "settings.json", REPO / ".claude" / "settings.local.json",
+                 Path.home() / ".claude" / "settings.json")
+
+
+def hooks_disabled(paths=None) -> list[str]:
+    """Settings sources that switch every hook off (`disableAllHooks`), which would silence the paid-generation guard.
+    The tooling hash covers only the project file; this covers the local and user files too."""
+    out = []
+    for p in HOOK_SETTINGS if paths is None else paths:
+        try:
+            if json.loads(Path(p).read_text()).get("disableAllHooks"):
+                out.append(str(p))
+        except (OSError, ValueError):
+            continue
+    return out
+
+
 def gate_tooling(root: Path) -> list[str]:
+    if off := hooks_disabled():
+        return [f"D: hooks are disabled in {off}: the paid-generation guard is not running"]
     p = Path(root) / STAMP
     if not p.exists():
         return ["D: no tooling stamp: run `python -m ulac tooling-check` (tests must be green before any paid job)"]

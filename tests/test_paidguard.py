@@ -232,6 +232,17 @@ def test_this_repository_installs_the_guard():
     assert "CLAUDE_CODE_SUBAGENT_MODEL_FORCE" not in s.get("env", {})
 
 
+def test_hooks_switched_off_in_any_settings_source_stop_every_reservation(tmp_path, monkeypatch):
+    """`disableAllHooks` in a local or user settings file leaves the hashed project file unchanged: gate D checks it."""
+    local = tmp_path / "settings.local.json"
+    local.write_text(json.dumps({"disableAllHooks": True}))
+    assert firewall.hooks_disabled((tmp_path / "missing.json", local)) == [str(local)]
+    monkeypatch.setattr(firewall, "HOOK_SETTINGS", (local,))
+    assert "hooks are disabled" in firewall.gate_tooling(tmp_path)[0]
+    local.unlink()
+    assert "no tooling stamp" in firewall.gate_tooling(tmp_path)[0]
+
+
 def test_a_settings_file_without_a_blocking_mcp_hook_does_not_count(tmp_path):
     p = tmp_path / "settings.json"
     p.write_text(json.dumps({"hooks": {"PreToolUse": [{"matcher": "mcp__.*", "hooks": [

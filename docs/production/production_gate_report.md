@@ -13,9 +13,9 @@ No paid job was submitted, queued or reserved during this work, and no credits w
 | Item | Value |
 |---|---|
 | Code | branch `claude/comfy-ui-mcp-connect-ej9ezx`; the commit that adds this report and its parent (see `git log`) |
-| Tooling stamp | `project/EP05/TOOLING_OK.json`: sha256 `77e5438ea134e7333580766a98a41c7a4af9bc1819fdd6e481676514cd2f3f28`, 2026-10-15T11:32:37Z |
-| Full suite | `python3 -m pytest -q tests`: **414 passed, 2 skipped, 1 xfailed** (the tooling-check run above; before this session: 310 passed, 2 skipped) |
-| New suites | `tests/test_paidguard.py` (72 passed, 1 strict xfail AUD-30), `tests/test_contracts.py` (22), `tests/test_evidence.py` (5) |
+| Tooling stamp | `project/EP05/TOOLING_OK.json`: sha256 `f1da318a1d2803670396334fea3dafdf1c59d5a9191823ee16478aa999990bbc`, 2026-10-15T11:39:09Z |
+| Full suite | `python3 -m pytest -q tests`: **415 passed, 2 skipped, 1 xfailed** (the tooling-check run above; before this session: 310 passed, 2 skipped) |
+| New suites | `tests/test_paidguard.py` (73 passed, 1 strict xfail AUD-30), `tests/test_contracts.py` (22), `tests/test_evidence.py` (5) |
 | Render configuration | `seedance2-flf-720p-audio-v1` (`ulac/contracts.py` RENDER_CONFIG) |
 | EP05 contract versions | audio ledger `7a311ad1c507` on narration `fe588f78d7b6`; render plan `cfc098118a45` (0 clips, 37 excluded); e.g. storyboard SEQ_001 `7a14984166eb`, continuity SEQ_001->SEQ_002 `13b9815a7e20` |
 | Hook | `.claude/settings.json` PreToolUse `mcp__.*` (fail closed) and `Bash|Write|Edit|NotebookEdit|MultiEdit`; live log `project/PAIDGUARD_LOG.jsonl` |
@@ -58,10 +58,15 @@ No paid job was submitted, queued or reserved during this work, and no credits w
 | # | Bypass | Strongest control in place |
 |---|---|---|
 | R1 | The Comfy web UI, or any client that does not load `.claude/settings.json` | Billing reconciliation (SC-8); `evidence.verify` |
-| R2 | A person disables hooks (`/hooks`) or edits the settings | The tooling hash covers the settings; `test_this_repository_installs_the_guard` fails, so the stamp and every reservation fail |
+| R2 | A person disables hooks or edits the settings | An edit of the project `.claude/settings.json` changes the tooling hash and fails `test_this_repository_installs_the_guard`. `disableAllHooks` in any settings file trips gate D (`firewall.hooks_disabled`, added after the review). A client that loads no settings is R1. |
 | R3 | Code the agent writes to a file and runs, which calls the signing functions or writes a record | The hook catches the command-line forms only; `_user` refuses role and model names; `evidence.verify` catches changed frozen files |
 | R4 | **AUD-30:** `git checkout <rev> -- ulac/paidguard.py` from the agent shell | Not blocked yet. The guard protected itself before its git-revert rule could be added, and I did not work around that refusal. **Patch for the user** (in `_writes`, add to `pats`): `rf"\bgit\b[^|;&]*\b(checkout\|restore\|rm\|mv)\b[^|;&]*{e}"` and `rf"\bln\b[^|;&]*{e}"`. Then remove the xfail mark in `test_the_guard_cannot_be_switched_off_from_the_agent_shell`. |
 | R5 | A keyframe LOCK's cloud upload is not proven to hold the locked pixels | The plan match binds the graph to the LOCK's cloud name; byte identity of the upload stays unverified (AUD-28) |
+
+## Open operational questions
+
+- **AUD-33:** is there a person-only route in this cloud session? The signing commands must run in the container, where `project/` lives, but not as an agent tool call. Whether a `!` shell command bypasses the hook here is unverified; `operator_guide.md` gives a safe probe. If no route exists, the chain cannot advance from this session. That is the user's decision, not something to work around.
+- **AUD-31:** the edit's blanket transition rule (SD-5) is documented and replaced in `assembly_audio_qc_plan.md`. The code still applies the old rule. The 9 v5 dissolves over rendered breaks remain documented masked breaks.
 
 ## Unverified or human-only conditions
 

@@ -142,3 +142,12 @@ Three read-only research agents (Haiku; Read, Grep and Glob were meant to be the
 | AUD-12 | Tested: L4 is compiled by `storyboard.video_text_flf` from L1–L3, linted by `video.prompt_problems` plus the contract checks | `test_the_compiled_prompt_carries_every_contract_layer` |
 | AUD-13 | Hypothesis records only | `docs/production/h3_comfy_hypotheses.md` |
 | AUD-14 | Open: human review | `production_gate_report.md` |
+
+### Added after the closing review (2026-10-15)
+
+| ID | Location | Failure mechanism | Severity | Remediation | Regression test | Status |
+|---|---|---|---|---|---|---|
+| AUD-30 | `ulac/paidguard.py` `_writes` | `git checkout <rev> -- ulac/paidguard.py` from the agent shell is not refused. The guard protected itself before this rule could be added. | Medium | Patch in `production_gate_report.md` R4, which the user applies | strict xfail in `test_the_guard_cannot_be_switched_off_from_the_agent_shell` | Open (user) |
+| AUD-31 | `edit.join_plan` (SD-5) | A blanket rule (cut at a shared frame, dissolve elsewhere) put 9 dissolves over rendered breaks in v5 | Medium | A per-join transition rule recorded with the continuity contract (`assembly_audio_qc_plan.md`) | none yet | Open (rule documented, not coded) |
+| AUD-32 | gate D | `disableAllHooks` in local or user settings silenced the guard without touching the hashed project file | High | `firewall.hooks_disabled` in `gate_tooling` | `test_hooks_switched_off_in_any_settings_source_stop_every_reservation` | Tested |
+| AUD-33 | operating model | Signing must run in the container but not as an agent tool call. A person-only route in cloud sessions is unverified. | High (operational) | A safe probe in `operator_guide.md` | none | Open (user) |

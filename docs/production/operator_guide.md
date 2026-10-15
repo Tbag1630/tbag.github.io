@@ -54,6 +54,19 @@ Each one lists its `findings`.
 
 Only STATE_HANDOFF_MISMATCH and BOARD_PANEL_COUNT can be waived. Every other blocking code cannot.
 
+## Where a person runs the signing commands (unverified for cloud sessions)
+
+`project/<EP>` is gitignored and exists only inside the session's container, so the signing commands have to run there, but not as the agent's tool call, which the hook refuses.
+
+In a local Claude Code terminal, the person's own shell works. In a claude.ai/code cloud session it is **not verified** that you have a shell route the hook does not intercept. Probe it safely by typing this in the session input (the `!` prefix runs a shell command directly, where the client supports it):
+
+```
+!python3 -m ulac.castlock status project/EP05 # sign
+```
+
+- **The lock status prints:** `!` is your signing route.
+- **PAIDGUARD refuses it:** hooks apply to `!` as well. Signing then has no route in cloud sessions until one is designed, and that is your decision.
+
 ## 3. Approve (a person, in your own terminal)
 
 Approvals run in order, and each needs the previous one to be current. In the approval statement, say what you checked, including the human-review items the contract lists. Those are things the code cannot see: positions on the board, left and right, hands, the room against its master, and the emotional read.
@@ -105,7 +118,12 @@ Authorization makes spend eligible inside the firewall's own caps and attempt ce
 
 `evidence.verify` and billing reconciliation catch those after the fact.
 
-To review or disable the hook, use `/hooks` in Claude Code. Disabling it fails `test_this_repository_installs_the_guard`, and therefore the tooling stamp, so every reservation stops.
+To review the hook, use `/hooks` in Claude Code. If it is switched off, every reservation stops, but two different checks catch the two ways of doing it:
+
+- Removing it from the project `.claude/settings.json` fails `test_this_repository_installs_the_guard`, and with it the tooling stamp.
+- Setting `disableAllHooks` in any settings file (project, local or user) trips gate D (`firewall.hooks_disabled`).
+
+Neither check can see a client that never loads these settings at all.
 
 ## 6. After generation
 

@@ -69,7 +69,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SD-2 | Music and voice screen on every take; mute candidates reviewed | **CODE** (`video.audio_screen` with `musicscreen`); RECORD (human listen) | `music_windows`, `audio_mutes` with reasons |
 | SD-3 | Hard-cut scan on every take (invented cuts) | PROCESS today; CODE is a next-episode requirement (LL-07) | inspect sheets |
 | SD-4 | Narration lock: picture frames equal narration frames; no row boundary moved | **CODE** (`edit.plan`, `finish` frames check) | `edl.json`, `qc.json` |
-| SD-5 | Transitions: shared-frame joins cut, others dissolve, holds pushed in | **CODE** (`edit.join_plan`, `zoom_shape`) | `joins.json` |
+| SD-5 | Transitions: one per join, chosen from what changes on screen and recorded with its continuity contract; **never over an unresolved rendered break** (`assembly_audio_qc_plan.md`). The code still applies the old blanket rule (shared-frame joins cut, others dissolve, holds pushed in): **AUD-31, open**. | CODE (`edit.join_plan`, `zoom_shape`), with the rule PROCESS until coded | `joins.json`; continuity contracts |
 | SD-6 | No unapproved audio substitution or unexplained missing sound | PROCESS (listen) | listening notes |
 
 ## SE: Final QA and release

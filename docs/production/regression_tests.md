@@ -2,7 +2,7 @@
 
 `python3 -m pytest -q tests` runs everything. `python3 -m ulac tooling-check project/<EP>` runs the suite and stamps the tooling, and the firewall refuses reservations without a fresh stamp.
 
-Last run (2026-10-15, tooling stamp `77e5438e`): **414 passed, 2 skipped, 1 xfailed** (AUD-30, explained in `production_gate_report.md`).
+Last run (2026-10-15, tooling stamp `f1da318a`): **415 passed, 2 skipped, 1 xfailed** (AUD-30, explained in `production_gate_report.md`).
 
 Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere they skip, and a skip is not a pass.
 
@@ -36,7 +36,7 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | Code writing "user" price acceptances | AUD-03 | `test_contracts.py::test_code_price_acceptance_is_derived_from_a_person_never_written_as_user` | Derived from a signed authorization, within its cap; no `by="user"` in code |
 | Agent or model names signing; signing from the agent shell | P03, AUD-04, AUD-20 | `test_model_and_role_names_are_not_people`, `test_signing_and_evidence_writes_are_refused_in_the_agent_shell` | "haiku", "lead", "Sonnet 4.5" refused; signing commands refused in the agent shell |
 | An agent's note clearing the chain gate | AUD-19 | `test_castlock.py::test_a_chained_clip_needs_its_predecessor_reviewed` | Only a person's `video_qc` PASS counts |
-| The guard switched off or rewritten by the agent | AUD-23 | `test_this_repository_installs_the_guard`, `test_the_guard_cannot_be_switched_off_from_the_agent_shell`, `test_the_guard_cannot_be_rewritten_with_file_tools` | Removing the hook fails the suite and the stamp; edits are refused. **One case is a strict xfail (AUD-30, git revert).** |
+| The guard switched off or rewritten by the agent | AUD-23, AUD-32 | `test_hooks_switched_off_in_any_settings_source_stop_every_reservation`, `test_this_repository_installs_the_guard`, `test_the_guard_cannot_be_switched_off_from_the_agent_shell`, `test_the_guard_cannot_be_rewritten_with_file_tools` | Removing the hook fails the suite and the stamp; edits are refused. **One case is a strict xfail (AUD-30, git revert).** |
 | **Cut inside a spoken word** (after frame rounding) | AUD-08: SEQ_025, SEQ_028, SEQ_035, SEQ_036 | `test_blueprint.py::test_the_packer_rechecks_a_cut_after_frame_rounding`, `test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words` (*EP05 data*), `test_contracts.py::test_a_mid_word_cut_cannot_be_approved` | The packer refuses; the audio ledger cannot be approved |
 | Gaps, overlaps, duplicate segments, clips over 15 s | Contract A | `test_gaps_overlaps_and_clips_over_15_s_cannot_be_approved` | Cannot be approved |
 | Storyboard panels not timed on the narration; incomplete panels | AUD-06 (37/37 EP05 boards) | `test_storyboards_wait_for_a_locked_ledger_and_untimed_boards_are_refused`, `test_missing_camera_unknown_characters_and_missing_references_block`, `test_ep05_contracts_refuse_what_its_production_later_paid_for` (*EP05 data*) | Cannot be approved |
