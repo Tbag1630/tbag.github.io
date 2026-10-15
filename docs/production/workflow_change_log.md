@@ -2,6 +2,15 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+
+## 2026-10-15: Creative review round 2 (EP03, private package v5)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The episode's sightline adapter (private) models standing people as occluders, checks beside-camera figures are out of frame, checks the pinned end frame of a moving last setup, compares vantage labels with facing, and flags cameras outside the measured walls | The craft review found key frames the old check passed but a camera could not shoot (LL-47) | Private adapter v4; to be ported to `ulac/sightline.py` with tests after the pending environment job, whose authorization is bound to the current tooling hash |
+| Environment edit specs name each change by object, count the source first, and map each seat to its chair | A v1 prompt contradicted the master's chair count (LL-46) | Private spec v2 |
+| A room's walls carry a measured uncertainty, and cameras keep clear of it unless defined against a fixed object | The master's perspective is not one camera (LL-48) | Private authority v4 |
+
 ## 2026-10-15: environment-only references outside the cast lock (B-20)
 
 | Change | Why | Evidence | Status |
