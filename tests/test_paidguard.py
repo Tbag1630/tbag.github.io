@@ -250,3 +250,23 @@ def test_a_settings_file_without_a_blocking_mcp_hook_does_not_count(tmp_path):
     assert not paidguard.installed(p)
     p.write_text("{}")
     assert not paidguard.installed(p)
+
+
+# ---------------------------------------------------------------------------- live gaps the candidate closes (2026-10-15)
+CANDIDATE = "closed by docs/production/patches/paidguard.proposed.py; a person applies it (the guard refuses the agent)"
+
+
+@pytest.mark.xfail(strict=True, reason=CANDIDATE)
+@pytest.mark.parametrize("tool,ti", [
+    ("mcp__claude-code-remote__create_session", {"prompt": "generate the clip"}),            # an unhooked session
+    ("mcp__github__create_or_update_file", {"path": "ulac/paidguard.py", "content": "x"}),   # edit remote, then pull
+    ("Artifact", {"file_path": "p.html", "capabilities": {"mcp": {"servers": [{"server": "Cloud Comfy"}]}}}),
+    ("Agent", {"prompt": "p", "isolation": "remote"}),
+])
+def test_live_guard_gap_routes_around_the_hook(tool, ti):
+    assert not paidguard.decide({"tool_name": tool, "tool_input": ti}, roots=[])[0]
+
+
+@pytest.mark.xfail(strict=True, reason=CANDIDATE)
+def test_live_guard_gap_a_recorded_decision_from_the_shell():
+    assert not _bash("python3 -c \"from ulac import firewall; firewall.decision(r, 'X', by='producer', quote='go ahead')\"")

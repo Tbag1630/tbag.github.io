@@ -702,6 +702,24 @@ def window_peak_db(x: np.ndarray, a_s: float, b_s: float, sr: int = SR) -> float
     return _db(float(np.abs(seg).max())) if len(seg) else DB_FLOOR
 
 
+def joins_check(path: Path) -> dict:
+    """Release check on the picture's joins (EP05-C04, LL-30): a join whose frames differ and that no person approved is
+    an unresolved continuity break, so the release fails; a mismatched splice inside one row needs a person's look.
+    A joins.json written before the rule carries no flags, so its joins cannot be judged."""
+    from . import edit
+    if not Path(path).is_file():
+        return chk("joins.continuity", UNKNOWN, f"{path} is missing: the picture's joins cannot be checked")
+    joins = [r.get("join_out") for r in json.loads(Path(path).read_text()) if r.get("join_out")]
+    n = edit.unresolved_joins(joins)
+    if not any(("unresolved_break" in j or "splice_break" in j or "approved" in j or j.get("kind") == "cut") for j in joins) \
+            and any(j.get("kind") == "xfade" for j in joins):
+        return chk("joins.continuity", UNKNOWN, "rendered before the transition rule: dissolves carry no approval record, "
+                   "so a dissolve may hide a break (re-render to check)", **n)
+    v = FAIL if n["unresolved_break"] else WARN if n["splice_break"] else PASS
+    return chk("joins.continuity", v, f"{n['unresolved_break']} unresolved break(s) between clips, {n['splice_break']} "
+               "mismatched splice(s) inside rows; every dissolve over differing frames is person-approved", **n)
+
+
 def verdict_of(checks: list[dict]) -> str:
     v = [c["verdict"] for c in checks]
     return FAIL if FAIL in v else WARN if (WARN in v or UNKNOWN in v) else PASS
@@ -864,6 +882,7 @@ def finish(ep: Path, variant: str = "v3", out: str | Path | None = None, foley: 
                       channels=nj["streams"][0]["channels"], sample_rate=nj["streams"][0]["sample_rate"]))
     if not ok_clock:
         raise FinishError("the v3 picture does not match the narration clock; refusing to place music on it (audio is the master clock)")
+    checks.append(joins_check(mdir / "joins.json"))
     body_n = body_f * SPF
     body_s = body_f / FPS
     nar = fit_length(decode(st_nar), body_n)

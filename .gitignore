@@ -9,3 +9,16 @@ runs/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Client media never enters this public repository (readiness review 2026-10-15). Files tracked before this rule are
+# listed in tests/fixtures/public_media_baseline.txt; whether to remove them from history is the owner's decision.
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.mov
+*.mkv
+*.m4a
+*.aac
+*.flac
+!tests/fixtures/*.jpg

@@ -68,6 +68,36 @@ def save_conf(root: Path, conf: dict) -> None:
     (Path(root) / CONF).write_text(json.dumps(conf, indent=2, ensure_ascii=False) + "\n")
 
 
+def close_authorizations(root: Path, *, reason: str, evidence: str) -> dict:
+    """Close every standing spend authorization in FIREWALL.json: image boards, audio, video, the video pilot and its
+    1080p title scope. It only restricts. Nothing in this module reopens an authorization: that is a person's new
+    authorization, through its own checking path. EP05's pilot (cap 39,500) was still AUTHORIZED three days after
+    delivery. The earlier values stay in the file under `closed`, and a ledger event records the closure."""
+    if len(str(reason).strip()) < 20 or len(str(evidence).strip()) < 20:
+        raise FirewallError("say why the authorizations are closed and cite the evidence (20 characters or more each)")
+    conf = load_conf(root)
+    stamp = {"utc": utc_iso(), "reason": str(reason).strip(), "evidence": str(evidence).strip()}
+    items, a = [], conf["authorization"]
+    if a.get("sequence_boards"):
+        items.append(("authorization.sequence_boards", a["sequence_boards"]))
+        a["sequence_boards"] = False
+    for k in ("video", "audio"):
+        if str(a.get(k, "")).upper() == "AUTHORIZED":
+            items.append((f"authorization.{k}", a[k]))
+            a[k] = "CLOSED"
+    vp = conf.get("video_pilot") or {}
+    for path, node in (("video_pilot", vp), ("video_pilot.title_1080p", vp.get("title_1080p") or {})):
+        if str(node.get("status", "")).upper() == "AUTHORIZED":
+            items.append((path, node["status"]))
+            node["status"] = "CLOSED"
+            node["closed"] = stamp
+    if not items:
+        return {"closed": []}
+    a.setdefault("closed", []).append({**stamp, "items": [p for p, _ in items]})
+    save_conf(root, conf)
+    return record(root, "authorizations_closed", items=[{"path": p, "was": w} for p, w in items], **stamp)
+
+
 def read_ledger(root: Path) -> list[dict]:
     p = Path(root) / LEDGER
     return [json.loads(x) for x in p.read_text().splitlines() if x.strip()] if p.exists() else []
@@ -77,7 +107,8 @@ def read_ledger(root: Path) -> list[dict]:
 # approve_extra, video_accept_price, castlock.sign). EP05 had eight "video_qc" PASS events written straight through
 # record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
 GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released",
-                  "contract_approved", "render_plan_released", "generation_authorized", "decision")
+                  "contract_approved", "render_plan_released", "generation_authorized", "decision",
+                  "video_released", "take_disposition")
 
 
 def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:
@@ -299,6 +330,8 @@ def _reservations(root: Path) -> dict[str, dict]:
             res[rid].update(state="billed", billed=float(r["credits"]))
         elif rid in res and ev == "video_qc":
             res[rid]["qc"] = r["verdict"]
+        elif rid in res and ev == "video_released" and res[rid]["state"] == "reserved":
+            res[rid]["state"] = "released"
     return res
 
 
@@ -306,8 +339,50 @@ def video_state(root: Path) -> dict:
     """Fold the ledger. A reservation counts at its quoted credits until billing replaces that figure, and it still counts
     after a crash between reserve and submit: a job that may exist is never treated as free."""
     res = _reservations(root)
-    committed = sum(x["billed"] if x["state"] == "billed" else x["credits"] for x in res.values())
+    committed = sum(x["billed"] if x["state"] == "billed" else 0.0 if x["state"] == "released" else x["credits"]
+                    for x in res.values())
     return {"reservations": list(res.values()), "attempts": len(res), "committed": round(committed, 2)}
+
+
+def video_release(root: Path, rid: str, *, reason: str, evidence: str) -> dict:
+    """Close a video reservation that never left: no submission, no job id, no bill, and no send in the guard's log.
+    A submitted reservation is spent and is reconciled against billing, never released (a job that may exist is never
+    treated as free). EP05: V33 and V67 were reserved and never sent, so committed spend read 1,049.70 high."""
+    cur = _reservations(root).get(rid)
+    if cur is None:
+        raise FirewallError(f"{rid} has no video reservation")
+    if cur["state"] != "reserved":
+        raise FirewallError(f"{rid} is {cur['state']} (job {cur['job_id']}): a reservation that was sent is reconciled "
+                            "against billing, never released")
+    from . import paidguard
+    if paidguard._sent_before(cur["graph_sha256"]):
+        raise FirewallError(f"{rid}: the guard's log shows its graph was sent; reconcile it against billing")
+    if len(str(reason).strip()) < 20 or len(str(evidence).strip()) < 20:
+        raise FirewallError("say why it is released and cite the evidence that it never ran (20 characters or more each)")
+    return record(root, "video_released", _sanctioned=True, rid=rid, seq=cur["seq"], credits=cur["credits"],
+                  reason=str(reason).strip(), evidence=str(evidence).strip())
+
+
+def take_disposition(root: Path, rid: str, *, superseded_by: str, final_edl: dict, edl_path: str, evidence: str) -> dict:
+    """Record a fact about an executed take that is not in the final cut: another take of the same sequence replaced
+    it there. It is not a QC verdict (that stays a person's, through video_qc_record). EP05 left V02, V04, V06, V41 and
+    V42 out of the cut with no record of why."""
+    res = _reservations(root)
+    cur, rep = res.get(rid), res.get(superseded_by)
+    if cur is None or cur["state"] not in ("submitted", "billed"):
+        raise FirewallError(f"{rid} is not an executed take")
+    if rep is None or rep["seq"] != cur["seq"]:
+        raise FirewallError(f"{superseded_by} is not a take of {cur['seq']}")
+    used = {t for row in final_edl["rows"] if row.get("seq") == cur["seq"] for t, a, b in row["segments"] if b > a}
+    if rid in {t for row in final_edl["rows"] for t, a, b in row["segments"] if b > a}:
+        raise FirewallError(f"{rid} is in the final cut: nothing replaced it")
+    if superseded_by not in used:
+        raise FirewallError(f"{superseded_by} is not used in {cur['seq']}'s row of {edl_path}")
+    if len(str(evidence).strip()) < 20:
+        raise FirewallError("cite the evidence (20 characters or more)")
+    return record(root, "take_disposition", _sanctioned=True, rid=rid, seq=cur["seq"], disposition="superseded",
+                  superseded_by=superseded_by, final_edl=edl_path, evidence=str(evidence).strip(),
+                  note="a fact about the cut, not a QC verdict")
 
 
 def allowed_resolution(root: Path, seq: str) -> str:

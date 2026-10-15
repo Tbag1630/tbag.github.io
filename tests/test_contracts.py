@@ -216,6 +216,29 @@ def test_a_changed_boundary_keyframe_voids_its_continuity_approval(ep):
     assert st == "STORYBOARD_APPROVED" and "keyframe" in " ".join(why)
 
 
+def test_a_transition_is_approved_with_its_continuity_contract_and_never_over_a_break(ep):
+    """LL-30 / EP05-C04: the edit dissolves a join whose frames differ only on a transition a person approved in that
+    join's continuity contract. A changed transition voids the approval; a dissolve needs a reason and is refused over
+    a rendered break."""
+    reg = json.loads((ep / "BOUNDARIES.json").read_text())
+    reg["SEQ_001->SEQ_002"]["transition"] = {"kind": "xfade", "frames": 8, "reason": "the afternoon passes into evening"}
+    (ep / "BOUNDARIES.json").write_text(json.dumps(reg))
+    _rebuild(ep)
+    assert C.approved_transitions(ep) == {}                                   # written, not yet approved
+    _through_continuity(ep)
+    assert C.approved_transitions(ep) == {"SEQ_001->SEQ_002": reg["SEQ_001->SEQ_002"]["transition"]}
+    reg["SEQ_001->SEQ_002"]["transition"] = {"kind": "xfade", "frames": 24, "reason": "the afternoon passes into evening"}
+    (ep / "BOUNDARIES.json").write_text(json.dumps(reg))
+    _rebuild(ep)
+    assert C.approved_transitions(ep) == {}                                   # a changed transition is a new decision
+    body = C.load(ep, C.cc_name("SEQ_001->SEQ_002"))["body"]
+    codes = lambda b: {x["code"] for x in C.validate_continuity(b)}
+    assert "TRANSITION_UNMOTIVATED" in codes({**body, "transition": {"kind": "xfade", "frames": 8}})
+    assert "TRANSITION_OVER_BREAK" in codes({**body, "rendered_join": {"verdict": "BREAK", "dhash_bits": 31}})
+    assert not {"TRANSITION_OVER_BREAK", "TRANSITION_UNMOTIVATED"} & codes(
+        {**body, "transition": {"kind": "cut"}, "rendered_join": {"verdict": "BREAK", "dhash_bits": 31}})
+
+
 def test_a_status_field_cannot_be_flipped_and_agents_cannot_approve(ep):
     with pytest.raises(C.ContractError, match="from a person"):
         C.approve(ep, kind="audio", ids=None, by="reviewer agent", statement=ST)
@@ -400,3 +423,41 @@ def test_ep05_board_end_locks_chain_into_the_next_board():
         pj = json.loads((EP / "SEQUENCES" / f"SEQ_{i + 1:03d}" / "prompt.json").read_text())
         matched.append(h in json.dumps(pj.get("start_frame_ref") or pj.get("start_frame") or ""))
     assert len(matched) == 34 and all(matched)
+
+
+def test_a_generation_authorization_expires_and_cannot_be_open_ended(tmp_path, monkeypatch):
+    """EP05's video authorization (cap 39,500) was still open three days after delivery. A generation authorization
+    now carries an expiry (48 h by default, at most 7 days) and stops counting when it passes."""
+    import datetime as dt
+    _stamp(tmp_path)
+    authorize_clips(tmp_path, CLIPS)
+    a = C._authorization(firewall.read_ledger(tmp_path))
+    assert a["expires_utc"] and C.authorization_problems(tmp_path, "SEQ_001") == []
+    later = C.utc_now() + dt.timedelta(hours=C.AUTH_HOURS_DEFAULT + 1)
+    monkeypatch.setattr(C, "utc_now", lambda: later)
+    assert "expired" in " ".join(C.authorization_problems(tmp_path, "SEQ_001"))
+    with pytest.raises(C.ContractError, match="hours"):
+        C.authorize(tmp_path, scope=["SEQ_001"], cap_credits=100, by=BY, statement=ST, hours=C.AUTH_HOURS_MAX + 1)
+
+
+def test_closing_standing_authorizations_only_restricts_and_keeps_the_record(tmp_path):
+    """EP05's FIREWALL.json still authorized boards, audio, the video pilot and 1080p titles after delivery."""
+    conf = {"authorization": {"sequence_boards": True, "video": "NOT_AUTHORIZED", "audio": "AUTHORIZED"},
+            "video_pilot": {"status": "AUTHORIZED", "cap_credits": 39500, "scope": ["SEQ_003"],
+                            "title_1080p": {"status": "AUTHORIZED", "authorized_by": "user"}}}
+    (tmp_path / firewall.CONF).write_text(json.dumps(conf))
+    with pytest.raises(firewall.FirewallError, match="cite the evidence"):
+        firewall.close_authorizations(tmp_path, reason="done", evidence="")
+    rec = firewall.close_authorizations(tmp_path, reason="EP05 delivered and wrapped up on 2026-10-12",
+                                        evidence="ledger line 852 (wrap-up decision); v5 delivered")
+    got = firewall.load_conf(tmp_path)
+    assert got["authorization"]["sequence_boards"] is False and got["authorization"]["audio"] == "CLOSED"
+    assert got["video_pilot"]["status"] == "CLOSED" and got["video_pilot"]["title_1080p"]["status"] == "CLOSED"
+    assert got["video_pilot"]["cap_credits"] == 39500                          # history kept, not erased
+    assert {i["path"] for i in rec["items"]} == {"authorization.sequence_boards", "authorization.audio", "video_pilot",
+                                                 "video_pilot.title_1080p"}
+    assert firewall.close_authorizations(tmp_path, reason="EP05 delivered and wrapped up on 2026-10-12",
+                                         evidence="ledger line 852 (wrap-up decision); v5 delivered") == {"closed": []}
+    assert not [n for n in dir(firewall) if "reopen" in n.lower()]            # reopening is a person's new authorization
+    with pytest.raises(firewall.FirewallError, match="no video pilot authorization"):
+        firewall.video_reserve(tmp_path, seq="SEQ_003", graph={}, prompt="", seconds=4, segment_seconds=4.0)

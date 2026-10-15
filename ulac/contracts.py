@@ -32,16 +32,19 @@ when an agent runs them, and `firewall._user` refuses role names.
   python3 -m ulac.contracts approve   project/EP05 --kind audio|storyboard|continuity [--ids A,B] --by <person> --statement "..."
   python3 -m ulac.contracts plan      project/EP05 [--replace SEQ_005:EP05-R6-D1]
   python3 -m ulac.contracts release   project/EP05 --clips SEQ_001,SEQ_002 --by <person> --statement "..."
-  python3 -m ulac.contracts authorize project/EP05 --scope SEQ_001,K_X --cap 1200 --by <person> --statement "..."
+  python3 -m ulac.contracts authorize project/EP05 --scope SEQ_001,K_X --cap 1200 --by <person> --statement "..." [--hours 48]
   python3 -m ulac.contracts revoke    project/EP05 --by <anyone> --reason "..."
 """
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import json
 import math
 import sys
 from pathlib import Path
+
+from orchestrator.util import utc_iso, utc_now
 
 from . import blueprint as bp
 
@@ -361,7 +364,9 @@ def continuity_contract(root: Path, rec: dict, sbs: dict, refs: dict) -> dict:
                         if method == "scene_cut" else "the film's opening or closing frame"),
             "post_generation": "an identical input image does not prove the rendered frames match: the rendered join is "
                                "checked separately (rendered_join, joins check)",
-            "rendered_join": rec.get("rendered")}
+            "rendered_join": rec.get("rendered"),
+            # the edit's transition for this join, from BOUNDARIES.json; approved with the contract (LL-30)
+            "transition": reg.get("transition")}
     return _doc("continuity", join, body, validate_continuity(body))
 
 
@@ -387,6 +392,40 @@ def validate_continuity(body: dict) -> list[dict]:
     rj = body.get("rendered_join") or {}
     if rj.get("verdict") == "BREAK":
         f("RENDERED_BOUNDARY_BREAK", REVIEW, f"rendered frames differ ({rj.get('dhash_bits')}/64 dHash bits)")
+    tr = body.get("transition")
+    if tr is not None:
+        kind = tr.get("kind") if isinstance(tr, dict) else None
+        if kind not in TRANSITIONS:
+            f("TRANSITION_UNKNOWN", BLOCK, f"transition {tr!r} is not one of {sorted(TRANSITIONS)}")
+        elif kind != "cut" and len(str(tr.get("reason") or "").strip()) < 20:
+            f("TRANSITION_UNMOTIVATED", BLOCK, f"a {kind} needs its reason: what changes on screen that it serves")
+        if kind in ("xfade", "dissolve") and rj.get("verdict") == "BREAK":   # EP05-C04: never hide a break (LL-30)
+            f("TRANSITION_OVER_BREAK", BLOCK, f"a {kind} over a rendered break hides it: repair the clip or cut")
+    return out
+
+
+TRANSITIONS = {"cut", "xfade", "dissolve", "dip"}
+
+
+def approved_transitions(root: Path) -> dict[str, dict]:
+    """{join: transition} for every continuity contract whose transition a person approved and that is still current.
+    The edit uses only these to dissolve a join whose rendered frames differ; anything else is cut and flagged."""
+    root = Path(root)
+    out = {}
+    if not (root / CDIR).is_dir():
+        return out
+    led = None
+    for p in sorted((root / CDIR).glob("continuity_contract_*.json")):
+        try:
+            doc = json.loads(p.read_text())
+            tr, join = doc["body"].get("transition"), doc["body"]["join"]
+            if not tr:
+                continue
+            led = _ledger(root) if led is None else led
+            if not current(root, "continuity", join, led=led):
+                out[join] = tr
+        except Exception:                          # an unreadable contract approves nothing
+            continue
     return out
 
 
@@ -497,6 +536,8 @@ def current(root: Path, kind: str, id_: str, *, led: list | None = None, clip: s
         why.append(f"{kind} {id_} has not been approved by a person")
     elif ap.get("sha256") != doc["sha256"]:
         why.append(f"{kind} {id_} changed after its approval (approved {ap['sha256'][:12]}, now {doc['sha256'][:12]})")
+    else:
+        why += _signature_problems(ap, kind, id_, doc["sha256"])
     fs = _findings_now(root, doc)
     if clip:
         fs = [p for p in fs if p["clip"] in (clip, "EPISODE")]
@@ -514,10 +555,39 @@ def _person(by: str, statement: str, what: str) -> None:
         raise ContractError(f"{what}: say what was checked (40 characters or more)")
 
 
+def _signed(root: Path, kind: str, items: list[tuple[str, str]], by: str, statement: str, signature: str | None) -> dict:
+    """Fields a signed approval carries (AUD-33). The statement is rebuilt from the current hashes, so a signature made
+    over another version of a contract does not verify."""
+    if not signature:
+        return {}
+    from . import signing
+    msg = signing.statement(project=Path(root).name, action="contract_approved", kind=kind, items=items, by=by,
+                            text=statement)
+    try:
+        info = signing.verify(msg, signature, by)
+    except signing.SignatureError as e:
+        raise ContractError(f"the signature does not verify: {e}") from e
+    return {"signed_statement": msg.decode(), "signature": signature.strip(), "signer": info["fingerprint"]}
+
+
+def _signature_problems(ap: dict, kind: str, id_: str, sha: str) -> list[str]:
+    if not ap.get("signature"):
+        return []
+    from . import signing
+    try:
+        signing.verify(ap["signed_statement"].encode(), ap["signature"], ap["by"])
+    except (signing.SignatureError, KeyError) as e:
+        return [f"{kind} {id_}: the approval's signature no longer verifies ({e})"]
+    if f"approve: {id_} sha256 {sha}\n" not in ap["signed_statement"]:
+        return [f"{kind} {id_}: the signed statement does not name this contract's hash"]
+    return []
+
+
 def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement: str,
-            waivers: dict | None = None) -> list[dict]:
+            waivers: dict | None = None, signature: str | None = None) -> list[dict]:
     """A person approves contracts. Order is enforced: storyboards need the audio ledger locked, continuity needs both
-    storyboards approved. Waivers cover only WAIVABLE codes and need a reason."""
+    storyboards approved. Waivers cover only WAIVABLE codes and need a reason. `signature`: the person's SSH signature
+    over `python3 -m ulac.signing statement ...` (AUD-33); it is verified against the registered signers."""
     from .firewall import record
     root = Path(root)
     _person(by, statement, f"{kind} approval")
@@ -541,6 +611,8 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
         raise ContractError(f"unknown contract kind {kind!r}")
     if not targets:
         raise ContractError("name the contracts to approve (--ids)")
+    docs = {i: load(root, name) for k, i, name in targets}
+    sig = _signed(root, kind, [(i, (d or {}).get("sha256", "")) for i, d in docs.items()], by, statement, signature)
     out = []
     for k, i, name in targets:
         doc = load(root, name)
@@ -560,7 +632,8 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
             impact = _audio_impact(root, prev["sha256"], doc)
         out.append(record(root, "contract_approved", _sanctioned=True, kind=k, id=i, sha256=doc["sha256"], by=by,
                           statement=statement.strip(), waivers=waivers.get(i, {}),
-                          supersedes=prev["sha256"] if prev and prev["sha256"] != doc["sha256"] else None, impact=impact))
+                          supersedes=prev["sha256"] if prev and prev["sha256"] != doc["sha256"] else None, impact=impact,
+                          **sig))
     return out
 
 
@@ -753,6 +826,11 @@ def authorization_problems(root: Path, target: str, *, led: list | None = None) 
     if not a:
         return ["no current generation authorization signed by a person (python3 -m ulac.contracts authorize)"]
     why = []
+    exp = a.get("expires_utc")
+    if not exp:
+        why.append("the authorization has no expiry: a person signs a new one (it lasts at most 7 days)")
+    elif utc_now() >= _dt.datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=_dt.timezone.utc):
+        why.append(f"the authorization expired at {exp}: a person signs a new one")
     if target not in a.get("scope", []):
         why.append(f"{target} is outside the authorized scope {a.get('scope')}")
     if a.get("tooling_sha256") != firewall.tooling_hash():
@@ -768,9 +846,14 @@ def authorization_problems(root: Path, target: str, *, led: list | None = None) 
     return why
 
 
-def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, statement: str) -> dict:
+AUTH_HOURS_DEFAULT, AUTH_HOURS_MAX = 48, 168
+
+
+def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, statement: str,
+              hours: float = AUTH_HOURS_DEFAULT) -> dict:
     """A person authorizes paid generation for named clips and keyframes, after every gate passes. Authorization is
-    eligibility for spend inside the firewall's own caps and ceilings; it never widens them."""
+    eligibility for spend inside the firewall's own caps and ceilings; it never widens them. It expires (48 h by default,
+    at most 7 days): EP05's video authorization was still open three days after delivery."""
     from . import firewall
     root = Path(root)
     _person(by, statement, "generation authorization")
@@ -778,6 +861,8 @@ def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, stat
         raise ContractError("name the clips and keyframes to authorize (--scope)")
     if not (isinstance(cap_credits, (int, float)) and cap_credits > 0):
         raise ContractError("the authorization needs a positive credit cap")
+    if not (isinstance(hours, (int, float)) and 0 < hours <= AUTH_HOURS_MAX):
+        raise ContractError(f"the authorization lasts between 0 and {AUTH_HOURS_MAX} hours (--hours)")
     led = _ledger(root)
     why = gate_common(root)
     for t in scope:
@@ -792,7 +877,8 @@ def authorize(root: Path, *, scope: list[str], cap_credits: float, by: str, stat
     plan = load(root, "render_plan")
     return firewall.record(root, "generation_authorized", _sanctioned=True, scope=sorted(scope), cap_credits=float(cap_credits),
                            by=by, statement=statement.strip(), tooling_sha256=firewall.tooling_hash(),
-                           render_plan_sha256=plan["sha256"] if plan else None)
+                           render_plan_sha256=plan["sha256"] if plan else None,
+                           expires_utc=utc_iso(utc_now() + _dt.timedelta(hours=float(hours))))
 
 
 def revoke(root: Path, *, by: str, reason: str) -> dict:
@@ -1002,8 +1088,9 @@ def _main(a: list[str]) -> None:
                 tid, code, *why = a[i + 1].split(":", 2)
                 wv.setdefault(tid, {})[code] = why[0] if why else ""
         ids = get("--ids").split(",") if get("--ids") else None
+        sig = Path(get("--signature")).read_text() if get("--signature") else None
         print(json.dumps(approve(ep, kind=get("--kind"), ids=ids, by=get("--by"), statement=get("--statement"),
-                                 waivers=wv), indent=1))
+                                 waivers=wv, signature=sig), indent=1))
     elif cmd == "plan":
         rep = dict(x.split(":", 1) for i, x in enumerate(a) if i and a[i - 1] == "--replace")
         d = compile_plan(ep, replace=rep)
@@ -1013,7 +1100,8 @@ def _main(a: list[str]) -> None:
         print(json.dumps(release_plan(ep, clips=get("--clips").split(","), by=get("--by"), statement=get("--statement")), indent=1))
     elif cmd == "authorize":
         print(json.dumps(authorize(ep, scope=get("--scope").split(","), cap_credits=float(get("--cap")), by=get("--by"),
-                                   statement=get("--statement")), indent=1))
+                                   statement=get("--statement"), hours=float(get("--hours", AUTH_HOURS_DEFAULT))),
+                         indent=1))
     elif cmd == "revoke":
         print(json.dumps(revoke(ep, by=get("--by", "unknown"), reason=get("--reason", "")), indent=1))
     else:

@@ -1,0 +1,43 @@
+{
+ "episode": "EP05",
+ "hashed_utc": "2026-10-15T13:18:30.835980Z",
+ "scope": "EDIT/v5_final, the delivered version (hashes only; no media in this repository)",
+ "note": "Supplements evidence_manifest.json, whose master pattern missed the 1080p file. The rendition the client streamed from the private watch page (a CRF18 MP4 of about 213 MiB) was never hashed and is not in the container: its hash is missing, not reconstructed.",
+ "files": [
+  {
+   "path": "EDIT/v5_final/EP05_v5_candidate_master.mp4",
+   "bytes": 560525970,
+   "sha256": "a92c5ed86c122db19070fc6f3d7454ab263b175dbdec806fcdf16b4086621ca2"
+  },
+  {
+   "path": "EDIT/v5_final/EP05_v5_contact_sheet.jpg",
+   "bytes": 794505,
+   "sha256": "0b9ba111fccfc72e31f0b3d08cbc6e38b2ec7ca2baccd063e7dcbca08a49dd06"
+  },
+  {
+   "path": "EDIT/v5_final/EP05_v5_mix.wav",
+   "bytes": 136512102,
+   "sha256": "8e9f77a04804c6f05e60b378d94cedcc93f8b95e2e98b16d2d4d16a540541bee"
+  },
+  {
+   "path": "EDIT/v5_final/EP05_v5_review.mp4",
+   "bytes": 40712328,
+   "sha256": "5d6eafef93768c6fa569a9af710d126b611e8ec126fc55759835f801eece4797"
+  },
+  {
+   "path": "EDIT/v5_final/The_Family_Drawing_EP05_1080p.mp4",
+   "bytes": 489089384,
+   "sha256": "bb6782b25334f9479ce070f33881b882b156487a05a37d91086f24a320abd8dc"
+  },
+  {
+   "path": "EDIT/v5_final/finish.json",
+   "bytes": 28829,
+   "sha256": "0ccba01d759b9b828155a5e3261c596bf7df7c4742bae2025250dd8da429c3cf"
+  },
+  {
+   "path": "EDIT/v5_final/qc.json",
+   "bytes": 14251,
+   "sha256": "2c9248bcf0e1395f4acdaebf9eb489d895702bdcdaba0fdaf94826817a7f2cfc"
+  }
+ ]
+}

@@ -424,26 +424,48 @@ def _dhash_frame(path: Path, idx: int):
     return (g[:, 1:] > g[:, :-1]).flatten(), fr.reshape(-1, 3).mean(axis=0)
 
 
-def join_plan(ep: Path, edl: dict, items: list[dict]) -> list[dict]:
-    """For each join between consecutive items: 'dip' (scene change, from the EDL transitions), 'match' (both sides show
-    the same pinned frame: a shared-keyframe splice, left as a seamless cut) or 'xfade' (every other join)."""
+def join_plan(ep: Path, edl: dict, items: list[dict], approved: dict | None = None) -> list[dict]:
+    """For each join between consecutive items:
+      * 'dip': a scene change, from the EDL transitions;
+      * 'match': both sides show the same pinned frame (a shared-keyframe splice), left as a seamless cut;
+      * otherwise the rendered frames differ. A dissolve there would hide a continuity break (EP05 v5 hid 9 this way,
+        EP05-C04). So the join is only dissolved, or kept as a deliberate cut, when a person approved that transition
+        in the join's continuity contract (`approved`, from `contracts.approved_transitions`). Every other such join is a
+        plain cut marked `unresolved_break` (between clips) or `splice_break` (inside one row), so the break shows and
+        finish QC refuses the release. An EDL 'dissolve' is a plan written by the edit, not an approval."""
     vid = lambda take: ep / "VIDEO" / f"{take}.output.mp4"
     xf = int(edl["picture"].get("xfade_frames", 8))
+    approved = approved or {}
     joins = []
     for A, B in zip(items, items[1:]):
         tr = edl["transitions"].get(A["seq"]) if A["last_in_row"] else None
         if tr and tr[0] == "dip":
             joins.append({"kind": "dip", "seconds": tr[1]})
             continue
-        if tr and tr[0] == "dissolve":
-            joins.append({"kind": "xfade", "frames": max(xf, f(tr[1]) // 2 * 2)})
-            continue
         ha, hb = _dhash_frame(vid(A["take"]), A["b"] - 1), _dhash_frame(vid(B["take"]), B["a"])
         # a shared pinned frame: same structure AND same colour (flat or dark frames alone are not a match)
         same = (ha is not None and hb is not None and int((ha[0] != hb[0]).sum()) <= 4
                 and float(abs(ha[1] - hb[1]).max()) < 10)
-        joins.append({"kind": "match"} if same else {"kind": "xfade", "frames": xf})
+        planned = {"kind": "xfade", "frames": max(xf, f(tr[1]) // 2 * 2)} if tr and tr[0] == "dissolve" else None
+        if same:
+            joins.append(planned or {"kind": "match"})              # nothing to hide: a planned dissolve may stay
+            continue
+        key = f"{A['seq']}->{B['seq']}"
+        ok = approved.get(key) if A["seq"] != B["seq"] else None
+        if ok and ok.get("kind") in ("xfade", "dissolve"):
+            joins.append({"kind": "xfade", "frames": int(ok.get("frames") or xf), "approved": key})
+        elif ok and ok.get("kind") == "cut":
+            joins.append({"kind": "cut", "approved": key})
+        else:
+            flag = "unresolved_break" if A["seq"] != B["seq"] else "splice_break"
+            joins.append({"kind": "cut", flag: True, **({"refused": "dissolve"} if planned else {})})
     return joins
+
+
+def unresolved_joins(joins: list[dict]) -> dict[str, int]:
+    """Counts of the joins a person still has to resolve (repair, or approve a motivated transition)."""
+    return {"unresolved_break": sum(bool(j and j.get("unresolved_break")) for j in joins),
+            "splice_break": sum(bool(j and j.get("splice_break")) for j in joins)}
 
 
 def motion_profile(path: Path, a: int, b: int) -> list[float]:
@@ -493,7 +515,8 @@ def render_picture_xf(ep: Path, edl: dict, out: Path) -> Path:
     total = edl["picture_frames"]
     opts = edl["picture"]
     items = flat_items(edl)
-    joins = join_plan(ep, edl, items)
+    from . import contracts
+    joins = join_plan(ep, edl, items, contracts.approved_transitions(ep))
     zoom = float(opts.get("push_in", 0.04))
     thresh, min_still = float(opts.get("still_threshold", 0.6)), int(opts.get("still_frames", 36))
     for i, it in enumerate(items):
@@ -670,7 +693,8 @@ def build_fx(ep: Path, edl: dict):
     if edl.get("picture", {}).get("xfade_frames"):
         # every join the picture dissolves gets the same equal-power crossfade (dips keep their picture fades)
         items = flat_items(edl)
-        for i, jn in enumerate(LAST_FX.get("joins") or join_plan(ep, edl, items)):
+        from . import contracts
+        for i, jn in enumerate(LAST_FX.get("joins") or join_plan(ep, edl, items, contracts.approved_transitions(ep))):
             if jn["kind"] != "xfade":
                 continue
             A, B = items[i], items[i + 1]

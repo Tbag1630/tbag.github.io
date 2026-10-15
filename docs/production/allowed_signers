@@ -1,0 +1,3 @@
+# Registered approval keys (AUD-33): one line per person, OpenSSH allowed_signers format, no options.
+#   <principal> ssh-ed25519 <base64 public key>
+# The principal is the name the person signs with (--by). Only the person adds their own line.

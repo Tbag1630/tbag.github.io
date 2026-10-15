@@ -29,13 +29,17 @@ ROLES = (
     ("keyframe", ("PROD/K_*/*.png", "PROD/K_*/LOCK.json")),
     ("repair_record", ("PROD/*/*.prompt.txt", "PROD/*/*_inspect.json")),
     ("edit_decision", ("EDIT/edl.json", "EDIT/*/edl.json", "PROD/ACCEPTED.json")),
-    ("master", ("EDIT/master/*_master.mp4", "EDIT/*_final/*master*.mp4", "EDIT/*_final/*_mix.wav",
+    ("master", ("EDIT/master/*_master.mp4", "EDIT/*_final/*master*.mp4", "EDIT/*_final/*.mp4", "EDIT/*_final/*_mix.wav",
                 "EDIT/*_final/qc.json", "EDIT/*_final/finish.json")),
     ("ledger", ("CREDIT_LEDGER.jsonl", "FIREWALL.json", "RUN_STATE.json")),
 )
 
 STATUSES = ("in_final_cut", "rejected_qc", "provider_rejected", "not_in_final_cut", "no_output", "not_executed",
-            "never_submitted")
+            "never_submitted", "released")
+
+
+class FreezeError(RuntimeError):
+    pass
 
 
 def sha256(p: Path) -> str:
@@ -82,7 +86,7 @@ def take_status(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> dic
         if not rid:
             continue
         d = takes.setdefault(rid, {"seq": None, "reserved": None, "billed": None, "submitted": False,
-                                   "not_executed": False, "qc": []})
+                                   "not_executed": False, "qc": [], "released": False, "disposition": None})
         e = r["event"]
         if e == "video_reserved":
             d.update(seq=r.get("seq"), reserved=r.get("credits"))
@@ -94,6 +98,10 @@ def take_status(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> dic
             d["not_executed"] = True
         elif e in ("video_qc", "video_qc_note"):
             d["qc"].append(r.get("verdict"))
+        elif e == "video_released":
+            d["released"] = True
+        elif e == "take_disposition":
+            d["disposition"] = {k: r.get(k) for k in ("disposition", "superseded_by", "utc")}
     for rid, d in takes.items():
         out = root / "VIDEO" / f"{rid}.output.mp4"
         d["frames_in_final_cut"] = used.get(rid, 0)
@@ -111,6 +119,8 @@ def take_status(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> dic
             d["status"] = "not_executed"
         elif d["submitted"]:
             d["status"] = "no_output"
+        elif d["released"]:
+            d["status"] = "released"
         else:
             d["status"] = "never_submitted"
     return takes
@@ -122,13 +132,18 @@ def open_records(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> di
     with no verdict, so the ledger shows 3 rejections where 8 takes failed or were replaced."""
     t = take_status(root, final_edl, reels)
     return {"reservations_never_closed": sorted(r for r, d in t.items() if d["status"] == "never_submitted"),
-            "executed_without_verdict": sorted(r for r, d in t.items()
-                                               if d["status"] == "not_in_final_cut" and not d["qc"])}
+            "executed_without_verdict": sorted(r for r, d in t.items() if d["status"] == "not_in_final_cut"
+                                               and not d["qc"] and not d["disposition"])}
 
 
 def freeze(root: Path, final_edl: Path, out: Path, reels: tuple[str, ...] = ()) -> dict:
     root = Path(root)
     edl = json.loads((root / final_edl).read_text())
+    op = open_records(root, edl, reels)
+    if any(op.values()):
+        raise FreezeError("records are still open (LL-34): " + json.dumps(op) + ". Release an unsent reservation "
+                          "(firewall.video_release) or record why a take is out of the cut (firewall.take_disposition, or "
+                          "a person's QC verdict) before freezing.")
     files = inventory(root)
     takes = take_status(root, edl, reels)
     man = {"episode": root.name, "frozen_utc": utc_iso(), "final_edl": str(final_edl), "reels": list(reels),

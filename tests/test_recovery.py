@@ -167,7 +167,9 @@ PROJECT_STATE = pytest.mark.skipif(os.environ.get("ULAC_PROJECT_STATE") != "1", 
 @pytest.mark.skipif(not (EP / "FIREWALL.json").exists(), reason="EP05 project state not present")
 def test_ep05_is_frozen_for_video_and_images():
     conf = firewall.load_conf(EP)
-    assert conf["video_pilot"]["status"] == "FROZEN"
+    assert conf["video_pilot"]["status"] in ("FROZEN", "CLOSED")       # CLOSED: close_authorizations, 2026-10-15
+    assert (conf["video_pilot"].get("title_1080p") or {}).get("status") != "AUTHORIZED"
+    assert str(conf["authorization"].get("audio", "")).upper() != "AUTHORIZED"
     assert conf["authorization"]["sequence_boards"] is False
     events = [e["event"] for e in firewall.read_ledger(EP)]
     assert "video_frozen" in events and "boards_frozen" in events

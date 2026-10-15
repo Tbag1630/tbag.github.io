@@ -493,3 +493,23 @@ def test_the_1080p_delivery_keeps_a_1080p_reel_native_and_lifts_a_720p_one(tmp_p
     _lavfi(small, "1280x720", 24, 1, audio=False)
     got = finish.conform_reel(small, tmp_path / "end_1080.mkv", finish.probe_reel(small), push_in=0.03)
     assert (got["width"], got["height"], got["frames"]) == (1920, 1080, 24)
+
+
+def test_the_release_fails_on_an_unresolved_break_and_cannot_judge_an_old_render(tmp_path):
+    """EP05-C04: v5's joins.json dissolves 9 rendered breaks and records no approval, so it cannot pass this check."""
+    import json as _json
+    from ulac import finish as F
+    p = tmp_path / "joins.json"
+    rows = lambda *js: _json.dumps([{"seq": f"SEQ_{i:03d}", "join_out": j} for i, j in enumerate(js)])
+    p.write_text(rows({"kind": "match"}, {"kind": "cut", "unresolved_break": True}, None))
+    assert F.joins_check(p)["verdict"] == F.FAIL
+    p.write_text(rows({"kind": "cut", "splice_break": True}, {"kind": "xfade", "frames": 8, "approved": "SEQ_001->SEQ_002"}))
+    assert F.joins_check(p)["verdict"] == F.WARN
+    p.write_text(rows({"kind": "match"}, {"kind": "xfade", "frames": 8, "approved": "SEQ_001->SEQ_002"}, {"kind": "dip", "seconds": 1}))
+    assert F.joins_check(p)["verdict"] == F.PASS
+    p.write_text(rows({"kind": "xfade", "frames": 8}, {"kind": "match"}))          # rendered before the rule
+    assert F.joins_check(p)["verdict"] == F.UNKNOWN
+    assert F.joins_check(tmp_path / "missing.json")["verdict"] == F.UNKNOWN
+    v5 = Path(__file__).resolve().parent.parent / "project" / "EP05" / "EDIT" / "v5" / "master" / "joins.json"
+    if v5.exists():
+        assert F.joins_check(v5)["verdict"] == F.UNKNOWN
