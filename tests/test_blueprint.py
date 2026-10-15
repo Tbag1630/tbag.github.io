@@ -180,7 +180,7 @@ def test_release_needs_a_person_no_blocking_findings_and_the_current_report(tmp_
 
 def test_video_reservation_refuses_an_unreleased_clip(tmp_path):
     sign_cast(tmp_path)
-    with pytest.raises(firewall.FirewallError, match="no storyboard blueprint"):
+    with pytest.raises(firewall.FirewallError, match="not GENERATION_AUTHORIZED"):
         firewall.video_reserve(tmp_path, seq="SEQ_001", graph={}, prompt="", seconds=4, segment_seconds=4.0)
 
 
@@ -190,10 +190,34 @@ def test_ep05_paper_checks_find_what_generation_later_paid_for():
     """Regression: EP05's planning records, checked on paper, show the boundary and timing defects found later."""
     a = bp.audio_ledger(EP)
     mid = sorted(p["clip"] for p in a["problems"] if p["code"] == "BOUNDARY_MID_WORD")
-    assert mid == ["SEQ_028", "SEQ_035", "SEQ_036"]
+    assert mid == ["SEQ_025", "SEQ_028", "SEQ_035", "SEQ_036"]   # SEQ_025: 10 ms inside "part." (frame rounding)
     shots = bp.shot_specs(EP, a)
     assert sum(p["code"] == "PANELS_NOT_TIMED_TO_AUDIO" for p in shots["problems"]) == 37
     bnd = bp.boundary_ledger(EP, shots)
     refs = bp.reference_manifest(EP, shots, bnd)
     props = {p["detail"].split(": ")[0] for p in refs["problems"] if p["code"] == "MISSING_REFERENCE"}
     assert props == {"prop:DRAWING", "prop:PAPER", "prop:BUCKETS"}
+
+
+def test_the_packer_rechecks_a_cut_after_frame_rounding():
+    """Root cause of EP05's mid-word boundaries: the raw cut sat exactly at a zero-gap word junction (allowed), and
+    rounding it to the 24 fps grid moved it 10-15 ms into the previous word, which was never re-checked."""
+    from ulac import packer
+    words = [{"word": "part.", "start": 0.40, "end": 1.01}, {"word": "You", "start": 1.01, "end": 1.60},
+             {"word": "here.", "start": 1.70, "end": 2.20}, {"word": "Now", "start": 2.60, "end": 3.00}]
+    bad = [{"t": 1.01, "boundary": "SUBJECT_CHANGE", "reason": "zero-gap junction, rounds into a word"}]
+    _, errs = packer.pack_from_cuts(words, bad, audio_duration=3.2, fps=24, target_min=0.1)
+    assert any("rounds to frame" in e for e in errs)
+    good = [{"t": 2.40, "boundary": "SUBJECT_CHANGE", "reason": "a 0.4 s pause"}]
+    _, errs = packer.pack_from_cuts(words, good, audio_duration=3.2, fps=24, target_min=0.1)
+    assert not [e for e in errs if "word" in e]
+
+
+@pytest.mark.skipif(not (ROOT / "project" / "EP05_plan" / "cuts.json").exists(), reason="EP05 planner cuts not present")
+def test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words():
+    from ulac import packer
+    words = json.loads((EP / "AUDIO" / "transcript_word.json").read_text())["words"]
+    cuts = json.loads((ROOT / "project" / "EP05_plan" / "cuts.json").read_text())
+    _, errs = packer.pack_from_cuts(words, cuts, audio_duration=462.922, fps=24)
+    rounded = sorted(e.split("(")[1].split(")")[0] for e in errs if "rounds to frame" in e)
+    assert len(rounded) == 4, errs                     # the ends of SEQ_025, SEQ_028, SEQ_035 and SEQ_036

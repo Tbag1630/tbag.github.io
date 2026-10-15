@@ -76,7 +76,8 @@ def read_ledger(root: Path) -> list[dict]:
 # Events that carry a human decision. They are written only by the function that checks the decision (video_qc_record,
 # approve_extra, video_accept_price, castlock.sign). EP05 had eight "video_qc" PASS events written straight through
 # record() by the lead, which skipped video_qc_record's human-listening rule; downstream code read them as passed.
-GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released")
+GUARDED_EVENTS = ("video_qc", "approved_extra", "video_price_accepted", "cast_locked", "storyboard_released",
+                  "contract_approved", "render_plan_released", "generation_authorized")
 
 
 def record(root: Path, event: str, *, _sanctioned: bool = False, **fields) -> dict:
@@ -129,8 +130,7 @@ def approved(root: Path, tid: str, attempt: int) -> dict | None:
 def approve_extra(root: Path, tid: str, attempt: int, by: str, quote: str, requires_fail: bool = False) -> dict:
     """Record the user's explicit approval of one attempt beyond the ceiling. The quote must be their own words;
     the worker, a reviewer or an automated check never approves its own overspend."""
-    who = by.strip().lower()
-    if who in ("", "claude", "claude-code", "worker", "director", "agent") or who.startswith(("automated", "claude")):
+    if not _user(by):                        # one person check everywhere ("lead" passed the old local list)
         raise FirewallError(f"approval must come from the user, not {by!r}")
     if len(quote.strip()) < 8:
         raise FirewallError("quote the user's approval (their own words)")
@@ -198,7 +198,7 @@ def global_committed(root: Path) -> float:
 
 def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, ref_hashes: dict, config_hash: str,
             seed, model: str, workflow: str, closed: bool, parent_job: str | None = None,
-            est_credits: float | None = None) -> dict:
+            est_credits: float | None = None, graph_sha256: str | None = None) -> dict:
     """Commit to one paid attempt at compile time. Idempotent for the same prompt; refuses duplicate spend."""
     conf = load_conf(root)
     if closed:
@@ -207,13 +207,17 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
         cast = castlock.problems(root) + castlock.ref_problems(root, ref_hashes)
         if cast:
             raise FirewallError(f"CAST LOCK refused {tid}: " + "; ".join(cast))
+    if kind == "keyframe":                     # a boundary keyframe draws two approved storyboards' shared state
+        from . import contracts
+        if why := contracts.keyframe_problems(root, tid):
+            raise FirewallError(f"CONTRACTS refused keyframe {tid}: " + "; ".join(why[:6]))
     check_ceiling(root, tid, attempt)
     live = _live_reservations(root, tid)
     cur = live.get(attempt)
     if cur:
         paid = cur.get("job_id") or cur.get("last_event") in ("submitted", "ingested", "accepted", "failed")
-        if cur.get("prompt_sha256") == prompt_sha and cur.get("ref_hashes") == ref_hashes:
-            return {**cur, "reused": True}
+        if cur.get("prompt_sha256") == prompt_sha and cur.get("ref_hashes") == ref_hashes and not paid:
+            return {**cur, "reused": True}          # a paid reservation is never handed back as if it were unspent
         if paid:
             raise FirewallError(f"{tid} attempt {attempt} is already paid for (job {cur.get('job_id')}): ingest it "
                                 "instead of compiling another graph")
@@ -238,7 +242,7 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
         ok = False                     # paid music and sound effects need their own recorded user authorization
     rec = record(root, "reserved", target=tid, kind=kind, attempt=attempt, prompt_sha256=prompt_sha,
                  ref_hashes=ref_hashes, config_hash=config_hash, seed=seed, model=model, workflow=workflow,
-                 est_credits=est, parent_job=parent_job, authorized=ok)
+                 est_credits=est, parent_job=parent_job, authorized=ok, graph_sha256=graph_sha256)
     return rec
 
 
@@ -255,7 +259,8 @@ _ACTORS = ("", "claude", "claude-code", "worker", "director", "agent")
 
 # Role words that name an agent, never a person. EP05's ledger has "lead (picture QC)" and "reviewer agent", which the
 # old check accepted as human.
-_ROLE_WORDS = ("agent", "reviewer", "lead", "builder", "research", "bot", "assistant", "model", "orchestrator", "claude")
+_ROLE_WORDS = ("agent", "reviewer", "lead", "builder", "research", "bot", "assistant", "model", "orchestrator", "claude",
+               "subagent", "haiku", "sonnet", "opus", "fable", "gpt", "gemini", "llm", "ai")
 
 
 def _user(by: str) -> bool:
@@ -335,13 +340,41 @@ def video_accept_price(root: Path, *, by: str, quote: str, graph_sha256: str, cr
     return acc
 
 
+def video_accept_derived(root: Path, *, seq: str, graph_sha256: str, credits: float, applied_by: str) -> dict:
+    """Price acceptance derived from a person's current generation authorization, for the code paths that compile
+    graphs (ulac.chain, ulac.prod). It is recorded as derived and names the authorization; it is never written as if a
+    person accepted this graph (production_audit AUD-03). Refused unless the authorization covers `seq` and the credits
+    fit its cap."""
+    from . import contracts
+    led = read_ledger(root)
+    a = contracts._authorization(led)
+    why = contracts.authorization_problems(root, seq, led=led)
+    if a and isinstance(a.get("cap_credits"), (int, float)) and global_committed(root) + float(credits) > a["cap_credits"]:
+        why.append(f"{global_committed(root)} committed + {credits} exceeds the authorized cap {a['cap_credits']}")
+    if why:
+        raise FirewallError(f"no derived price acceptance for {seq}: " + "; ".join(why))
+    by = f"derived from generation authorization {a['utc']} signed by {a['by']}"
+    conf = load_conf(root)
+    acc = {"graph_sha256": graph_sha256, "credits": round(float(credits), 2), "by": by, "quote": a["statement"],
+           "applied_by": applied_by, "utc": utc_iso()}
+    conf["video_pilot"] = {**(conf.get("video_pilot") or {}), "price_acceptance": acc}
+    save_conf(root, conf)
+    return record(root, "video_price_accepted", _sanctioned=True, graph_sha256=graph_sha256, credits=acc["credits"], by=by,
+                  quote=a["statement"], applied_by=applied_by, authorization_utc=a["utc"])
+
+
 def video_reserve(root: Path, *, seq: str, graph: dict, prompt: str, seconds: int, segment_seconds: float) -> dict:
     """Reserve one paid video submission or refuse it. A refusal writes nothing. The caller submits only the stored graph
     (video_payload), and only after this returns. The platform's submit tool has no per-job cap, so this reservation is
     the enforcement: a job made without it is outside the firewall."""
     pilot = video_pilot(root)
-    from . import blueprint                    # storyboard-first: no video before a signed release of the plan
-    why = gate_tooling(root) + castlock.problems(root) + blueprint.release_problems(root, seq)
+    from . import contracts                    # no video before the contract chain reaches GENERATION_AUTHORIZED
+    from . import evidence
+    rel = contracts.release_problems(root, seq)
+    why = gate_tooling(root) + castlock.problems(root) + rel
+    if not rel:                                # an authorized clip may only send the released plan's own graph
+        why += contracts.plan_match_problems(root, seq, prompt=prompt, seconds=seconds, graph=graph)
+    why += [f"evidence: {p}" for p in evidence.verify(root)]
     if str(pilot.get("status", "")).upper() != "AUTHORIZED":
         why.append("no video pilot authorization is recorded (FIREWALL.json video_pilot)")
     scope = pilot.get("scope") or []
@@ -409,7 +442,7 @@ def predecessor_qc_problems(root: Path, seq: str) -> list[str]:
         return []
     last = rids[-1]
     verdicts = [str(e.get("verdict", "")) for e in read_ledger(root)
-                if e.get("event") in ("video_qc", "video_qc_note") and e.get("rid") == last]
+                if e.get("event") == "video_qc" and e.get("rid") == last]   # notes are unguarded agent text: never a PASS
     if not any(v.upper().startswith("PASS") for v in verdicts):
         return [f"{seq} chains from {prev}'s last take {last}, which has no PASS QC record "
                 f"({verdicts or 'none'}): review it before paying for the next clip"]
@@ -422,6 +455,8 @@ def video_payload(root: Path, rid: str) -> dict:
     cur = _reservations(root).get(rid)
     if cur is None:
         raise FirewallError(f"{rid} has no reservation in the ledger")
+    if cur.get("state") != "reserved":         # V63-V66: a sent reservation (even billed zero) is never sent again
+        raise FirewallError(f"{rid} is {cur.get('state')}: a reservation is sent once; reserve a new attempt instead")
     if why := castlock.problems(root):          # a reservation made before the cast lock existed (EP05 V67) stays blocked
         raise FirewallError(f"CAST LOCK refused the payload of {rid}: " + "; ".join(why))
     graph = json.loads((Path(root) / cur["graph_file"]).read_text(encoding="utf-8"))
@@ -488,12 +523,27 @@ def video_qc_record(root: Path, rid: str, *, verdict: str, reviewer: str, output
 
 # ---- tooling gate (D) ----------------------------------------------------------------------------------------------
 def tooling_hash() -> str:
-    h = hashlib.sha256()
+    h = hashlib.sha256()                        # the guard's own wiring counts as tooling: removing the hook voids the stamp
     for p in sorted(list((REPO / "ulac").glob("*.py")) + list((REPO / "tests").glob("*.py"))
-                    + list((REPO / "orchestrator").glob("*.py"))):
-        h.update(p.name.encode())
+                    + list((REPO / "orchestrator").rglob("*.py")) + list((REPO / ".claude").glob("settings.json"))
+                    + list((REPO / ".claude" / "agents").glob("*.md"))):
+        h.update(str(p.relative_to(REPO)).encode())
         h.update(p.read_bytes())
     return h.hexdigest()
+
+
+def release_reservation(root: Path, tid: str, attempt: int, reason: str) -> dict:
+    """Release an unspent reservation. A reservation that was submitted (or later ingested, accepted or failed) is
+    spent: releasing it would let the same attempt be reserved and paid again."""
+    cur = _live_reservations(root, tid).get(attempt)
+    if cur is None:
+        raise FirewallError(f"{tid} attempt {attempt} has no live reservation")
+    if cur.get("job_id") or cur.get("last_event") in ("submitted", "ingested", "accepted", "failed"):
+        raise FirewallError(f"{tid} attempt {attempt} was already submitted (job {cur.get('job_id')}): it is spent and "
+                            "cannot be released")
+    if not str(reason).strip():
+        raise FirewallError("say why the reservation is released")
+    return record(root, "released", target=tid, attempt=attempt, reason=reason)
 
 
 def tooling_check(root: Path, timeout: int = 900) -> dict:

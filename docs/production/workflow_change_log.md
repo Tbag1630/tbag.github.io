@@ -2,6 +2,21 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: enforceable production law (contracts, paid-generation hook, evidence protection)
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| **PreToolUse hook `ulac/paidguard.py`** in `.claude/settings.json`. It denies by default on generation servers; `submit_workflow` passes only with a reserved, authorized graph, sent once. It also refuses signing commands and protected-file writes. | Every paid job is an agent MCP call that no code gated (AUD-01/02; P04: 71.55 unledgered credits) | `tests/test_paidguard.py`; live log `project/PAIDGUARD_LOG.jsonl` | Regression-protected; residual bypasses documented |
+| **Contracts A/B/C** (`ulac/contracts.py`): audio ledger, storyboard and continuity contracts; approvals bound to content hashes; computed states; render plan compiled only from approved contracts; person-signed release and generation authorization | Untimed panels (37/37), mid-word cuts, handoffs equal by construction, approvals that never went stale (AUD-06/07/08/11) | `tests/test_contracts.py` | Regression-protected. **EP05: 37/37 clips at AUDIO_DRAFT.** |
+| `video_reserve` requires GENERATION_AUTHORIZED, the plan's own graph (PLAN_DIVERGENCE) and unchanged evidence. `reserve` gates keyframes on the contracts. | Paid video only from approved plans (AUD-05, AUD-21) | `test_video_reserve_refuses_a_graph_that_is_not_the_plan` | Regression-protected |
+| Code no longer writes `by="user"` price acceptances; `video_accept_derived` cites the person's authorization | AUD-03: 73 "user" acceptances in the EP05 ledger, none typed by a person per graph | `test_code_price_acceptance_is_derived_from_a_person_never_written_as_user` | Regression-protected |
+| Re-spend routes closed: no release of a submitted reservation, no "reused" paid reservation, no payload of a sent reservation | Research audit (AUD-16/17/18) | `test_paidguard.py` | Regression-protected |
+| A chain predecessor needs a person's `video_qc` PASS; an agent's note no longer counts. Model names are not people. | AUD-19, AUD-20 | `test_castlock.py`, `test_paidguard.py` | Regression-protected. **Tightening:** the old test expected a note PASS to clear the gate. |
+| The packer re-checks each cut after frame rounding; blueprint mid-word tolerance is 5 ms; the join check is strict | Root cause of EP05's four mid-word boundaries (SEQ_025 had been missed); AUD-24 | `test_the_packer_rechecks_a_cut_after_frame_rounding`, `test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words` | Regression-protected |
+| **Evidence protection** (`ulac/evidence.py`): verify against the frozen manifest (exact or append-only); `protect`; `ingest_take` never replaces a take | Accepted takes and history survive remediation (directive Phase B) | `tests/test_evidence.py`; EP05 verify: no violations | Regression-protected. 299 EP05 media files made read-only (root can still write; verify is the control). |
+| The tooling hash covers `.claude/settings.json`, the agent files and every `orchestrator/` module | Removing the hook used to leave the stamp valid (AUD-23) | `test_this_repository_installs_the_guard` | Regression-protected |
+| Model routing: research agent on Haiku, read-only; subagent default Haiku; advisor Opus; policy in CLAUDE.md §8 | User request (2026-10-15) | `.claude/agents/research.md`, `.claude/settings.json` | Configured. The research agents ran on Haiku (transcripts). The read-only tool restriction applies from the next session: this session had loaded the old definition. |
+
 ## 2026-10-13: EP05 postmortem controls
 
 | Change | Why | Evidence | Status |

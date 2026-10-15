@@ -40,6 +40,7 @@ def img(tid: str, spec_path: str) -> dict:
     psha = hashlib.sha256(spec["prompt"].encode()).hexdigest()
     rec = firewall.reserve(ROOT, tid=tid, kind="keyframe", attempt=attempt, prompt_sha=psha,
                            ref_hashes={t: n for t, n in refs}, config_hash=video.graph_sha256(g), seed=0,
+                           graph_sha256=video.graph_sha256(g),
                            model=comfy.GPT_MODEL, workflow="gpt_image keyframe", closed=False)
     if not rec.get("authorized"):
         raise SystemExit(f"FIREWALL: keyframe {tid} attempt {attempt} is not authorized")
@@ -78,10 +79,7 @@ def flf(tid: str, spec_path: str) -> dict:
                              credits=credits, source=f"per-second table {res} {rate:.3f}/s x {secs} s", dry_run="prod flf")
     if q["problems"]:
         raise SystemExit(f"preflight: {q['problems']}")
-    pilot = firewall.load_conf(ROOT)["video_pilot"]
-    quote = (pilot.get("title_1080p") or {}).get("source") if res != "720p" else pilot["source"]
-    firewall.video_accept_price(ROOT, by="user", quote=quote or pilot["source"], graph_sha256=q["graph_sha256"],
-                                credits=credits)
+    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=q["graph_sha256"], credits=credits, applied_by="ulac.prod flf")
     r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]))
     d = _dir(tid)
     (d / f"{r['rid']}.prompt.txt").write_text(prompt)

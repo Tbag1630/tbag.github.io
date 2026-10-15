@@ -31,8 +31,8 @@ def prep(seq: str, start: str) -> None:
                                  credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain")
     if quote["problems"]:
         sys.exit(f"preflight: {quote['problems']}")
-    firewall.video_accept_price(ROOT, by="user", quote=firewall.load_conf(ROOT)["video_pilot"]["source"],
-                                graph_sha256=quote["graph_sha256"], credits=credits)
+    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
+                                  applied_by="ulac.chain")
     r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
     print(json.dumps({"rid": r["rid"], "credits": credits, "committed_before": r["committed_before"]}))
     print(json.dumps(g))
@@ -123,8 +123,8 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
                                  credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain r2v")
     if quote["problems"]:
         sys.exit(f"preflight: {quote['problems']}")
-    firewall.video_accept_price(ROOT, by="user", quote=firewall.load_conf(ROOT)["video_pilot"]["source"],
-                                graph_sha256=quote["graph_sha256"], credits=credits)
+    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
+                                  applied_by="ulac.chain r2v")
     r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
     print(json.dumps({"rid": r["rid"], "credits": credits, "committed_before": r["committed_before"], "chars": len(prompt)}))
     print(json.dumps(g))

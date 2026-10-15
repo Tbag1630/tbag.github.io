@@ -2,7 +2,7 @@
 
 `python3 -m pytest -q tests` runs everything. `python3 -m ulac tooling-check project/<EP>` runs the suite and stamps the tooling, and the firewall refuses reservations without a fresh stamp.
 
-Last run (2026-10-13): **302 passed, 2 skipped**.
+Last run (2026-10-15, tooling stamp `77e5438e`): **414 passed, 2 skipped, 1 xfailed** (AUD-30, explained in `production_gate_report.md`).
 
 Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere they skip, and a skip is not a pass.
 
@@ -29,6 +29,24 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | Silent audio, wrong frames or unpinned FLF | CLAUDE.md audio policy | `test_video_flf.py::*` | Audio on; sound-only prompts; music requests refused |
 | Tests reaching a provider | R5 | `test_recovery.py::test_tests_cannot_reach_the_network` | No outbound connection in the suite |
 | Inventory and metrics drifting from the records | P05 | `test_freeze.py::*`, `test_metrics.py::*` | Take classification and metrics recompute identically |
+| **Paid job sent with no reservation** (direct MCP call) | P04, AUD-01 | `test_paidguard.py::test_p04_a_direct_submit_without_a_reservation_is_refused`, `test_every_other_comfy_tool_is_refused`, `test_unauthorized_providers_are_refused_outright`, `test_an_unlisted_server_is_a_generation_server` | The hook refuses every generation tool except a reserved, authorized `submit_workflow` |
+| A reserved graph changed, re-sent, or rerun by job id | AUD-01, V63–V66 | `test_only_the_reserved_authorized_graph_passes_and_only_once`, `test_a_rerun_of_a_past_job_is_refused` | Only the exact reserved bytes pass, once; the positive control passes |
+| A stored payload sent without the cast lock | V67 | `test_v67_a_stored_payload_without_the_cast_lock_is_refused_at_the_hook` | Refused at the hook as well as in `video_payload` |
+| Re-spend by releasing or reusing a paid reservation | AUD-16, AUD-17, AUD-18 | `test_a_submitted_reservation_cannot_be_released_or_handed_back_as_unspent` | Spent reservations stay spent |
+| Code writing "user" price acceptances | AUD-03 | `test_contracts.py::test_code_price_acceptance_is_derived_from_a_person_never_written_as_user` | Derived from a signed authorization, within its cap; no `by="user"` in code |
+| Agent or model names signing; signing from the agent shell | P03, AUD-04, AUD-20 | `test_model_and_role_names_are_not_people`, `test_signing_and_evidence_writes_are_refused_in_the_agent_shell` | "haiku", "lead", "Sonnet 4.5" refused; signing commands refused in the agent shell |
+| An agent's note clearing the chain gate | AUD-19 | `test_castlock.py::test_a_chained_clip_needs_its_predecessor_reviewed` | Only a person's `video_qc` PASS counts |
+| The guard switched off or rewritten by the agent | AUD-23 | `test_this_repository_installs_the_guard`, `test_the_guard_cannot_be_switched_off_from_the_agent_shell`, `test_the_guard_cannot_be_rewritten_with_file_tools` | Removing the hook fails the suite and the stamp; edits are refused. **One case is a strict xfail (AUD-30, git revert).** |
+| **Cut inside a spoken word** (after frame rounding) | AUD-08: SEQ_025, SEQ_028, SEQ_035, SEQ_036 | `test_blueprint.py::test_the_packer_rechecks_a_cut_after_frame_rounding`, `test_ep05_planner_cuts_are_refused_where_they_shipped_inside_words` (*EP05 data*), `test_contracts.py::test_a_mid_word_cut_cannot_be_approved` | The packer refuses; the audio ledger cannot be approved |
+| Gaps, overlaps, duplicate segments, clips over 15 s | Contract A | `test_gaps_overlaps_and_clips_over_15_s_cannot_be_approved` | Cannot be approved |
+| Storyboard panels not timed on the narration; incomplete panels | AUD-06 (37/37 EP05 boards) | `test_storyboards_wait_for_a_locked_ledger_and_untimed_boards_are_refused`, `test_missing_camera_unknown_characters_and_missing_references_block`, `test_ep05_contracts_refuse_what_its_production_later_paid_for` (*EP05 data*) | Cannot be approved |
+| Join without a colour frame; two images at one boundary; pencil frame; state mismatch at the join | AUD-07, V02, AUD-24 | `test_a_join_without_a_locked_colour_frame_cannot_be_approved`, `test_a_shared_boundary_with_two_different_images_or_a_pencil_frame_is_refused`, `test_an_unpermitted_state_change_needs_a_reasoned_waiver_and_some_codes_never_waive` | Cannot be approved; waivers only for waivable codes, with a reason |
+| **Stale approvals** (audio, board or keyframe changed after approval) | AUD-11 | `test_a_new_audio_ledger_version_voids_every_downstream_approval`, `test_a_changed_boundary_keyframe_voids_its_continuity_approval`, `test_a_status_field_cannot_be_flipped_and_agents_cannot_approve` | States fall back on their own; editing a file never advances a state |
+| Render plan with unapproved clips, a changed plan, or an accepted take re-planned | Phase E | `test_the_render_plan_excludes_unapproved_clips_and_refuses_a_changed_plan`, `test_an_accepted_take_is_never_replanned_without_an_open_defect`, `test_the_compiler_fails_closed` | Fails closed |
+| Paid graph differing from the plan (prompt, length, pins) | AUD-21 | `test_video_reserve_refuses_a_graph_that_is_not_the_plan` | PLAN_DIVERGENCE refusal |
+| Authorization stale after a code change, revoked, or without a cap | Section 10 | `test_authorization_needs_every_gate_and_voids_on_a_code_change_or_revocation`, `test_a_keyframe_needs_both_storyboards_and_its_own_authorization` | Refused |
+| Compiled prompt missing contract content | AUD-12 | `test_the_compiled_prompt_carries_every_contract_layer` | Linted by the repo's paid-prompt policy plus the contract checks |
+| **Accepted takes or history changed** by pipeline runs | Phase B, AUD-10 | `test_evidence.py::test_pipeline_runs_leave_every_protected_file_unchanged`, `test_a_changed_take_a_rewritten_ledger_and_a_missing_file_are_violations`, `test_protect_removes_write_permission_and_a_take_is_never_replaced`, `test_ep05_accepted_takes_and_records_match_the_frozen_manifest` (*EP05 data*) | Byte identity, or append-only growth, against the freeze |
 
 ## Gaps: known failures with no automated test yet
 
@@ -38,3 +56,7 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | Identity drift at wide scale (L07) | Needs a visual judgement | Reviewer gate (process) |
 | Unledgered spend through direct MCP submit (P04) | Outside the repo | Reconcile the billing feed every wave (SC-8) |
 | Human watch and listen (F10) | It is a person's judgement | Stage gate SE-3 record |
+| Wrong room while the joins match (L01, L03–L05: both sides of V05→V06→V07 equally wrong, 3/64 dHash bits) | Conformance to the environment master needs a visual judgement. A join check cannot see it. | Category C: the continuity approval statement (SB-7) and the reviewer's keyframe check against `PENV_*_DRESSED_MASTER` |
+| Duplicate character inside a clip (R6-D2), walking through a person or furniture (R6-M-D5), invented head ornaments (R6-D4) | No duplicate, contact or shape detector; an image-similarity score cannot establish these | Category C: a person's `video_qc` before FINAL_QC_APPROVED |
+| Board-level visual errors (positions, left/right, hands) on the 37 EP05 boards | The reviewer agents stopped on the usage limit (AUD-14); none of their output exists | Category C: storyboard approval statement |
+| Git revert of the guard by the agent (AUD-30) | The guard protected itself before its git-revert rule could be added | Strict xfail in `test_paidguard.py`; the user applies the patch in `production_gate_report.md` |

@@ -372,7 +372,7 @@ def main(argv=None) -> int:
             _p({"frozen_config": h})
             return 0
         elif c == "release":
-            firewall.record(Path(args.ep), "released", target=args.seq, attempt=args.attempt, reason=args.reason)
+            firewall.release_reservation(Path(args.ep), args.seq, args.attempt, args.reason)
             _p({"released": args.seq, "attempt": args.attempt})
             return 0
         elif c == "panels":

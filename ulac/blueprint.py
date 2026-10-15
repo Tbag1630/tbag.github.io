@@ -113,7 +113,7 @@ def audio_ledger(root: Path, *, samples=None, sil=None) -> dict:
         if dur > MAX_CLIP_S:
             _f(problems, sq["clip"], "OVER_15S", BLOCK, f"{dur} s exceeds the {MAX_CLIP_S} s Seedance 2.0 limit")
         text = " ".join(W[i]["word"] for i in inside)
-        straddle = [i for i, w in enumerate(W) if w["start"] < b - 0.01 and w["end"] > b + 0.01]
+        straddle = [i for i, w in enumerate(W) if w["start"] < b - 0.005 and w["end"] > b + 0.005]   # 5 ms: SEQ_025
         nxt = next((w for w in W if w["start"] >= b - 0.002), None)
         last = W[inside[-1]] if inside else None
         in_sil = any(s0 <= b + 0.02 and s1 >= b - 0.02 and s1 - s0 >= PAUSE_S for s0, s1 in S)
@@ -146,7 +146,7 @@ def audio_ledger(root: Path, *, samples=None, sil=None) -> dict:
         _f(problems, "EPISODE", "WORDS_UNCOVERED", BLOCK, f"{len(lost)} words belong to no slot: {lost[:8]}")
     if suspect:
         _f(problems, "EPISODE", "TIMESTAMP_SUSPECT", REVIEW, f"{len(suspect)} word timestamps sit in near-silence or overlap")
-    long_sil = [s for s in S if s[1] - s[0] >= 0.5]
+    long_sil = [list(s[:2]) for s in S if s[1] - s[0] >= 0.5]          # copies: the caller's list is not changed
     for s in long_sil:
         s.append(next((q["clip"] for q in out_seqs if q["start"] <= s[0] < q["end"]), None))
     return {"audio": str(wav.relative_to(root)), "audio_sha256": _sha(wav), "transcript_sha256": tr.get("audio_sha256"),
@@ -241,6 +241,12 @@ def shot_specs(root: Path, audio: dict) -> dict:
         for e in intent.get("essential_visual_information", []):
             if not any(len(_tokens(e) & _tokens(x)) >= max(2, len(_tokens(x)) // 2) for x in essential):
                 essential.append(e)
+        for p in panels[:-1]:                     # a beat change inside a spoken word reads as a mistimed cut
+            t = a + p["t_out"]
+            w = next((w for w in W if w["start"] < t - 0.005 and w["end"] > t + 0.005), None)
+            if w:
+                _f(problems, s, "PANEL_BOUNDARY_MID_WORD", REVIEW,
+                   f"{p['id']} ends at {round(t, 3)} s inside '{w['word']}' ({w['start']}-{w['end']} s)")
         if src != "authored":
             _f(problems, s, "PANELS_NOT_TIMED_TO_AUDIO", BLOCK,
                f"panel timing is {src}: the board was planned on a 0-{tmax:g} s template, the slot is {dur} s; "
@@ -305,7 +311,8 @@ def boundary_ledger(root: Path, shots: dict, final_edl: dict | None = None) -> d
         forbid = _j(root / "SEQUENCES" / B / "qc_contract.json").get("forbidden_changes", []) \
             if (root / "SEQUENCES" / B / "qc_contract.json").exists() else []
         diffs = _diff(after, before)
-        unpermitted = [] if scene else [d for d in diffs if d not in allowed and not d.startswith("C.")]
+        # allowed_change lists what may change *inside* B; at the join itself the states must agree (camera wording aside)
+        unpermitted = [] if scene else [d for d in diffs if not d.startswith("C.")]
         key = f"{A}->{B}"
         ref = reg.get(key) or {}
         kf = ref.get("keyframe")

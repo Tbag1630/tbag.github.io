@@ -64,7 +64,10 @@ def test_image_jobs_with_the_cast_are_refused_but_rooms_and_music_are_not(tmp_pa
 def test_a_signed_episode_still_refuses_an_unsigned_identity_reference(tmp_path):
     lock = sign_cast(tmp_path)
     good = next(iter(lock["files"].values()))
-    firewall.reserve(tmp_path, tid="K_001_A", kind="keyframe", attempt=1, ref_hashes={"identity_board": good}, **KW)
+    with pytest.raises(firewall.FirewallError, match="CONTRACTS refused") as e:   # the cast lock passes the signed
+        firewall.reserve(tmp_path, tid="K_001_A", kind="keyframe", attempt=1,   # reference; the contract gate is next
+                         ref_hashes={"identity_board": good}, **KW)
+    assert "CAST LOCK" not in str(e.value)
     with pytest.raises(firewall.FirewallError, match="not in the signed cast lock"):
         firewall.reserve(tmp_path, tid="K_002_A", kind="keyframe", attempt=1,
                          ref_hashes={"identity_board": "f" * 64}, **KW)
@@ -113,7 +116,11 @@ def test_a_chained_clip_needs_its_predecessor_reviewed(tmp_path):
     assert "no PASS QC record" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]
     _video(tmp_path, "V02-b", "SEQ_001", [{"event": "video_qc_note", "rid": "V02-b", "verdict": "FAIL"}])
     assert "V02-b" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]   # the latest take is the one that counts
-    _video(tmp_path, "V03-c", "SEQ_001", [{"event": "video_qc_note", "rid": "V03-c", "verdict": "PASS (picture)"}])
+    _video(tmp_path, "V03-c", "SEQ_001", [{"event": "video_qc_note", "rid": "V03-c", "verdict": "PASS (picture)",
+                                            "reviewer": "reviewer agent"}])
+    assert "no PASS QC record" in firewall.predecessor_qc_problems(tmp_path, "SEQ_002")[0]   # an agent's note never
+    _video(tmp_path, "V04-d", "SEQ_001", [{"event": "video_qc", "rid": "V04-d", "verdict": "PASS",  # clears the chain
+                                            "reviewer": "producer"}])
     assert firewall.predecessor_qc_problems(tmp_path, "SEQ_002") == []
 
 

@@ -10,7 +10,11 @@ Every check below is marked by how it is enforced:
 | **RECORD** | Produces a record that a person signs. |
 | **PROCESS** | Discipline only. |
 
-**Strength cap (LL-16).** Every CODE gate binds only callers that go through the firewall. The platform's submit tools can be called directly, so a gate is as strong as the discipline of whoever submits. Reconciling against the billing feed (SC-8) is the backstop that detects a bypass after the fact.
+**Strength cap (LL-16), updated 2026-10-15.**
+
+- Every paid job is an agent's MCP tool call. Since 2026-10-15 the PreToolUse hook `ulac/paidguard.py` (wired in `.claude/settings.json`) sits in front of every such call. It refuses any generation tool except `submit_workflow`, and lets that through only with the exact graph of a live, unsent firewall reservation whose target is GENERATION_AUTHORIZED.
+- The hook binds Claude Code sessions in this repository. It does not bind the Comfy web UI or a client without these settings. Removing it fails `test_this_repository_installs_the_guard`, so the tooling stamp, and every reservation with it, fails too.
+- Reconciling against the billing feed (SC-8) remains the backstop that detects a bypass after the fact.
 
 A failed gate produces a named defect in `defect_registry.json`, with evidence and a corrective action. A failed gate is never waived silently. A waiver is a user decision, recorded in the ledger (`decision`).
 
@@ -25,6 +29,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SA-5 | Canonical prop references defined for story-critical props (LL-10) | PROCESS (until a prop lock exists) | prop sheet in `docs/<EP>_prod_specs/` |
 | SA-6 | Prior-episode requirements applied: `next_episode_requirements.md` walked line by line and signed | RECORD | change-impact review signed in the episode plan |
 | SA-7 | Regression suite green, tooling stamped | **CODE** (`python3 -m ulac tooling-check`; the firewall refuses reservations otherwise) | `TOOLING_OK.json` |
+| SA-8 | **Audio ledger approved** (state AUDIO_LOCKED). Every word is covered, there are no gaps, overlaps or segments over 15 s, and no cut falls inside a word, including after frame rounding. A person approves after listening. | **CODE** (`ulac.contracts`, kind audio; `packer` re-checks the rounded frame) | `BLUEPRINT/contracts/audio_ledger.json`, ledger `contract_approved` |
 
 ## SB: Storyboard
 
@@ -34,6 +39,9 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SB-2 | Spatial and character continuity: seats, facing, one instance per character, props | PROCESS (reviewer agent; board QC) | board review record |
 | SB-3 | Board error detection: wrong occupancy, floating limbs, geography; preventions written into the prompt | PROCESS | prompt "preventions" lines |
 | SB-4 | Known historical defects checked (`regression_tests.md` "board" cases) | PROCESS | checklist in the board review |
+| SB-5 | **Storyboard contract approved** (STORYBOARD_APPROVED). Panels are timed on the narration, in order and covering the clip; each has a camera and an action; every character has a reference and a zone; the outgoing state is defined. Approval needs a locked ledger and binds the contract hash. | **CODE** (`ulac.contracts`) | `storyboard_contract_<SEQ>.json`, `contract_approved` |
+| SB-6 | **Continuity contract approved for every join** (CONTINUITY_APPROVED). A locked colour keyframe exists (never a pencil END_LOCK); both sides of a shared boundary are the same image bytes; states agree at the join; both storyboards are approved. Approval binds the keyframe hashes. | **CODE** (`ulac.contracts`) | `continuity_contract_<A>_to_<B>.json` |
+| SB-7 | Visual correctness of boards and keyframes: positions, left/right, hands, room conformance to the environment master, emotional read | **RECORD** (a person, in the contract approval statement; category C) | approval statement |
 
 ## SC: Generation (paid)
 
@@ -44,7 +52,11 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SC-3 | Quote recorded, price accepted, within cap and attempt ceiling, scope authorized | **CODE** (`firewall.video_reserve`) | ledger `video_quoted`, `video_reserved` |
 | SC-4 | **Every pinned clip** (story, repair or title) states `requires.end_state`; its keyframes are reviewer-passed, locked and carry **`contract_checks`** for every required state | **CODE** (`repairlint` in `prod.flf` for every spec; `prod.lock`; `prod.contract` addendum) | `PROD/K_*/LOCK.json`, `CONTRACT*.json` |
 | SC-5 | Repair names its fix and required states; a shared-prop change only with its neighbours | **CODE** (`repairlint`, `r6_accept`) | spec `requires`, `with_neighbours` |
-| SC-6 | A chained clip's predecessor has a PASS on record: the reviewer's picture review (`video_qc_note`) or a human `video_qc` | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` / `video_qc_note` |
+| SC-0 | **Render plan released and generation authorized** (GENERATION_AUTHORIZED). The plan is compiled only from approved contracts; a person releases it and signs an authorization with a scope and a cap. Code, plan or input changes void it. | **CODE** (`contracts.release_problems` in `video_reserve`; `keyframe_problems` in `reserve`; the hook) | `render_plan.json`, `render_plan_released`, `generation_authorized` |
+| SC-6 | A chained clip's predecessor has a person's `video_qc` PASS. An agent's `video_qc_note` never counts (changed 2026-10-15). | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` |
+| SC-10 | The graph sent is the plan's own: same compiled L4 prompt, same length, and both pinned keyframes' recorded uploads | **CODE** (`contracts.plan_match_problems` in `video_reserve`) | refusal `PLAN_DIVERGENCE` |
+| SC-11 | Protected evidence unchanged since the freeze (takes, keyframes, records; the ledger only appended) | **CODE** (`evidence.verify` in `video_reserve` and `authorize`) | refusal `evidence:` |
+| SC-12 | No paid tool call outside a reservation; no rerun by `from_prompt_id`; a reserved graph is sent once; a submitted reservation cannot be released | **CODE** (`ulac/paidguard.py` hook; `firewall.release_reservation`, `video_payload`) | `project/PAIDGUARD_LOG.jsonl` |
 | SC-7 | Credit balance confirmed with the producer to cover the whole batch | PROCESS (no balance read available; LL-17) | ledger `decision` naming the confirmed balance |
 | SC-8 | After each wave, billing reconciled into the ledger; submitted-but-unbilled jobs listed | CODE (`metrics.video.submitted_without_billing`) + PROCESS (run it) | `video_billed` / `billed` events |
 | SC-9 | Pilot first on a new method (two sequences) | PROCESS (CLAUDE.md §2.6) | pilot QC records |

@@ -91,3 +91,54 @@ Severity: **Blocking** means it must be fixed before any paid generation. Status
 ### Recommended order of work
 
 AUD-01/02/15 (hook) → AUD-03/04 (forged approvals) → AUD-06/07/08/11 (contracts with bound approvals) → AUD-05 (image gate) → AUD-10 (evidence) → AUD-12 (prompt layers) → AUD-09/13/14 (documentation and human review).
+
+---
+
+## Audit 2026-10-15, second pass: independent research and implementation status
+
+Three read-only research agents (Haiku; Read, Grep and Glob were meant to be their only tools, but this session had loaded the older definition, so they also used Bash read-only) re-audited the areas above in parallel. I checked their claims against the files before acting; the ones marked "verified" below I reproduced myself. They wrote no files and spent nothing.
+
+### Corrections to the first pass
+
+| Finding | Correction | Evidence | Verified |
+|---|---|---|---|
+| AUD-08 | "No validator" and "no audio hash" were wrong: `blueprint.audio_ledger` validated boundaries and recorded the narration hash. The count was wrong too: **four** boundaries fall inside a word, not three (the ends of SEQ_025, SEQ_028, SEQ_035 and SEQ_036). Root cause: the planner placed each cut exactly at a zero-gap word junction, `packer.pack_from_cuts` checked only the raw time, then rounded it to the 24 fps grid, 10–15 ms into the previous word. The blueprint's 10 ms tolerance hid SEQ_025 ("part." ends at 312.76; the cut ships at 312.75). | `project/EP05_plan/cuts.json`; `ulac/packer.py` (raw check, then rounding); `transcript_word.json` | yes |
+| AUD-09 | EP05's interval producer is `ulac/packer.py` with `project/EP05_plan/cuts.json`, not `orchestrator/`. `orchestrator/` caps clips at 345 frames (14.375 s), while ulac uses 15 s; six EP05 clips exceed 14.375 s. README presents `orchestrator/` as a shared evidence layer, and nothing marked it non-authoritative. | `orchestrator/stages/s02_segmentation.py`; `README.md` | partly (the 345-frame cap is in `docs/READINESS.md`) |
+| AUD-07 | The wrong-room defects L03–L05 are **not** rendered join breaks. The V05→V06 and V06→V07 joins match (3 of 64 dHash bits), because both sides are equally wrong. Only conformance to the environment master catches them, and that is a human-review item (category C), not a join check. A hash chain **does** exist for board END_LOCKs; the gap is that rendered frames and keyframe cloud uploads were never bound to local hashes. "40 joins" is 40 findings across 38 boundary records. | research report on continuity; `BLUEPRINT/boundaries.json` | partly (dHash values not re-run) |
+| AUD-11 | `gates.py` does recompute content hashes, and `blueprint.release_problems` recomputes the report hash. The real gap is that no approval recorded its **input** hashes, and that signatures accept any name. SEQ_011–029 and SEQ_036–037 were signed "claude-code". `HANDOFF_AUDIT.json` predates the 2026-10-12 state edits and counts 16 "draft" acceptances as accepted. | `ulac/gates.py`; `HANDOFF_AUDIT.json` mtime | not independently |
+| AUD-05 | Keyframe and board reservations were capped by `video_pilot.cap_credits` inside `reserve()`. "No cap" was wrong; the missing gate was the contract chain. | `ulac/firewall.py` `reserve` | yes |
+| AUD-15 | "The hook now covers the tool calls" was written before the hook existed. It is true only from the commit that adds the hook. | git history | yes |
+
+### New findings
+
+| ID | Location | Failure mechanism | Severity | Remediation | Regression test | Status |
+|---|---|---|---|---|---|---|
+| AUD-16 | `ulac/__main__.py` `release` | `ulac release` dropped a reservation that had already been submitted, so the same attempt could be reserved and paid again | High | `firewall.release_reservation` refuses a submitted reservation | `test_paidguard.py::test_a_submitted_reservation_cannot_be_released_or_handed_back_as_unspent` | Tested |
+| AUD-17 | `firewall.reserve` | The same prompt after a paid attempt came back as "reused", as if it were unspent | Medium | Reuse only an unpaid reservation | same test | Tested |
+| AUD-18 | `firewall.video_payload` | Returned the stored graph of a reservation already submitted (V63–V66) | Medium | Refuses unless the state is "reserved" | `test_only_the_reserved_authorized_graph_passes_and_only_once` | Tested |
+| AUD-19 | `firewall.predecessor_qc_problems` | An agent's unguarded `video_qc_note` PASS cleared the chain gate (six such notes in the EP05 ledger) | High | Only a person's `video_qc` PASS counts | `test_castlock.py::test_a_chained_clip_needs_its_predecessor_reviewed` | Tested |
+| AUD-20 | `firewall._user`, `approve_extra` | Model names ("haiku", "Sonnet 4.5") passed as people; `approve_extra` used its own list, which accepted "lead" | High | Model and role words added; `approve_extra` uses `_user` | `test_model_and_role_names_are_not_people` | Tested |
+| AUD-21 | `ulac/prod.py` `flf` | A clip could be reserved with a prompt, length or pinned frames that differ from the approved plan | High | `contracts.plan_match_problems` in `video_reserve` (PLAN_DIVERGENCE) | `test_video_reserve_refuses_a_graph_that_is_not_the_plan` | Tested |
+| AUD-22 | `paidguard` (first draft) | An unlisted server (for example `openai`) passed, and a string `dry_run` passed as a dry run | High | Any server not on the known-safe list is a generation server; `dry_run` must be `true` | `test_an_unlisted_server_is_a_generation_server`, `test_a_dry_run_passes_only_as_a_real_boolean` | Tested |
+| AUD-23 | `firewall.tooling_hash` | Ignored `.claude/settings.json`, the agent files and `orchestrator/` subfolders, so removing the hook left the stamp valid | Medium | All three hashed; a test asserts the hook is installed | `test_this_repository_installs_the_guard` | Tested |
+| AUD-24 | `blueprint.boundary_ledger` | The join check exempted the downstream clip's within-clip `allowed_change` paths at the boundary itself | Medium | States must agree at the join (camera wording aside) | `test_an_unpermitted_state_change_needs_a_reasoned_waiver_and_some_codes_never_waive` | Tested |
+| AUD-25 | `blueprint.audio_ledger` | Mutated the caller's silence list, so a second build crashed | Low | Copies | `test_contracts.py` rebuild tests | Tested |
+| AUD-26 | `gates.sign`, `adjudicate`, `qc._set`, `relay.decide`, `prod.lock`, `prod.contract`, orchestrator approve | These record decisions under any non-empty name | Medium | None of them now gates spend: the contract approvals that do are person-checked. Left as is and recorded. | none | Open (accepted) |
+| AUD-27 | Approval files (`CAST_LOCK.json`, `FIREWALL.json` approvals) | Read as plain files and not cross-checked with the ledger; a script the agent writes and runs could forge both | Medium | The hook refuses agent writes to them through Write, Edit and Bash; `evidence.verify` detects a changed frozen file | `test_file_tools_cannot_write_protected_records` | Residual (code run from a file is not blocked) |
+| AUD-28 | Keyframe cloud uploads | A LOCK's cloud name is not verified to hold the locked pixels | Medium | The plan match binds the graph to the LOCK's cloud name; byte identity of the upload stays unverified | `test_video_reserve_refuses_a_graph_that_is_not_the_plan` | Partial |
+| AUD-29 | `prod.crop`, `relay` asset boards | Graphs submitted without a matching graph-hash reservation | Low | The hook now refuses them (fail closed); crops need a reservation path before they run again | `test_p04_a_direct_submit_without_a_reservation_is_refused` | Blocked by design |
+
+### Status of the first-pass findings after implementation
+
+| ID | Status | Evidence |
+|---|---|---|
+| AUD-01, AUD-02, AUD-15 | Tested. The hook is live in this session: a Bash denial and a free MCP call were logged, and the log also shows subagent calls passing through it. | `project/PAIDGUARD_LOG.jsonl`; `tests/test_paidguard.py` |
+| AUD-03 | Tested: `video_accept_derived` replaces every `by="user"` in code | `test_code_price_acceptance_is_derived_from_a_person_never_written_as_user` |
+| AUD-04 | Tested for the hook and for model names. Residual: AUD-27. | `tests/test_paidguard.py` |
+| AUD-05 | Tested: keyframe reservations need approved storyboards and an authorization | `test_a_keyframe_needs_both_storyboards_and_its_own_authorization` |
+| AUD-06, AUD-07, AUD-08, AUD-11 | Tested: `ulac/contracts.py`, with approvals bound to hashes and states computed | `tests/test_contracts.py` |
+| AUD-09 | Documented in the operator guide: ulac with the contracts is the only authority for releases | `docs/production/operator_guide.md` |
+| AUD-10 | Tested: `ulac/evidence.py`; 299 EP05 media files made read-only (as root this adds friction, not protection; `verify` is the control) | `tests/test_evidence.py` |
+| AUD-12 | Tested: L4 is compiled by `storyboard.video_text_flf` from L1–L3, linted by `video.prompt_problems` plus the contract checks | `test_the_compiled_prompt_carries_every_contract_layer` |
+| AUD-13 | Hypothesis records only | `docs/production/h3_comfy_hypotheses.md` |
+| AUD-14 | Open: human review | `production_gate_report.md` |

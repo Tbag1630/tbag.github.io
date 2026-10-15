@@ -299,7 +299,20 @@ def pack_from_cuts(words: list[dict], cuts: list[dict], *, audio_duration: float
                           f"({inside[0]['start']:.3f}-{inside[0]['end']:.3f})")
         if not 0 < c["t"] < audio_duration:
             errors.append(f"cut at {c['t']:.3f}s is outside the audio")
-    bounds = [0] + [round(c["t"] * fps) for c in cuts] + [total_f]
+    def _in_word(tf):
+        return next((w for w in words if w["start"] + 1e-3 < tf < w["end"] - 1e-3), None)
+
+    def _frame(t):
+        """The cut ships on a frame: the nearest frame outside every word (round, then floor, then ceil)."""
+        cands = [round(t * fps), math.floor(t * fps + 1e-9), math.ceil(t * fps - 1e-9)]
+        return next((f for f in cands if not _in_word(f / fps)), cands[0])
+    bounds = [0] + [_frame(c["t"]) for c in cuts] + [total_f]
+    for c, f in zip(cuts, bounds[1:-1]):         # the frame-rounded cut is what ships: check it too (EP05 SEQ_025/028/035/036)
+        w = _in_word(f / fps)
+        if w:
+            errors.append(f"cut at {c['t']:.3f}s rounds to frame {f} ({f / fps:.3f}s), inside the word {w['word']!r} "
+                          f"({w['start']:.3f}-{w['end']:.3f}): no frame between the words; place the cut in a pause "
+                          "at least one frame long")
     if len(set(bounds)) != len(bounds):
         errors.append("two cuts land on the same frame")
     seqs = []

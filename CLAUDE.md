@@ -54,6 +54,7 @@ Hard constraints are separated from preferences. Results are judged against the 
 - Challenge flawed plans with evidence.
 - Never fabricate success, conceal uncertainty, bypass a failed gate, or widen authorization.
 - Durable state (ledger, manifests, git) survives restarts. Record decisions and lessons there.
+- You are accountable for the quality of the production process, not for defending your previous output. Challenge weak assumptions, identify preventable failures, and make evidence-based corrections without waiting for the user to point out every problem. Do not confuse confidence with proof. Preserve accepted work, protect the generation budget, and stop at genuine quality gates. Every episode must leave the production system measurably better than it found it.
 
 ## Continuity enforcement
 
@@ -154,6 +155,15 @@ Available now:
 | `python3 -m ulac.musicscreen <clip.mp4>` | Music and held-tone windows in generated audio, with mute proposals (listen to confirm). |
 | `python3 -m ulac.freeze project/<EP> --final-edl ... --out ...` | Hashed evidence manifest and take classification at the end of an episode. |
 | `python3 -m ulac.metrics project/<EP> --final-edl ... --registry docs/production/defect_registry.json` | Episode metrics, compared against the previous episode. |
+| `python3 -m ulac.contracts build\|status\|plan project/<EP>` | Contracts A/B/C, each clip's computed state, and the render plan compiled from approved contracts (`docs/production/operator_guide.md`). |
+| `python3 -m ulac.contracts approve\|release\|authorize\|revoke project/<EP> ...` | Person only. The hook refuses these from the agent. Any change to an input voids every approval downstream of it. |
+| `python3 -m ulac.evidence verify\|protect project/<EP>` | Accepted takes and records against the frozen manifest; makes accepted media read-only. |
+
+**Paid-generation hook.** `ulac/paidguard.py` runs before every MCP, Bash and file-writing call (`.claude/settings.json`).
+
+- Paid tool calls leave only as the exact graph of a reserved, GENERATION_AUTHORIZED target.
+- Never work around a refusal. Report it.
+- Refused signing commands belong to the user.
 
 Not built yet (build them in `ulac/` with tests before use; never call them as if they exist):
 
@@ -170,6 +180,47 @@ Not built yet (build them in `ulac/` with tests before use; never call them as i
 - At the end of an episode, freeze the evidence, reconcile billing, compute metrics, and update the defect registry, lessons, gates and change log in `docs/production/`.
 - A repeated defect stops the affected stage until its root cause is found.
 - Mark each lesson Observed, Hypothesis, Verified, Regression-protected, Rejected or Unresolved, and never promote one without evidence.
+
+## 8. Model routing and tool-use policy
+
+### Role separation
+
+- **Main session (Sonnet):** owns implementation, integration, test runs, failure analysis, final review and release decisions.
+- **`research` subagent (Haiku; Read, Grep and Glob only):** read-only repository investigations. It never implements changes.
+- **Advisor (Opus):** extra reasoning at high-value decision points, where the advisor feature is available. Advisor output is advice. It is never approval or verification.
+- `builder` (Sonnet) and `reviewer` (Opus) keep the roles their agent files define.
+- The subagent default is `CLAUDE_CODE_SUBAGENT_MODEL=haiku` in `.claude/settings.json`. Project settings override user settings, so this file is the one that decides.
+- `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` stays unset, so each agent's own `model:` line still applies.
+
+### Delegation rules
+
+- For an open-ended repository investigation, proactively delegate 2–3 independent research tasks in parallel when that helps:
+  1. Audio ledger, timestamp authority and storyboard contract.
+  2. Spatial continuity, boundary handoffs and historical defects.
+  3. Render-plan release, test coverage and paid-generation bypasses.
+- Keep implementation in the main session. Never delegate editing or final test ownership to the research agent.
+- Ask each researcher for findings, exact evidence paths, unresolved questions and proposed regression tests. Synthesize the results before changing code. Never pass an unsupported conclusion from one agent to another as an established fact.
+- Skip delegation for small, local tasks.
+
+### Advisor consultation
+
+- Consult the Opus advisor, when it is available:
+  - before a consequential architectural change, or a change that touches several contracts;
+  - when the same defect recurs after a proposed fix;
+  - when evidence conflicts or a root cause stays uncertain;
+  - before declaring the production gates complete;
+  - before resolving a high-impact security, integrity or spending-control issue.
+- Consultations add usage. Don't call the advisor for routine edits or for every test result.
+- If the advisor is unavailable, continue with documented reasoning and tests. Never say a consultation happened when it did not.
+
+### Evidence and release
+
+- Tests, not agent opinions, decide whether automated gates pass.
+- Preserve accepted takes and historical evidence.
+- Run the relevant regression tests after each meaningful change, and the complete suite before declaring readiness.
+- Keep paid generation blocked until the production authorization gate is independently satisfied.
+- Report the actual commands, results, unresolved failures and evidence locations.
+- Never weaken a failing test just to get a passing report.
 
 ## Spending
 

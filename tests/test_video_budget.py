@@ -6,7 +6,7 @@ import subprocess
 
 import pytest
 
-from conftest import release_clips, sign_cast
+from conftest import authorize_clips, sign_cast
 from ulac import comfy, firewall, video
 
 SEG = 13.583
@@ -25,6 +25,14 @@ GRAPH = comfy.seedance_r2v_720p(PROMPT, STORY, IDENT, seconds=14, prefix="ULAC/E
 needs_ffmpeg = pytest.mark.skipif(not (shutil.which("ffmpeg") and shutil.which("ffprobe")), reason="ffmpeg not installed")
 
 
+@pytest.fixture(autouse=True)
+def _plan_match_tested_elsewhere(monkeypatch):
+    """These tests exercise caps, attempts, quotes and QC with a fixed pilot graph. Whether a graph matches the released
+    render plan is tested in test_contracts.py (test_video_reserve_refuses_a_graph_that_is_not_the_plan)."""
+    from ulac import contracts
+    monkeypatch.setattr(contracts, "plan_match_problems", lambda *a, **k: [])
+
+
 def _pilot(root, **over):
     pilot = {"status": "AUTHORIZED", "scope": ["SEQ_001"], "cap_credits": 700, "max_attempts": 1,
              "authorized_by": "user", **over}
@@ -32,8 +40,8 @@ def _pilot(root, **over):
     (root / firewall.STAMP).write_text(json.dumps({"ok": True, "sha256": firewall.tooling_hash(), "result": "test"}))
     if not (root / "CAST_LOCK.json").exists():
         sign_cast(root)
-    if not (root / "BLUEPRINT_RELEASE.json").exists():
-        release_clips(root, ["SEQ_001", "SEQ_002"])
+    if not (root / "BLUEPRINT").exists():
+        authorize_clips(root, ["SEQ_001", "SEQ_002"])
 
 
 def _quote(root, graph=GRAPH, credits=639.0):
@@ -65,7 +73,8 @@ def test_refuses_without_authorization_and_writes_nothing(tmp_path):
     _quote(tmp_path)
     with pytest.raises(firewall.FirewallError, match="no video pilot authorization"):
         _reserve(tmp_path)
-    assert [e["event"] for e in firewall.read_ledger(tmp_path) if e["event"] not in ("cast_locked", "storyboard_released")] == ["video_quoted"]
+    assert [e["event"] for e in firewall.read_ledger(tmp_path) if e["event"] not in ("cast_locked", "storyboard_released", "contract_approved",
+                                                                         "render_plan_released", "generation_authorized")] == ["video_quoted"]
     assert not (tmp_path / firewall.VIDEO_DIR).exists()
 
 
@@ -257,7 +266,10 @@ def test_one_production_budget_counts_images_and_audio_and_audio_needs_its_own_a
     conf["authorization"] = {"sequence_boards": True}
     (tmp_path / firewall.CONF).write_text(json.dumps(conf))
     kw = dict(prompt_sha="p", ref_hashes={}, config_hash="c", seed=0, model="m", workflow="w", closed=False)
-    firewall.reserve(tmp_path, tid="K_1", kind="keyframe", attempt=1, est_credits=80, **kw)
+    from ulac import contracts                                        # boundary keyframes K1, K2 of the clean episode
+    contracts.authorize(tmp_path, scope=["SEQ_001", "SEQ_002", "K1", "K2"], cap_credits=100000, by="producer",
+                        statement="test fixture: keyframes K1 and K2 may be generated for these two clips")
+    firewall.reserve(tmp_path, tid="K1", kind="keyframe", attempt=1, est_credits=80, **kw)
     m = firewall.reserve(tmp_path, tid="MUS_1", kind="music", attempt=1, est_credits=20, **kw)
     assert m["authorized"] is False                                   # no audio authorization recorded yet
     _quote(tmp_path)
@@ -265,4 +277,4 @@ def test_one_production_budget_counts_images_and_audio_and_audio_needs_its_own_a
     with pytest.raises(firewall.FirewallError, match="exceed the 700-credit cap"):
         _reserve(tmp_path)                                            # 100 already committed + 639 > 700
     with pytest.raises(firewall.FirewallError, match="production cap"):
-        firewall.reserve(tmp_path, tid="K_2", kind="keyframe", attempt=1, est_credits=650, **kw)
+        firewall.reserve(tmp_path, tid="K2", kind="keyframe", attempt=1, est_credits=650, **kw)

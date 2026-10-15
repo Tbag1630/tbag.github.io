@@ -16,7 +16,7 @@ from pathlib import Path
 from orchestrator.ledger import Ledger
 from orchestrator.util import sha256_text, utc_iso
 
-from . import comfy, endpoint, firewall, gates, layout, qc, validators
+from . import comfy, endpoint, firewall, gates, layout, qc, validators, video
 from .firewall import FirewallError
 from .config import load as load_config
 
@@ -673,7 +673,8 @@ class Episode:
                                    ref_hashes={r: layout.sha256_file(Path(p)) for r, p in refs},
                                    config_hash=firewall.config_hash(cfg) if cfg else "", seed=node["inputs"].get("seed"),
                                    model=node["inputs"].get("model", ""), workflow="storyboard_sheet_v1" if kind == "seq"
-                                   else "gpt_image", closed=closed, parent_job=parent)
+                                   else "gpt_image", closed=closed, parent_job=parent,
+                                   graph_sha256=video.graph_sha256(graph))
         except FirewallError as e:
             raise RelayError(str(e)) from None
         return {"gates": {g: "pass" for g in report}, "reservation": {k: res.get(k) for k in ("attempt", "est_credits",
