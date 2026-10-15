@@ -4,19 +4,31 @@ exact graph to submit. done() records the submission. The firewall still refuses
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
 from . import comfy, firewall, storyboard, video
 
-ROOT = Path("project/EP05")
+
+def _root() -> Path:
+    """The episode this command works on. It is named every time (ULAC_PROJECT=project/<EP>): this module used to
+    default to project/EP05, so a next-episode job would have been reserved in EP05's ledger."""
+    p = os.environ.get("ULAC_PROJECT", "").strip()
+    if not p:
+        raise SystemExit("name the episode: ULAC_PROJECT=project/<EP> python3 -m ulac.<module> ...")
+    root = Path(p)
+    if not (root / "CREDIT_LEDGER.jsonl").exists() and not (root / "SEQUENCES").is_dir():
+        raise SystemExit(f"{root} is not an episode folder (no CREDIT_LEDGER.jsonl or SEQUENCES/)")
+    return root
+
 RATE = 639.0 / 14  # credits per second, 720p audio on; cloud estimates 8 s=365, 14 s=639, 15 s=684
 
 
 def prep(seq: str, start: str) -> None:
-    if why := firewall.predecessor_qc_problems(ROOT, seq):
+    if why := firewall.predecessor_qc_problems(_root(), seq):
         sys.exit("chain refused: " + "; ".join(why))
-    d = ROOT / "SEQUENCES" / seq
+    d = _root() / "SEQUENCES" / seq
     pj = json.loads((d / "prompt.json").read_text())
     plan = json.loads((d / "storyboard_plan.json").read_text())
     if seq == "SEQ_002":
@@ -27,13 +39,13 @@ def prep(seq: str, start: str) -> None:
     (d / "video_start" / "prompt_video_start.txt").write_text(prompt)
     g = comfy.seedance_flf_720p(prompt, start, None, seconds=secs, prefix=f"ULAC/EP05/{seq}_VIDEO_start")
     credits = round(secs * RATE, 1)
-    quote = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
+    quote = firewall.video_quote(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
                                  credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain")
     if quote["problems"]:
         sys.exit(f"preflight: {quote['problems']}")
-    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
+    firewall.video_accept_derived(_root(), seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
                                   applied_by="ulac.chain")
-    r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
+    r = firewall.video_reserve(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
     print(json.dumps({"rid": r["rid"], "credits": credits, "committed_before": r["committed_before"]}))
     print(json.dumps(g))
 
@@ -59,7 +71,7 @@ CUT = ("@image3 is the last frame of the previous shot in a different location: 
 
 def board_output(seq: str) -> str:
     """Cloud name of the accepted storyboard sheet (the ledger's accepted attempt)."""
-    led = firewall.read_ledger(ROOT)
+    led = firewall.read_ledger(_root())
     acc = [r["attempt"] for r in led if r.get("target") == seq and r["event"] == "accepted"][-1]
     return [r["output"] for r in led if r.get("target") == seq and r.get("attempt") == acc and r.get("output")][-1]
 
@@ -89,9 +101,9 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     """Reference-to-video with three images: @image1 the accepted storyboard (staging), @image2 the colour identity
     board (who), @image3 the previous clip's last frame (the opening frame). SEQ_003 V04 showed that a start frame
     alone loses identity and room when the previous clip ends on an insert."""
-    if why := firewall.predecessor_qc_problems(ROOT, seq):
+    if why := firewall.predecessor_qc_problems(_root(), seq):
         sys.exit("chain refused: " + "; ".join(why))
-    d = ROOT / "SEQUENCES" / seq
+    d = _root() / "SEQUENCES" / seq
     pj = json.loads((d / "prompt.json").read_text())
     plan = json.loads((d / "storyboard_plan.json").read_text())
     secs, seg = int(pj["render_seconds"]), float(pj["duration"])
@@ -111,28 +123,28 @@ def prep_r2v(seq: str, opening: str, mode: str = "open", fix: str = "") -> None:
     if not env:
         sys.exit(f"preflight: no environment master is uploaded for {pj.get('penv_id')!r} (ENV_MASTERS); the video stage "
                  "never runs without it (EP05 lost its hall look this way)")
-    local = ROOT / "VIDEO" / opening
+    local = _root() / "VIDEO" / opening
     if local.exists():
-        bad = video.frame_source_problems(local, video.sketch_registry(ROOT))
+        bad = video.frame_source_problems(local, video.sketch_registry(_root()))
         if bad:
             sys.exit(f"preflight: {bad}")
     g = comfy.seedance_r2v_720p(prompt, board_output(seq), IDENTITY, seconds=secs,
                                 prefix=f"ULAC/EP05/{seq}_VIDEO_r2v", opening=opening, environment=env)
     credits = round(secs * RATE, 1)
-    quote = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
+    quote = firewall.video_quote(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg,
                                  credits=credits, source=f"per-second table {RATE:.3f}/s x {secs} s", dry_run="chain r2v")
     if quote["problems"]:
         sys.exit(f"preflight: {quote['problems']}")
-    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
+    firewall.video_accept_derived(_root(), seq=seq, graph_sha256=quote["graph_sha256"], credits=credits,
                                   applied_by="ulac.chain r2v")
-    r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
+    r = firewall.video_reserve(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=seg)
     print(json.dumps({"rid": r["rid"], "credits": credits, "committed_before": r["committed_before"], "chars": len(prompt)}))
     print(json.dumps(g))
 
 
 def done(rid: str, job: str) -> None:
-    g = json.loads((ROOT / "VIDEO" / f"{rid}.graph.json").read_text())
-    firewall.video_submitted(ROOT, rid, job, g)
+    g = json.loads((_root() / "VIDEO" / f"{rid}.graph.json").read_text())
+    firewall.video_submitted(_root(), rid, job, g)
     print("recorded", rid, job)
 
 

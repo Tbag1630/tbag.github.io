@@ -54,7 +54,11 @@ Each one lists its `findings`.
 
 Only STATE_HANDOFF_MISMATCH and BOARD_PANEL_COUNT can be waived. Every other blocking code cannot.
 
-## Where a person runs the signing commands (unverified for cloud sessions)
+## Where a person runs the signing commands
+
+**Signed approvals (2026-10-15).** A contract approval can carry your SSH signature, so it is verifiable after the fact and can travel through a cloud session. The steps are in `docs/production/patches/README.md` ("To use signed approvals"): register your key in `docs/production/allowed_signers` yourself; the agent prints the exact statement (`python3 -m ulac.signing statement ...`); you sign it with `ssh-keygen -Y sign -n ulac-approval`; the approval is recorded with `--signature`. The live guard still refuses approvals from the agent's shell until the guard candidate is applied (decision B-04). Your choice of route is decision B-05 in `decision_register.md`.
+
+### Your own shell (unverified for cloud sessions)
 
 `project/<EP>` is gitignored and exists only inside the session's container, so the signing commands have to run there, but not as the agent's tool call, which the hook refuses.
 

@@ -163,8 +163,11 @@ Available now:
 |---|---|
 | `python3 -m pytest -q tests` | Test suite. Must pass after any code change. |
 | `python3 -m ulac tooling-check project/<EP>` | Restamps tooling. The firewall refuses reservations after an unstamped code change. |
-| `python3 -m ulac.chain r2v SEQ_xxx <prev_last.png> [open\|cut] [audio\|repair]` | Chained reference-to-video: preflight, quote, price acceptance and firewall reservation; prints the graph. |
-| `python3 -m ulac.chain done <rid> <job_id>` | Records a submitted job in the firewall ledger. |
+| `ULAC_PROJECT=project/<EP> python3 -m ulac.prod img\|flf <TID> <spec.json>` | Keyframe or first-last-frame clip: preflight, quote, firewall reservation; prints the graph. The episode is named every time (no EP05 default). |
+| `ULAC_PROJECT=project/<EP> python3 -m ulac.chain r2v ...` | Legacy reference-to-video. The render plan is FLF only, so the firewall refuses its graphs (PLAN_DIVERGENCE). |
+| `ULAC_PROJECT=project/<EP> python3 -m ulac.chain done <rid> <job_id>` | Records a submitted job in the firewall ledger. |
+| `python3 -m ulac.signing statement\|verify ...` | The exact statement a person signs for a contract approval, and signature verification (AUD-33). |
+| `firewall.close_authorizations`, `video_release`, `take_disposition` (Python) | Restrict-only and fact-only reconciliation with cited evidence; `freeze` refuses open records. |
 | `python3 -m ulac.castlock status\|sign project/<EP>` | Cast lock: status, or the producer's signature (human only). |
 | `python3 -m ulac.musicscreen <clip.mp4>` | Music and held-tone windows in generated audio, with mute proposals (listen to confirm). |
 | `python3 -m ulac.freeze project/<EP> --final-edl ... --out ...` | Hashed evidence manifest and take classification at the end of an episode. |

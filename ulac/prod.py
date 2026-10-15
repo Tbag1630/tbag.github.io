@@ -12,12 +12,24 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
 from . import audio, comfy, firewall, storyboard, video
 
-ROOT = Path("project/EP05")
+
+def _root() -> Path:
+    """The episode this command works on. It is named every time (ULAC_PROJECT=project/<EP>): this module used to
+    default to project/EP05, so a next-episode job would have been reserved in EP05's ledger."""
+    p = os.environ.get("ULAC_PROJECT", "").strip()
+    if not p:
+        raise SystemExit("name the episode: ULAC_PROJECT=project/<EP> python3 -m ulac.<module> ...")
+    root = Path(p)
+    if not (root / "CREDIT_LEDGER.jsonl").exists() and not (root / "SEQUENCES").is_dir():
+        raise SystemExit(f"{root} is not an episode folder (no CREDIT_LEDGER.jsonl or SEQUENCES/)")
+    return root
+
 RATE = 639.0 / 14                      # measured Seedance 2.0 720p audio-on credits per second on this account
 RATES = {"720p": RATE,
          "1080p": 680.0 / 6}            # estimate_credits 2026-10-12 (6 s at 1080p = 680); replace with the billed rate
@@ -25,7 +37,7 @@ IMG_EST = 55.3                         # measured GPT Image board cost on this a
 
 
 def _dir(tid: str) -> Path:
-    d = ROOT / "PROD" / tid
+    d = _root() / "PROD" / tid
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -33,12 +45,12 @@ def _dir(tid: str) -> Path:
 def img(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
     refs = [(t, frame(n)) for t, n in spec["refs"]]      # out:<TID> names a locked keyframe; refused if unlocked
-    attempt = firewall.next_attempt(ROOT, tid)
+    attempt = firewall.next_attempt(_root(), tid)
     g = comfy.gpt_image(spec["prompt"], refs, prefix=f"ULAC/EP05/PROD/{tid}_a{attempt}", size=spec.get("size", "1280x720"),
                         quality=spec.get("quality", "high"),
                         out_size=tuple(spec["out_size"]) if spec.get("out_size") else None)
     psha = hashlib.sha256(spec["prompt"].encode()).hexdigest()
-    rec = firewall.reserve(ROOT, tid=tid, kind="keyframe", attempt=attempt, prompt_sha=psha,
+    rec = firewall.reserve(_root(), tid=tid, kind="keyframe", attempt=attempt, prompt_sha=psha,
                            ref_hashes={t: n for t, n in refs}, config_hash=video.graph_sha256(g), seed=0,
                            graph_sha256=video.graph_sha256(g),
                            model=comfy.GPT_MODEL, workflow="gpt_image keyframe", closed=False)
@@ -54,7 +66,7 @@ def frame(name: str | None) -> str | None:
     a release-blocking gate (CLAUDE.md section 5): the clip is refused, never built from an unreviewed frame."""
     if not name or not name.startswith("out:"):
         return name
-    lock = ROOT / "PROD" / name[4:] / "LOCK.json"
+    lock = _root() / "PROD" / name[4:] / "LOCK.json"
     if not lock.exists():
         raise SystemExit(f"GATE: keyframe {name[4:]} is not locked (no reviewer pass recorded at {lock})")
     return json.loads(lock.read_text())["cloud"]
@@ -63,7 +75,7 @@ def frame(name: str | None) -> str | None:
 def flf(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
     from . import repairlint                       # every pinned clip, repairs and story clips alike (SC-4)
-    why = repairlint.problems(spec, repairlint.load_locks(ROOT / "PROD"), repair=bool(spec.get("fix")))
+    why = repairlint.problems(spec, repairlint.load_locks(_root() / "PROD"), repair=bool(spec.get("fix")))
     if why:
         raise SystemExit("contract lint refused (nothing quoted): " + "; ".join(why))
     spec["first"], spec["last"] = frame(spec["first"]), frame(spec.get("last"))
@@ -75,12 +87,12 @@ def flf(tid: str, spec_path: str) -> dict:
                            resolution=res)
     rate = RATES[res]
     credits = round(secs * rate, 1)
-    q = firewall.video_quote(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]),
+    q = firewall.video_quote(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]),
                              credits=credits, source=f"per-second table {res} {rate:.3f}/s x {secs} s", dry_run="prod flf")
     if q["problems"]:
         raise SystemExit(f"preflight: {q['problems']}")
-    firewall.video_accept_derived(ROOT, seq=seq, graph_sha256=q["graph_sha256"], credits=credits, applied_by="ulac.prod flf")
-    r = firewall.video_reserve(ROOT, seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]))
+    firewall.video_accept_derived(_root(), seq=seq, graph_sha256=q["graph_sha256"], credits=credits, applied_by="ulac.prod flf")
+    r = firewall.video_reserve(_root(), seq=seq, graph=g, prompt=prompt, seconds=secs, segment_seconds=float(spec["segment"]))
     d = _dir(tid)
     (d / f"{r['rid']}.prompt.txt").write_text(prompt)
     return {"tid": tid, "seq": seq, "rid": r["rid"], "credits": credits, "graph": r["graph_file"], "committed_before": r["committed_before"]}
@@ -102,24 +114,24 @@ def contract(tid: str, reviewer: str, checks) -> dict:
     rec = {"target": tid, "lock_sha256": json.loads(lk.read_text())["sha256"], "reviewer": reviewer,
            "contract_checks": {str(k): str(v).upper() for k, v in checks.items()}, "version": n}
     (d / ("CONTRACT.json" if n == 1 else f"CONTRACT_{n}.json")).write_text(json.dumps(rec, indent=1))
-    firewall.record(ROOT, "contract_checked", target=tid, reviewer=reviewer, version=n, checks=rec["contract_checks"])
+    firewall.record(_root(), "contract_checked", target=tid, reviewer=reviewer, version=n, checks=rec["contract_checks"])
     return rec
 
 
 def sent(tid: str, ref: str, job: str) -> None:
     if ref.startswith("V"):
-        g = json.loads((ROOT / "VIDEO" / f"{ref}.graph.json").read_text())
-        firewall.video_submitted(ROOT, ref, job, g)
+        g = json.loads((_root() / "VIDEO" / f"{ref}.graph.json").read_text())
+        firewall.video_submitted(_root(), ref, job, g)
     else:
-        firewall.record(ROOT, "submitted", target=tid, attempt=int(ref), job_id=job)
+        firewall.record(_root(), "submitted", target=tid, attempt=int(ref), job_id=job)
 
 
 def got(tid: str, ref: str, path: str) -> None:
     sha = hashlib.sha256(Path(path).read_bytes()).hexdigest()
     if ref.startswith("V"):
-        firewall.record(ROOT, "video_output", rid=ref, target=tid, path=path, sha256=sha)
+        firewall.record(_root(), "video_output", rid=ref, target=tid, path=path, sha256=sha)
     else:
-        firewall.record(ROOT, "ingested", target=tid, kind="keyframe", attempt=int(ref), path=path, sha256=sha)
+        firewall.record(_root(), "ingested", target=tid, kind="keyframe", attempt=int(ref), path=path, sha256=sha)
 
 
 def sound(tid: str, spec_path: str) -> dict:
@@ -127,7 +139,7 @@ def sound(tid: str, spec_path: str) -> dict:
     ace15 bpm and key. Music is instrumental only; sound effects are never music or voice (ulac.audio refuses both)."""
     spec = json.loads(Path(spec_path).read_text())
     prov, secs = spec["provider"], float(spec["seconds"])
-    attempt = firewall.next_attempt(ROOT, tid)
+    attempt = firewall.next_attempt(_root(), tid)
     prefix = f"ULAC/EP05/AUDIO/{tid}_a{attempt}"
     if prov == "ace15":
         g = audio.ace_step_15(spec["prompt"], seconds=secs, bpm=int(spec["bpm"]), keyscale=spec["key"], prefix=prefix,
@@ -140,7 +152,7 @@ def sound(tid: str, spec_path: str) -> dict:
         raise SystemExit(f"unknown audio provider {prov!r}")
     kind = "sfx" if prov == "sfx" else "music"
     est = audio.estimate(prov, secs)
-    rec = firewall.reserve(ROOT, tid=tid, kind=kind, attempt=attempt,
+    rec = firewall.reserve(_root(), tid=tid, kind=kind, attempt=attempt,
                            prompt_sha=hashlib.sha256(spec["prompt"].encode()).hexdigest(), ref_hashes={},
                            config_hash=video.graph_sha256(g), seed=int(spec.get("seed", 0)), model=prov,
                            workflow=f"{prov} {kind}", closed=False, est_credits=est)
@@ -158,7 +170,7 @@ def crop(tid: str, source: str, x: str, y: str, w: str, h: str) -> dict:
     g = comfy.crop_zoom(src, (int(x), int(y), int(w), int(h)), prefix=f"ULAC/EP05/PROD/{tid}_crop")
     out = _dir(tid) / "graph_crop.json"
     out.write_text(json.dumps(g, indent=1))
-    firewall.record(ROOT, "derived_planned", target=tid, kind="crop", source=source, source_cloud=src,
+    firewall.record(_root(), "derived_planned", target=tid, kind="crop", source=source, source_cloud=src,
                     box=[int(x), int(y), int(w), int(h)], graph_sha256=video.graph_sha256(g))
     return {"tid": tid, "graph": str(out), "source": src}
 
@@ -175,7 +187,7 @@ def lock(tid: str, cloud: str, path: str, review: str, contract_checks: dict | N
     rec = {"target": tid, "file": path, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(), "cloud": cloud,
            "review": review, "contract_checks": dict(contract_checks or {})}
     lk.write_text(json.dumps(rec, indent=1))
-    firewall.record(ROOT, "accepted", target=tid, kind="keyframe", sha256=rec["sha256"], cloud=cloud, review=review)
+    firewall.record(_root(), "accepted", target=tid, kind="keyframe", sha256=rec["sha256"], cloud=cloud, review=review)
     return rec
 
 
@@ -186,7 +198,7 @@ def inspect(tid: str, rid: str, first: str = "", last: str = "") -> dict:
     import cv2
     from PIL import Image, ImageDraw
     d = _dir(tid)
-    mp4 = ROOT / "VIDEO" / f"{rid}.output.mp4"
+    mp4 = _root() / "VIDEO" / f"{rid}.output.mp4"
     cap = cv2.VideoCapture(str(mp4))
     n, fps = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), cap.get(cv2.CAP_PROP_FPS) or 24.0
     frames = []

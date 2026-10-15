@@ -27,7 +27,7 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | RC6 | Model limitation in long R2V clips: invented cuts, duplicates, costume and identity drift at wide scale. | 31 | 5 |
 | RC7 | Gate records not tied to the fix contract: pins reviewed for cleanliness, not for the state the fix needs. | 4 | 1 |
 | RC8 | Human decisions writable by automation (record() for QC; role names accepted as users; code-signed acceptances). | 2 | 1 |
-| RC9 | MCP submit tools sit outside the firewall; discipline is the only control. | 3 | 2 |
+| RC9 | MCP submit tools sit outside the firewall; discipline is the only control. | 4 | 3 |
 | RC10 | Final QA ends at machine measurement; no human watch/listen is required before delivery or claims. | 1 | 1 |
 | RC11 | Billing feed not reconciled into the ledger at ingest. | 2 | 0 |
 | RC12 | No planned delivery channel for large masters; media lives only in an ephemeral container. | 2 | 2 |
@@ -42,6 +42,9 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | RC21 | The edit chose transitions by pixel difference (dissolve every non-matching join), so dissolves covered rendered continuity breaks instead of exposing them. | 1 | 1 |
 | RC22 | Graph shape was chosen per job by the builder, not fixed by an approved plan: the reference node carried the storyboard sheet as @image1 (39 graphs) and two first-last-frame jobs ran with no last frame. | 2 | 0 |
 | RC23 | No terminal-record rule: reservations, executed takes and acceptance files could stay open or contradict each other, so totals and rejection counts read from the records are wrong until someone reconciles them by hand. | 1 | 1 |
+| RC24 | Spend authorizations had no lifetime and no closing step: they stayed AUTHORIZED after the work they named was delivered. | 1 | 0 |
+| RC25 | Episode-specific constants in production code: the paid keyframe and video paths defaulted to project/EP05. | 1 | 0 |
+| RC26 | The public repository doubled as the evidence store, so review frames and client records were committed to it. | 1 | 1 |
 
 ## Defects
 
@@ -138,7 +141,7 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-C01 | continuity | MATERIAL | post_delivery | regression-protected | RC3 | No join has a registered, locked colour keyframe; the only boundary images are pencil END_LOCKs. Repair keyframes (PROD/K_*) exist for 17 repair clips but no BO  |
 | EP05-C02 | prop | MATERIAL | post_delivery | regression-protected (EP05 props still missing) | RC5 | 45 missing prop references: the drawing, the paper roll and the crayon buckets have no approved image. |
 | EP05-C03 | identity | MINOR | post_delivery | regression-protected | RC1 | Fixed occupants recorded by seat (state 'O') were left out of the reference manifest, so their sheets (BRAIDS_grid.png, JERSEY_grid.png) were never required. |
-| EP05-C04 | edit | MATERIAL | post_delivery | open (AUD-31: edit.join_plan not yet changed; the 9 joins are in the delivered v5) | RC21 | Nine rendered joins differ (7-35 of 64 dHash bits) and v5 covers each with an 8-frame crossfade. |
+| EP05-C04 | edit | MATERIAL | post_delivery | open (AUD-31: edit.join_plan not yet changed; the 9 joins are in the delivered v5) † | RC21 | Nine rendered joins differ (7-35 of 64 dHash bits) and v5 covers each with an 8-frame crossfade. |
 | EP05-C05 | environment | MATERIAL | post_generation | human review (cannot be automated reliably) | RC2 | The wrong-room clips match each other at their joins (V05->V06 3/64 bits, colour 3.3; V06->V07 3/64, 3.5), so a rendered-join check passes them. Frames show bar  |
 | EP05-C06 | continuity | MATERIAL | post_delivery | regression-protected | RC20 | state_after(N) and state_before(N+1) are copies edited together, so the handoff check passes by construction. |
 | EP05-G01 | process | BLOCKING | post_delivery | regression-protected with residuals R1-R5 (production_gate_report.md) | RC9 | Paid jobs were MCP tool calls no code gated; code wrote 73 'user' price acceptances; submitted reservations could be released and re-sent; agent notes cleared t  |
@@ -148,6 +151,10 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-G02 | cost | MINOR | post_delivery | regression-protected (metrics); ledger unchanged (append-only) | RC11 | One provider job (BOY grid, 8ab13883, 37.84) was billed twice, as CHARACTER_GRID__BOY and CHARACTER_GRID:BOY, overstating image spend and the ledgered total by   |
 | EP05-G03 | identity | MINOR | post_delivery | regression-protected | RC1 | The record that 'verified' cast_ref_01 (58f07ab2...) by a LoadImage->SaveImage round trip cites job 87d24c1d, which the billing feed records as the scribe_v2 na  |
 | EP05-G04 | process | MINOR | post_delivery | open (no terminal-record check at freeze; releasing V33/V67 is a person's decision) † | RC23 | V33 (684.6) and V67 (365.1) were reserved and never closed; five executed takes left out of the cut (3,157.38) carry no verdict, so metrics count 3 rejections w  |
+| EP05-G05 | cost | MATERIAL | post_delivery | regression-protected | RC24 | Three days after delivery, boards, audio, the video pilot (cap 39,500, 25 targets) and 1080p titles were all still AUTHORIZED. |
+| EP05-G06 | process | MATERIAL | post_delivery | open (candidate ready; a person applies it, decision B-04) | RC9 | Routes around the live guard: session-spawning remote tools, GitHub-connector edits of the guard, Artifact pages declaring a generation connector, remote agents  |
+| EP05-G07 | process | MATERIAL | post_delivery | regression-protected | RC25 | The paid keyframe and video paths hardcoded ROOT = project/EP05, so a next-episode job would have been reserved, quoted and recorded in EP05's ledger. |
+| EP05-G08 | delivery | MATERIAL | post_delivery | open (existing files: owner's decision B-07) | RC26 | 38 EP05 frames and contact sheets, the cast comparison, the client's feedback and ledger copies (quoted directives, a private artifact link) are tracked in a pu  |
 
 ## Successes
 
@@ -178,6 +185,9 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | 2026-10-15 | EP05-P02 | Until 2026-10-15 the predecessor gate accepted any video_qc PASS, so EP05's eight 'lead (picture QC)' events would have opened the next clip. It now requires a person's PASS (test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain). |
 | 2026-10-15 | EP05-P03 | Partially prevented: 'decision' was not a guarded event (the v5 delivery decision, ledger line 852, is by 'lead'); it is guarded from 2026-10-15 (test_a_decision_names_a_person_and_quotes_them). _sanctioned is still a keyword any caller can pass, and gates.sign and five other recorders accept any name (AUD-26). An agent can still transcribe by='user' with a quote; a person-only route is AUD-33. |
 | 2026-10-15 | EP05-G04 | Detector added: freeze.open_records lists unclosed reservations and executed takes left out of the cut without a verdict; metrics report it (video.open_records). EP05 returns exactly V33, V67 and V02, V04, V06, V41, V42 (tests/test_freeze.py::test_ep05_open_records_are_the_ones_the_postmortem_names). The freeze does not yet refuse them, and no function closes an unsent video reservation: closing V33/V67 needs one, and a person's decision. |
+| 2026-10-15 | EP05-C04 | Control coded (AUD-31): edit.join_plan cuts and flags a non-matching join unless its continuity contract carries a person-approved transition; finish QC fails on an unresolved break and reports UNKNOWN for renders made before the rule, including v5. Tests: test_a_break_without_an_approved_transition_is_cut_and_flagged_never_dissolved, test_the_release_fails_on_an_unresolved_break_and_cannot_judge_an_old_render. The 9 joins in delivered v5 are unchanged (decision B-03). |
+| 2026-10-15 | EP05-G04 | Reconciled with evidence: V33 and V67 released (firewall.video_release; no submission, no job id, no unattributed billing row that could be either); V02, V04, V06, V41 and V42 recorded as superseded by V03, V05, V47, V50 and V59 (firewall.take_disposition, a fact from the v5 EDL, not a QC verdict). freeze now refuses open records (test_the_freeze_refuses_while_records_are_open). Committed spend 34,362.71 -> 33,313.01. |
+| 2026-10-15 | EP05-P03 | firewall.decision from the shell is refused by the guard candidate (decision B-04); signed approvals (ulac/signing.py) make an approval verifiable after the fact once a key is registered (B-05). |
 | 2026-10-13 | — | P04 relabelled from 'spend outside the firewall' to 'unattributed spend' after checking EVENTS/RUN_STATE/SEQUENCES records; commit 3b5abcf's message used the earlier wording. |
 | 2026-10-15 | production_postmortem.md section 1, EP05-F2 | The original chain was 40 submissions (V02-V42 without V33, which was reserved at 08:43:56 and never submitted), from 03:47:52 to 10:07:19 on 2026-10-12; not 41 clips ending at 09:58. |
 | 2026-10-15 | EP05-P04 | The six unattributed jobs (71.55) also appear in docs/production/EP05/records/billing_feed_2026-10-13.txt, not only in BILLING_JOBS.json. Only 2 of the 6 (12:52, 12:54) fall inside commit d3cfb63's HEAD window (12:47:55-13:28:48), so 'board-stage tests around d3cfb63' stays a hypothesis. |

@@ -12,6 +12,9 @@ These are the records that carry evidence from one episode to the next. Episode-
 | `regression_tests.md` | Known failures and the tests that guard them, plus the gaps |
 | `workflow_change_log.md` | What changed, why, the evidence (commits) and the status |
 | `next_episode_requirements.md` | The readiness gate: blockers, mandatory changes, the change-impact review and the metrics to beat |
+| `decision_register.md` | Next-episode readiness: the decisions taken by the lead (executed, tested) and the decisions only a person takes, each with evidence and a recommendation |
+| `episode_blueprint.md` | The reusable production plan: mandatory versus experimental practice, the ten stages, the first-clip validation, costs and the hard spending boundary |
+| `patches/` | The guard candidate and its settings, for a person to apply (the live guard refuses the agent's writes to itself) |
 | `next_episode_transfer.md` | The hand-over from EP05: top lessons, required changes, inputs, checks, the first-clip checklist and success measures |
 | `cost_and_retry_ledger.md` | Billed credits by bucket, avoidable spend, and the reconciliation procedure |
 | `client_feedback/` | Client requirements in the client's own words (CR-01) |

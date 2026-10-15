@@ -52,7 +52,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SC-3 | Quote recorded, price accepted, within cap and attempt ceiling, scope authorized | **CODE** (`firewall.video_reserve`) | ledger `video_quoted`, `video_reserved` |
 | SC-4 | **Every pinned clip** (story, repair or title) states `requires.end_state`; its keyframes are reviewer-passed, locked and carry **`contract_checks`** for every required state | **CODE** (`repairlint` in `prod.flf` for every spec; `prod.lock`; `prod.contract` addendum) | `PROD/K_*/LOCK.json`, `CONTRACT*.json` |
 | SC-5 | Repair names its fix and required states; a shared-prop change only with its neighbours | **CODE** (`repairlint`, `r6_accept`) | spec `requires`, `with_neighbours` |
-| SC-0 | **Render plan released and generation authorized** (GENERATION_AUTHORIZED). The plan is compiled only from approved contracts; a person releases it and signs an authorization with a scope and a cap. Code, plan or input changes void it. | **CODE** (`contracts.release_problems` in `video_reserve`; `keyframe_problems` in `reserve`; the hook) | `render_plan.json`, `render_plan_released`, `generation_authorized` |
+| SC-0 | **Render plan released and generation authorized** (GENERATION_AUTHORIZED). The plan is compiled only from approved contracts; a person releases it and signs an authorization with a scope, a cap and an expiry (48 h by default, 7 days at most; added 2026-10-15). Code, plan or input changes void it. | **CODE** (`contracts.release_problems` in `video_reserve`; `keyframe_problems` in `reserve`; the hook) | `render_plan.json`, `render_plan_released`, `generation_authorized` |
 | SC-6 | A chained clip's predecessor has a person's `video_qc` PASS. An agent's `video_qc_note` never counts (changed 2026-10-15). A `video_qc` PASS by the lead, or with no reviewer, does not count either (enforced in code from the EP05 postmortem). | **CODE** (`firewall.predecessor_qc_problems`) | ledger `video_qc` |
 | SC-10 | The graph sent is the plan's own: same compiled L4 prompt, same length, one node of the plan's class, `first_frame` and `last_frame` wired to the plan's keyframe uploads, no other image (never a storyboard), and the plan's resolution and audio setting (shape added by the EP05 postmortem: S03, C07) | **CODE** (`contracts.plan_match_problems` in `video_reserve`) | refusal `PLAN_DIVERGENCE` |
 | SC-11 | Protected evidence unchanged since the freeze (takes, keyframes, records; the ledger only appended) | **CODE** (`evidence.verify` in `video_reserve` and `authorize`) | refusal `evidence:` |
@@ -69,7 +69,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SD-2 | Music and voice screen on every take; mute candidates reviewed | **CODE** (`video.audio_screen` with `musicscreen`); RECORD (human listen) | `music_windows`, `audio_mutes` with reasons |
 | SD-3 | Hard-cut scan on every take (invented cuts) | PROCESS today; CODE is a next-episode requirement (LL-07) | inspect sheets |
 | SD-4 | Narration lock: picture frames equal narration frames; no row boundary moved | **CODE** (`edit.plan`, `finish` frames check) | `edl.json`, `qc.json` |
-| SD-5 | Transitions: one per join, chosen from what changes on screen and recorded with its continuity contract; **never over an unresolved rendered break** (`assembly_audio_qc_plan.md`). The code still applies the old blanket rule (shared-frame joins cut, others dissolve, holds pushed in): **AUD-31, open**. | CODE (`edit.join_plan`, `zoom_shape`), with the rule PROCESS until coded | `joins.json`; continuity contracts |
+| SD-5 | Transitions: one per join, chosen from what changes on screen and recorded with its continuity contract; **never over an unresolved rendered break**. Since 2026-10-15 `edit.join_plan` dissolves (or deliberately cuts) a join whose frames differ only on a transition a person approved in that join's continuity contract; any other such join is cut and flagged, and finish QC (`joins.continuity`) fails the release. | **CODE** (`edit.join_plan`, `contracts.approved_transitions`, `finish.joins_check`) | `joins.json` flags; continuity contracts |
 | SD-6 | No unapproved audio substitution or unexplained missing sound | PROCESS (listen) | listening notes |
 
 ## SE: Final QA and release
@@ -82,7 +82,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SE-4 | Every claim in the client message checked against evidence (cast, fixes, format) | RECORD | the message draft with the evidence for each claim |
 | SE-5 | The master and mix leave the container through a planned channel; playback confirmed in a real browser | PROCESS (LL-18) | storage link and hash |
 | SE-6 | Outstanding defects listed, with explicit human approval for any that ship | RECORD | `defect_registry.json` status, plus a ledger `decision` (a guarded event from 2026-10-15: `firewall.decision` needs a person and their quote) |
-| SE-7 | Records closed before the freeze: every reservation released, billed or not executed; every executed take has a verdict or "replaced by"; one acceptance status per board (LL-34) | CODE detects (`freeze.open_records`, reported in metrics); refusal at the freeze proposed | `video.open_records` in the metrics record |
+| SE-7 | Records closed before the freeze: every reservation released, billed or not executed; every executed take has a verdict or "replaced by" (LL-34) | **CODE** (`freeze.freeze` refuses; `firewall.video_release`, `firewall.take_disposition` close with evidence) | the freeze manifest; ledger `video_released`, `take_disposition` |
 
 ## Human-review criteria (EP05 postmortem, 2026-10-15)
 
@@ -113,8 +113,8 @@ Automation cannot judge these items. Each record names the person, the date, the
 | SC-7 | **FAIL** (402 mid-batch) |
 | SC-10 | **FAIL** (39 graphs with the storyboard as a reference; V03 and V04 with no last frame) |
 | SB-5, SB-6 | **FAIL** (37 untimed boards; 38 joins without a colour keyframe; no person approval) |
-| SD-5 | **FAIL** (9 rendered breaks under dissolves, EP05-C04) |
-| SE-7 | **FAIL** (V33 and V67 never closed; 5 replaced takes without verdicts) |
+| SD-5 | **FAIL** (9 rendered breaks under dissolves, EP05-C04; the rule is in code since 2026-10-15, and v5 itself is unchanged) |
+| SE-7 | **FAIL** at the freeze (V33 and V67 never closed; 5 replaced takes unexplained); reconciled with evidence on 2026-10-15 |
 | SD-2 | Mitigated by hand |
 | SE-1 | PASS |
 | SE-3 | **FAIL** (no human watch or listen) |

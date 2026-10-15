@@ -23,7 +23,10 @@
   "RC20": "Approvals were stored statuses written by the agent, bound to no input hashes; handoff checks compared copied state files, so they passed by construction.",
   "RC21": "The edit chose transitions by pixel difference (dissolve every non-matching join), so dissolves covered rendered continuity breaks instead of exposing them.",
   "RC22": "Graph shape was chosen per job by the builder, not fixed by an approved plan: the reference node carried the storyboard sheet as @image1 (39 graphs) and two first-last-frame jobs ran with no last frame.",
-  "RC23": "No terminal-record rule: reservations, executed takes and acceptance files could stay open or contradict each other, so totals and rejection counts read from the records are wrong until someone reconciles them by hand."
+  "RC23": "No terminal-record rule: reservations, executed takes and acceptance files could stay open or contradict each other, so totals and rejection counts read from the records are wrong until someone reconciles them by hand.",
+  "RC24": "Spend authorizations had no lifetime and no closing step: they stayed AUTHORIZED after the work they named was delivered.",
+  "RC25": "Episode-specific constants in production code: the paid keyframe and video paths defaulted to project/EP05.",
+  "RC26": "The public repository doubled as the evidence store, so review frames and client records were committed to it."
  },
  "defects": [
   {
@@ -1575,6 +1578,134 @@
    "episode": "EP05",
    "added": "2026-10-15 postmortem (research pass 2)",
    "detection_note": "post_delivery (research audit, pass 2)"
+  },
+  {
+   "id": "EP05-G05",
+   "where": "project/EP05/FIREWALL.json",
+   "category": "cost",
+   "severity": "MATERIAL",
+   "stage_origin": "spend_control",
+   "stage_should_detect": "assembly_qc",
+   "stage_detected": "post_delivery",
+   "symptom": "Three days after delivery, boards, audio, the video pilot (cap 39,500, 25 targets) and 1080p titles were all still AUTHORIZED.",
+   "evidence": "FIREWALL.json before 2026-10-15 13:07; ledger event authorizations_closed; EP05_postmortem.md section 9",
+   "fact_class": "verified",
+   "root_cause": "RC24",
+   "contributing_factors": [
+    "wrap-up decision closed no authorization"
+   ],
+   "failed_safeguards": [
+    "none existed"
+   ],
+   "rework": "none (no spend rode on them)",
+   "corrective_action": "Closed through firewall.close_authorizations with evidence; generation authorizations now expire.",
+   "regression_test": [
+    "tests/test_contracts.py::test_closing_standing_authorizations_only_restricts_and_keeps_the_record",
+    "tests/test_contracts.py::test_a_generation_authorization_expires_and_cannot_be_open_ended"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "The legacy FIREWALL.json pilot has no expiry; contracts authorizations do.",
+   "lesson": "LL-37",
+   "lesson_class": "Prevent",
+   "process_change": "Every grant has a lifetime and a closing step.",
+   "episode": "EP05",
+   "added": "2026-10-15 readiness review",
+   "detection_note": "post_delivery (readiness review)"
+  },
+  {
+   "id": "EP05-G06",
+   "where": "the hook's coverage",
+   "category": "process",
+   "severity": "MATERIAL",
+   "stage_origin": "spend_control",
+   "stage_should_detect": "spend_control",
+   "stage_detected": "post_delivery",
+   "symptom": "Routes around the live guard: session-spawning remote tools, GitHub-connector edits of the guard, Artifact pages declaring a generation connector, remote agents, firewall.decision from the shell, and the git restore of the guard (AUD-30).",
+   "evidence": "ulac/paidguard.py KNOWN_SAFE and matchers; tests/test_paidguard.py strict xfails (6)",
+   "fact_class": "verified",
+   "root_cause": "RC9",
+   "contributing_factors": [
+    "the guard protects itself, so only a person can harden it"
+   ],
+   "failed_safeguards": [
+    "the MCP matcher covers MCP calls only"
+   ],
+   "rework": "none (no use found)",
+   "corrective_action": "Candidate guard and settings in docs/production/patches/, proven against the whole live suite.",
+   "regression_test": [
+    "tests/test_paidguard_candidate.py::test_routes_around_the_hook_are_refused",
+    "tests/test_paidguard_candidate.py::test_the_candidate_cannot_be_switched_off_from_the_agent_shell"
+   ],
+   "status": "open (candidate ready; a person applies it, decision B-04)",
+   "remaining_risk": "Clients without these settings (R1) stay outside any hook.",
+   "lesson": "LL-16",
+   "lesson_class": "Prevent",
+   "process_change": "A guard change is prepared with full-suite proof and applied by a person.",
+   "episode": "EP05",
+   "added": "2026-10-15 readiness review",
+   "detection_note": "post_delivery (readiness review)"
+  },
+  {
+   "id": "EP05-G07",
+   "where": "ulac/prod.py, ulac/chain.py",
+   "category": "process",
+   "severity": "MATERIAL",
+   "stage_origin": "prompt_config",
+   "stage_should_detect": "prompt_config",
+   "stage_detected": "post_delivery",
+   "symptom": "The paid keyframe and video paths hardcoded ROOT = project/EP05, so a next-episode job would have been reserved, quoted and recorded in EP05's ledger.",
+   "evidence": "git show 2c618e1:ulac/prod.py line 20; ulac/chain.py line 12",
+   "fact_class": "verified",
+   "root_cause": "RC25",
+   "contributing_factors": [],
+   "failed_safeguards": [
+    "none"
+   ],
+   "rework": "none",
+   "corrective_action": "ULAC_PROJECT names the episode; the modules refuse without it.",
+   "regression_test": [
+    "tests/test_episode_root.py::test_the_paid_paths_name_their_episode"
+   ],
+   "status": "regression-protected",
+   "remaining_risk": "Other EP05-era scripts outside ulac/ were not audited.",
+   "lesson": "LL-36",
+   "lesson_class": "Prevent",
+   "process_change": "Production code takes the episode as an input, never a constant.",
+   "episode": "EP05",
+   "added": "2026-10-15 readiness review",
+   "detection_note": "post_delivery (readiness review)"
+  },
+  {
+   "id": "EP05-G08",
+   "where": "docs/EP05_*/ (38 images), docs/production/EP05/, client_feedback/",
+   "category": "delivery",
+   "severity": "MATERIAL",
+   "stage_origin": "remediation",
+   "stage_should_detect": "remediation",
+   "stage_detected": "post_delivery",
+   "symptom": "38 EP05 frames and contact sheets, the cast comparison, the client's feedback and ledger copies (quoted directives, a private artifact link) are tracked in a public repository.",
+   "evidence": "git ls-files; tests/fixtures/public_media_baseline.txt",
+   "fact_class": "verified",
+   "root_cause": "RC26",
+   "contributing_factors": [
+    ".gitignore covered PNG, MP4 and WAV, not JPEG"
+   ],
+   "failed_safeguards": [
+    ".gitignore"
+   ],
+   "rework": "none",
+   "corrective_action": "New media ignored; additions refused by a test; making the repository private is decision B-07.",
+   "regression_test": [
+    "tests/test_public_repo.py::test_no_client_media_is_added_to_the_public_repository"
+   ],
+   "status": "open (existing files: owner's decision B-07)",
+   "remaining_risk": "The history keeps the files even if they are deleted.",
+   "lesson": "LL-38",
+   "lesson_class": "Preserve",
+   "process_change": "Client material lives in private storage; the repository holds hashes.",
+   "episode": "EP05",
+   "added": "2026-10-15 readiness review",
+   "detection_note": "post_delivery (readiness review)"
   }
  ],
  "corrections": [
@@ -1758,6 +1889,30 @@
    "why_undetected": "Totals were reconciled against the billing feed, not against the record lifecycle.",
    "earlier_evidence": "At freeze: every reservation released, billed or not executed; every executed take has a verdict or 'replaced by'; one acceptance status per board.",
    "control_now": "None in code. Metrics report never_submitted and duplicate billed jobs; closing V33/V67 is a person's release decision."
+  },
+  "RC24": {
+   "chain": "authorization written for a scope -> work delivered -> nothing closes it -> a later job could ride on it",
+   "why_introduced": "Authorizations were recorded as states, not as grants with a lifetime.",
+   "why_allowed": "No code closed or expired them.",
+   "why_undetected": "Nothing listed open authorizations at the end of an episode.",
+   "earlier_evidence": "An end-of-episode check of FIREWALL.json and the generation authorization.",
+   "control_now": "firewall.close_authorizations (restrict-only); contracts.authorize expires (48 h default, 7 days max)."
+  },
+  "RC25": {
+   "chain": "module constant ROOT = project/EP05 -> next episode runs ulac.prod -> reservation written to EP05's ledger",
+   "why_introduced": "The tools were written during EP05 for EP05.",
+   "why_allowed": "Single-episode use hid it.",
+   "why_undetected": "Tests exercised the firewall directly, not the module constant.",
+   "earlier_evidence": "A grep for hardcoded episode paths before the next episode.",
+   "control_now": "ULAC_PROJECT names the episode every time; the modules refuse without it."
+  },
+  "RC26": {
+   "chain": "review sheets and records written under docs/ -> committed -> pushed to a public repository",
+   "why_introduced": "docs/ was the convenient durable place, and .gitignore covered PNG/MP4/WAV but not JPEG.",
+   "why_allowed": "No rule separated client material from code and process records.",
+   "why_undetected": "Nobody checked the public tree for client material.",
+   "earlier_evidence": "A test over git ls-files for media types.",
+   "control_now": "New media ignored; a frozen baseline and a test refuse additions; removal is the owner's decision."
   }
  },
  "successes": [
@@ -1924,6 +2079,27 @@
     "EP05-G04"
    ],
    "note": "Detector added: freeze.open_records lists unclosed reservations and executed takes left out of the cut without a verdict; metrics report it (video.open_records). EP05 returns exactly V33, V67 and V02, V04, V06, V41, V42 (tests/test_freeze.py::test_ep05_open_records_are_the_ones_the_postmortem_names). The freeze does not yet refuse them, and no function closes an unsent video reservation: closing V33/V67 needs one, and a person's decision."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-C04"
+   ],
+   "note": "Control coded (AUD-31): edit.join_plan cuts and flags a non-matching join unless its continuity contract carries a person-approved transition; finish QC fails on an unresolved break and reports UNKNOWN for renders made before the rule, including v5. Tests: test_a_break_without_an_approved_transition_is_cut_and_flagged_never_dissolved, test_the_release_fails_on_an_unresolved_break_and_cannot_judge_an_old_render. The 9 joins in delivered v5 are unchanged (decision B-03)."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-G04"
+   ],
+   "note": "Reconciled with evidence: V33 and V67 released (firewall.video_release; no submission, no job id, no unattributed billing row that could be either); V02, V04, V06, V41 and V42 recorded as superseded by V03, V05, V47, V50 and V59 (firewall.take_disposition, a fact from the v5 EDL, not a QC verdict). freeze now refuses open records (test_the_freeze_refuses_while_records_are_open). Committed spend 34,362.71 -> 33,313.01."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-P03"
+   ],
+   "note": "firewall.decision from the shell is refused by the guard candidate (decision B-04); signed approvals (ulac/signing.py) make an approval verifiable after the fact once a key is registered (B-05)."
   }
  ]
 }

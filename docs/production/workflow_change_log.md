@@ -2,6 +2,19 @@
 
 Each entry gives the change, why it was made, the evidence and its verification status. Commit hashes are on branch `claude/comfy-ui-mcp-connect-ej9ezx`. The newest entries come first.
 
+## 2026-10-15: next-episode readiness (engineering gaps closed; decisions prepared)
+
+| Change | Why | Evidence | Status |
+|---|---|---|---|
+| Transition rule in code: no dissolve over differing frames without a person-approved transition in the join's continuity contract; finish QC fails on an unresolved break | 9 masked breaks in v5 (EP05-C04, AUD-31) | `test_xfade.py`, `test_contracts.py`, `test_finish.py` | Regression-protected |
+| `firewall.video_release`, `take_disposition`; `freeze` refuses open records; EP05 reconciled with evidence | V33 and V67 open; 5 unexplained takes (EP05-G04) | `test_freeze.py` | Regression-protected; EP05 committed 34,362.71 -> 33,313.01 |
+| `firewall.close_authorizations` (restrict-only); EP05's four standing authorizations closed; generation authorizations expire | Pilot cap 39,500 still open after delivery (EP05-G05) | `test_contracts.py` | Regression-protected |
+| SSH-signed contract approvals (`ulac/signing.py`, `contracts.approve --signature`) | AUD-33 | `test_signing.py` (real `ssh-keygen` fixtures) | Built; adoption is decision B-05 |
+| Guard candidate and settings (`docs/production/patches/`) | AUD-30 and routes around the hook (EP05-G06) | `test_paidguard_candidate.py` (the whole live suite plus the routes); strict xfails on the live guard | **Awaiting a person to apply it** (B-04) |
+| `ULAC_PROJECT` required by `ulac.prod` and `ulac.chain` | They defaulted to project/EP05 (EP05-G07) | `test_episode_root.py` | Regression-protected |
+| New media ignored; tracked media frozen; delivered files hashed (`EP05/delivery_manifest.json`) | 38 EP05 images in the public repository (EP05-G08) | `test_public_repo.py` | Regression-protected for additions; removal is decision B-07 |
+| Decision register; episode blueprint; first-clip validation plan | Directive: next-episode readiness | `decision_register.md`, `episode_blueprint.md` | Recorded |
+
 ## 2026-10-15: EP05 postmortem and knowledge lock
 
 | Change | Why | Evidence | Status |
