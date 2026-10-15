@@ -15,6 +15,7 @@ No paid job was submitted, queued or reserved during this work, and no credits w
 | Code | branch `claude/comfy-ui-mcp-connect-ej9ezx`; the commit that adds this report and its parent (see `git log`) |
 | Tooling stamp | `project/EP05/TOOLING_OK.json`: sha256 `f1da318a1d2803670396334fea3dafdf1c59d5a9191823ee16478aa999990bbc`, 2026-10-15T11:39:09Z |
 | Full suite | `python3 -m pytest -q tests`: **415 passed, 2 skipped, 1 xfailed** (the tooling-check run above; before this session: 310 passed, 2 skipped) |
+| Later run (EP05 postmortem) | **436 passed, 2 skipped, 1 xfailed**; stamp `552bcb54…` at 2026-10-15T12:42:13Z. See `EP05_postmortem.md` §9. |
 | New suites | `tests/test_paidguard.py` (73 passed, 1 strict xfail AUD-30), `tests/test_contracts.py` (22), `tests/test_evidence.py` (5) |
 | Render configuration | `seedance2-flf-720p-audio-v1` (`ulac/contracts.py` RENDER_CONFIG) |
 | EP05 contract versions | audio ledger `7a311ad1c507` on narration `fe588f78d7b6`; render plan `cfc098118a45` (0 clips, 37 excluded); e.g. storyboard SEQ_001 `7a14984166eb`, continuity SEQ_001->SEQ_002 `13b9815a7e20` |

@@ -2,7 +2,7 @@
 
 `python3 -m pytest -q tests` runs everything. `python3 -m ulac tooling-check project/<EP>` runs the suite and stamps the tooling, and the firewall refuses reservations without a fresh stamp.
 
-Last run (2026-10-15, tooling stamp `f1da318a`): **415 passed, 2 skipped, 1 xfailed** (AUD-30, explained in `production_gate_report.md`).
+Last run (2026-10-15 12:42Z, tooling stamp `552bcb54`): **436 passed, 2 skipped, 1 xfailed**. The xfail is AUD-30, explained in `production_gate_report.md`. The 2 skips are opt-in `ULAC_PROJECT_STATE=1` checks: run opt-in, the EDL check passes and `test_ep05_is_frozen_for_video_and_images` fails, because EP05's video pilot is still AUTHORIZED (B10). Earlier: 415 passed at stamp `f1da318a`.
 
 Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere they skip, and a skip is not a pass.
 
@@ -17,6 +17,7 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | A lead's or unattributed PASS opening the chain | P02, P03, EP05-C08 | `test_castlock.py::test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain` | Only a person's `video_qc` PASS counts; the eight EP05 'lead (picture QC)' passes would not |
 | A decision recorded by the lead | P03 (ledger line 852) | `test_castlock.py::test_a_decision_names_a_person_and_quotes_them` | `decision` is guarded; `firewall.decision` needs a person and a quote |
 | Storyboard sent as a video reference; FLF with a free end; wrong node, resolution or audio | EP05-S03, EP05-C07 | `test_contracts.py::test_the_plan_fixes_the_graph_shape_no_storyboard_reference_and_both_ends_pinned`, `test_ep05_paid_graphs_show_the_shapes_the_plan_now_refuses` (*EP05 data*) | Each shape is PLAN_DIVERGENCE even with the plan's prompt and keyframes; EP05 had 39 board-referenced graphs and V03/V04 open-ended |
+| Records opened and never closed | EP05-G04 | `test_freeze.py::test_open_records_lists_unclosed_reservations_and_unjudged_left_out_takes`, `test_ep05_open_records_are_the_ones_the_postmortem_names` (*EP05 data*) | Unclosed reservations and unjudged left-out takes are listed; EP05 gives V33, V67 and five takes |
 | One provider job billed twice | EP05-G02 | `test_metrics.py::test_a_provider_job_billed_under_two_targets_counts_once`, `test_ep05_image_spend_counts_the_boy_grid_once` (*EP05 data*) | Spend is summed per provider job; EP05 image spend is 3,680.11 |
 | A success claim that cannot be recomputed | EP05-W06 | `test_contracts.py::test_ep05_board_end_locks_chain_into_the_next_board` (*EP05 data*) | 34 of 34 same-room END_LOCK hashes chain |
 | The register edited in place, or a 'fixed' claim with no test | registry v2 | `test_registry.py` (6 tests) | v1 entries unchanged by hash; every cited test exists; the readable ledger equals the register |
@@ -61,7 +62,7 @@ Tests marked *EP05 data* run only where `project/EP05` is present. Elsewhere the
 | Invented cuts inside a clip (V62 between f213 and f214; L15, L19) | No automatic hard-cut scan on ingest | Add a cut scan to `prod.inspect` with a V62 regression (next episode) |
 | Identity drift at wide scale (L07) | Needs a visual judgement | Reviewer gate (process) |
 | Unledgered spend through direct MCP submit (P04) | Outside the repo | Reconcile the billing feed every wave (SC-8) |
-| Records left open at the freeze (V33, V67; takes without verdicts; EP05-G04) | No freeze check yet | Add an open-record refusal to `freeze` (LL-34, SE-7) |
+| Records left open at the freeze are refused (EP05-G04) | `freeze.open_records` detects them, but nothing refuses; no function closes an unsent video reservation | Add the refusal and a video-reservation close (LL-34, SE-7) |
 | A transition over a rendered break (EP05-C04) | `edit.join_plan` still applies the blanket rule (AUD-31) | Code the per-join rule with a test that refuses a dissolve over a BREAK join |
 | Human watch and listen (F10) | It is a person's judgement | Stage gate SE-3 record |
 | Wrong room while the joins match (L01, L03–L05: both sides of V05→V06→V07 equally wrong, 3/64 dHash bits) | Conformance to the environment master needs a visual judgement. A join check cannot see it. | Category C: the continuity approval statement (SB-7) and the reviewer's keyframe check against `PENV_*_DRESSED_MASTER` |

@@ -116,6 +116,16 @@ def take_status(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> dic
     return takes
 
 
+def open_records(root: Path, final_edl: dict, reels: tuple[str, ...] = ()) -> dict[str, list[str]]:
+    """Records an episode opened and never closed (LL-34, gate SE-7). Read only: listing them is the detector; closing
+    them is a person's decision. EP05: V33 and V67 reserved and never sent; five executed takes left out of the cut
+    with no verdict, so the ledger shows 3 rejections where 8 takes failed or were replaced."""
+    t = take_status(root, final_edl, reels)
+    return {"reservations_never_closed": sorted(r for r, d in t.items() if d["status"] == "never_submitted"),
+            "executed_without_verdict": sorted(r for r, d in t.items()
+                                               if d["status"] == "not_in_final_cut" and not d["qc"])}
+
+
 def freeze(root: Path, final_edl: Path, out: Path, reels: tuple[str, ...] = ()) -> dict:
     root = Path(root)
     edl = json.loads((root / final_edl).read_text())

@@ -1917,6 +1917,13 @@
     "EP05-P03"
    ],
    "note": "Partially prevented: 'decision' was not a guarded event (the v5 delivery decision, ledger line 852, is by 'lead'); it is guarded from 2026-10-15 (test_a_decision_names_a_person_and_quotes_them). _sanctioned is still a keyword any caller can pass, and gates.sign and five other recorders accept any name (AUD-26). An agent can still transcribe by='user' with a quote; a person-only route is AUD-33."
+  },
+  {
+   "date": "2026-10-15",
+   "amends": [
+    "EP05-G04"
+   ],
+   "note": "Detector added: freeze.open_records lists unclosed reservations and executed takes left out of the cut without a verdict; metrics report it (video.open_records). EP05 returns exactly V33, V67 and V02, V04, V06, V41, V42 (tests/test_freeze.py::test_ep05_open_records_are_the_ones_the_postmortem_names). The freeze does not yet refuse them, and no function closes an unsent video reservation: closing V33/V67 needs one, and a person's decision."
   }
  ]
 }

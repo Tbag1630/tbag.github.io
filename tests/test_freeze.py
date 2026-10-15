@@ -1,4 +1,7 @@
 import json
+from pathlib import Path
+
+import pytest
 
 from ulac import freeze
 
@@ -36,3 +39,26 @@ def test_inventory_hashes_by_role(tmp_path):
     inv = freeze.inventory(tmp_path)
     assert inv == [{"path": "AUDIO/narration.wav", "role": "audio_source", "bytes": 3,
                     "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}]
+
+
+def test_open_records_lists_unclosed_reservations_and_unjudged_left_out_takes(tmp_path):
+    (tmp_path / "VIDEO").mkdir()
+    for rid in ("V1-a", "V3-c"):
+        (tmp_path / "VIDEO" / f"{rid}.output.mp4").write_bytes(b"x")
+    ev = [{"event": "video_reserved", "rid": r, "seq": "SEQ_001", "credits": 100.0} for r in ("V1-a", "V3-c", "V6-f")]
+    ev += [{"event": "video_submitted", "rid": r, "job_id": r} for r in ("V1-a", "V3-c")]
+    _ledger(tmp_path, ev)
+    got = freeze.open_records(tmp_path, {"rows": [{"segments": [["V1-a", 0, 50]]}]})
+    assert got == {"reservations_never_closed": ["V6-f"], "executed_without_verdict": ["V3-c"]}
+
+
+EP = Path(__file__).resolve().parent.parent / "project" / "EP05"
+
+
+@pytest.mark.skipif(not (EP / "EDIT" / "v5" / "edl.json").exists(), reason="EP05 not present")
+def test_ep05_open_records_are_the_ones_the_postmortem_names():
+    """EP05-G04: V33 and V67 never closed; V02, V04, V06, V41 and V42 left out of the cut with no verdict."""
+    got = freeze.open_records(EP, json.loads((EP / "EDIT" / "v5" / "edl.json").read_text()),
+                              ("V52-3dd78c0c53f2", "V54-aa8d042ffaa4"))
+    assert [r[:3] for r in got["reservations_never_closed"]] == ["V33", "V67"]
+    assert [r[:3] for r in got["executed_without_verdict"]] == ["V02", "V04", "V06", "V41", "V42"]

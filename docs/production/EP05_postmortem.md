@@ -1,6 +1,6 @@
 # EP05 postmortem and production knowledge lock
 
-**Date:** 2026-10-15. **Status:** see §10. **Episode:** EP05 "The Family Drawing", delivered as v5 (1080p) on 2026-10-12.
+**Date:** 2026-10-15. **Status:** POSTMORTEM COMPLETE, pending the producer's approval of the lessons gate; next episode BLOCKED (§10). **Episode:** EP05 "The Family Drawing", delivered as v5 (1080p) on 2026-10-12.
 
 This report reconstructs EP05 from its records, not from the earlier reports. Where it disagrees with an earlier document, the register carries a dated correction and this report says which one is right.
 
@@ -152,7 +152,7 @@ The five questions are what happened, why it was introduced, why it was allowed,
 | C05 (RC2) wrong room | No master in any graph → invented hall → consistent from clip to clip → joins match | Text-only environment | No master gate on the video graph | Join checks compare clips with each other, not with the master | FLF carries the room in keyframes; person review against the master (SB-7) | V |
 | C04 (RC21) masked breaks | Pixel-difference rule → dissolve every non-matching join → 9 breaks shipped soft | LL-20 treated a dissolve as a remedy | No rule tied transitions to continuity | The transition record read the EDL, not the applied joins | `masked_break` detection; the rule in code is **open** (AUD-31) | V |
 | S02, C06 (RC20) approvals | The agent wrote statuses; state files were copied together | No hash binding | Records were writable by anyone | The handoff check passed by construction | Hash-bound person approvals; a shared image proves the handoff | V |
-| G04 (RC23) open records | Actions opened and never closed → misstated committed spend and rejection count | Records written at start, not at end | The freeze does not refuse open records | Totals were reconciled against billing, not against record lifecycle | **None in code** (LL-34, proposed) | V |
+| G04 (RC23) open records | Actions opened and never closed → misstated committed spend and rejection count | Records written at start, not at end | The freeze does not refuse open records | Totals were reconciled against billing, not against record lifecycle | Detector `freeze.open_records` (in the metrics); the refusal at the freeze and a video-reservation close are **not built** (LL-34) | V |
 | P10 (RC10) no human watch | Machine QC → delivery | The finish QC was treated as final QA | SE-3 was process only | — | SE-3 is BLOCKING; still not done for EP05 | V |
 | Unattributed 71.55 (RC9) | Six image jobs before the ledger existed | Testing outside the firewall (H) | No gate at the call | No ledger yet | Hook; reconciliation each wave | V for amount, H for purpose |
 
@@ -221,7 +221,7 @@ All are entered in the register (`corrections`, `status_updates`) with dates. Th
 | Timed, executable storyboards | Fewer sync and blocking repairs | More person time at the board stage; the effect on footage is unproven (LL-28) | Hypothesis until the pilot |
 | Graph shape bound to the plan | Removes the storyboard-as-reference and free-end failure classes | None found; a future config must restate the rule | Verified (tests) |
 | Reconciling billing every wave | No unattributed spend survives a wave | Operator time | Known (P04, G02) |
-| Terminal-record check at freeze (proposed) | Correct committed spend and rejection rate | Nothing beyond building it | Proposed (LL-34) |
+| Terminal-record refusal at the freeze (detector built, refusal proposed) | Correct committed spend and rejection rate | Nothing beyond building it | Detector verified (tests); refusal proposed (LL-34) |
 | Cutting retries | 4,212 credits went to takes not in the cut; at most this much is recoverable | Pressure to accept weak takes | **Only if quality holds** |
 
 ## 7. Human-review criteria
@@ -240,13 +240,14 @@ Automation cannot judge these items. The authority is `production_gates.md` §"H
 
 - `contracts.plan_match_problems` fixes the graph shape.
 - `firewall.predecessor_qc_problems` counts only a person's PASS.
+- `freeze.open_records` lists unclosed reservations and unjudged left-out takes; the metrics report it.
 - `decision` is a guarded event with `firewall.decision`.
 
 **Records:**
 
 - `metrics.other_metrics` counts a provider job once.
 - `ulac.registry` renders `defect_ledger.md` from the register.
-- The register gains 6 defects (S03, C07, C08, G02, G03, G04), RC22 and RC23 with causal chains, 8 status updates and 10 corrections.
+- The register gains 6 defects (S03, C07, C08, G02, G03, G04), RC22 and RC23 with causal chains, 9 status updates and 10 corrections.
 - The lessons gain LL-34 and LL-35, plus the re-grades in §5.
 
 **Tests added:**
@@ -262,13 +263,76 @@ Automation cannot judge these items. The authority is `production_gates.md` §"H
   - `test_a_provider_job_billed_under_two_targets_counts_once`
   - `test_ep05_image_spend_counts_the_boy_grid_once`
   - `test_ep05_planning_baseline_is_measured_not_estimated`
+- `test_freeze.py`:
+  - `test_open_records_lists_unclosed_reservations_and_unjudged_left_out_takes`
+  - `test_ep05_open_records_are_the_ones_the_postmortem_names`
 - `test_registry.py`: six tests, including `test_the_readable_ledger_is_rendered_from_the_register`.
 - `test_blueprint.py`: three tests (§2.1, §2.3).
 
-## 9. Verification
+## 9. Verification (run 2026-10-15, after every change in this pass)
 
-See the run record appended below. The earlier "415 passed" was not used as acceptance.
+**Commands and results:**
+
+| Command | Result |
+|---|---|
+| `python3 -m pytest -q -rs tests` | **436 passed, 2 skipped, 1 xfailed** (168.9 s) |
+| `python3 -m ulac tooling-check project/EP05` | ok; stamp `552bcb54de75bc3f…` at 12:42:13Z, the same count |
+| `python3 -m ulac.evidence verify project/EP05` (run **after** the stamp) | `{"violations": [], "ok": true}` |
+| `ULAC_PROJECT_STATE=1 python3 -m pytest -q tests/test_recovery.py` (the two skips) | `test_ep05_edl_matches_narration_and_policy` passes. `test_ep05_is_frozen_for_video_and_images` **fails**: EP05's `video_pilot` is still `AUTHORIZED` with a 39,500 cap from the R6 round. |
+
+**On the run itself:**
+
+- The 1 xfail is strict and is AUD-30: the guard can be reverted from the agent shell.
+- The 2 skips are opt-in checks of live project state. A skip is not a pass, so both were run above.
+- The open video authorization cannot spend today: every clip is AUDIO_DRAFT, the cast lock is unsigned, and the hook requires a GENERATION_AUTHORIZED plan. It is still an open authorization. Freezing it is the producer's call (B10). I did not change it.
+- The stamp appended one `tooling_check` line to the ledger. The ledger now has 987 lines against 981 frozen; the six extra are all `tooling_check`, and verify confirms the frozen prefix is unchanged.
+
+**Against the directive's criteria:**
+
+| Criterion | Evidence | Met |
+|---|---|---|
+| Deterministic defects are caught | Mid-word cuts: `test_ep05_contracts_refuse_what_its_production_later_paid_for` and the packer test. Untimed boards and joins without a colour frame: the same test. Beat boundaries inside words: `test_ep05_planning_baseline_is_measured_not_estimated`. Storyboard as reference and the free end: `test_ep05_paid_graphs_show_the_shapes_the_plan_now_refuses`. Masked breaks: `test_ep05_v5_masks_nine_rendered_breaks_with_dissolves`. Double billing: `test_ep05_image_spend_counts_the_boy_grid_once`. Open records: `test_ep05_open_records_are_the_ones_the_postmortem_names`. | Yes for detection. Prevention is still open for masked breaks (AUD-31) and for the freeze refusal (LL-34). |
+| Controls pass | The paid-generation hook, contracts, cast lock, evidence, predecessor and decision guards, all in the 436 | Yes |
+| Evidence unchanged | verify after the stamp: 0 violations; the ledger was only appended | Yes |
+| Approvals invalidate | `test_a_new_audio_ledger_version_voids_every_downstream_approval`, `test_a_changed_boundary_keyframe_voids_its_continuity_approval` | Yes |
+| No bypass misrepresented | Residuals R1–R5, AUD-26, AUD-30 and AUD-33 are named as open. The Higgsfield and OpenArt denials are tested (`test_paidguard.py` l.46). P02 and P03 were re-graded to partial for their past state. | Yes |
+| Visual review stays unresolved | No H1–H8 record exists for EP05. Room conformance, board visuals, the pinned clips, the mutes and the whole film are owed (B2, B3, B9). | Yes: unresolved and stated |
+| EP05 not marked compliant | The retroactive gate table holds 13 FAIL rows. All 37 clips compute AUDIO_DRAFT. 33 defects are open, 27 of them BLOCKING or MATERIAL. | Yes |
 
 ## 10. Completion gate
 
-See the decision appended below.
+**POSTMORTEM COMPLETE**, pending the producer's approval of this lessons gate.
+
+- Every deliverable of the directive exists:
+  - the ten-stage reconstruction (§1);
+  - the append-only register with defects, successes and causal chains;
+  - the five failure-class investigations (§2);
+  - the causal chains and five questions (§3);
+  - this report and the updated lessons, laws, contracts, tests, human-review criteria and readiness gate (§8);
+  - the default operating sequence in `CLAUDE.md`;
+  - the baselines and the optimization table (§6);
+  - the verification (§9);
+  - the transfer package (`next_episode_transfer.md`).
+- What remains unknown is stated as unknown, not filled in:
+  - the purpose of the 71.55 credits;
+  - the hash of the delivered rendition;
+  - human hours;
+  - every visual and listening judgement.
+- This review, an agent's note or a test count is not the producer's approval.
+
+**Next episode: BLOCKED.** It may not start until the producer approves this gate and clears:
+
+- **B1:** sign the cast lock.
+- **B2 and B9:** record the owed human reviews (whole film, 17 pinned clips, 11 mute windows, 9 masked joins).
+- **B3:** decide the hall's look.
+- **B4:** confirm credits.
+- **B5:** move the masters and `project/EP05` evidence to private storage.
+- **B6:** re-plan the staged R6 work.
+- **B7:** apply the AUD-30 guard patch.
+- **B8:** settle the person-only signing route (AUD-33).
+- **B10:** close or keep V33 and V67, record verdicts for the five takes, and freeze EP05's open video authorization.
+
+Before the first story clip, the lead must also build:
+
+- the transition rule in code (AUD-31);
+- the freeze refusal and a video-reservation close (LL-34).

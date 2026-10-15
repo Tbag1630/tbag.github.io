@@ -51,6 +51,7 @@ def video_metrics(root: Path, edl: dict, reels: tuple[str, ...]) -> dict:
         "waste_share": _r(waste / billed if billed else None),
         "submitted_without_billing": sorted(k for k, v in takes.items()
                                             if v["submitted"] and v["billed"] is None and not v["not_executed"]),
+        "open_records": freeze.open_records(root, edl, reels),
     }
 
 

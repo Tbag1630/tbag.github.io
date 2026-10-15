@@ -10,6 +10,7 @@ Each entry gives the change, why it was made, the evidence and its verification 
 | The predecessor gate counts only a person's `video_qc` PASS | EP05 holds eight lead passes and two unattributed ones that would have opened the chain (P02, P03) | `test_a_video_qc_pass_written_by_the_lead_or_by_nobody_does_not_open_the_chain` | Regression-protected. **Tightening.** |
 | `decision` is a guarded event (`firewall.decision`: a person and a quote) | The v5 delivery decision was written by "lead" (ledger line 852) | `test_a_decision_names_a_person_and_quotes_them` | Regression-protected; AUD-33 still open |
 | Metrics count a provider job once | The BOY grid was billed twice (EP05-G02) | `test_metrics.py` | Regression-protected |
+| `freeze.open_records` lists unclosed reservations and unjudged left-out takes; metrics report them | V33 and V67 never closed; 5 replaced takes without verdicts (EP05-G04) | `test_freeze.py` | Detection regression-protected; the refusal is proposed |
 | `defect_ledger.md` is rendered from the register (`python3 -m ulac.registry render`) | The view had fallen 12 entries behind | `test_the_readable_ledger_is_rendered_from_the_register` | Regression-protected |
 | Register: 6 defects, RC22–RC23, 8 status updates, 10 corrections; lessons LL-34 and LL-35 and nine re-grades; human-review criteria H1–H8; readiness blockers B7–B10 | Evidence-based postmortem (`EP05_postmortem.md`) | `test_registry.py` | Recorded |
 

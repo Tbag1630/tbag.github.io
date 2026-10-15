@@ -82,7 +82,7 @@ A failed gate produces a named defect in `defect_registry.json`, with evidence a
 | SE-4 | Every claim in the client message checked against evidence (cast, fixes, format) | RECORD | the message draft with the evidence for each claim |
 | SE-5 | The master and mix leave the container through a planned channel; playback confirmed in a real browser | PROCESS (LL-18) | storage link and hash |
 | SE-6 | Outstanding defects listed, with explicit human approval for any that ship | RECORD | `defect_registry.json` status, plus a ledger `decision` (a guarded event from 2026-10-15: `firewall.decision` needs a person and their quote) |
-| SE-7 | Records closed before the freeze: every reservation released, billed or not executed; every executed take has a verdict or "replaced by"; one acceptance status per board (LL-34) | PROCESS (proposed CODE in `freeze`) | open-record list in the freeze |
+| SE-7 | Records closed before the freeze: every reservation released, billed or not executed; every executed take has a verdict or "replaced by"; one acceptance status per board (LL-34) | CODE detects (`freeze.open_records`, reported in metrics); refusal at the freeze proposed | `video.open_records` in the metrics record |
 
 ## Human-review criteria (EP05 postmortem, 2026-10-15)
 

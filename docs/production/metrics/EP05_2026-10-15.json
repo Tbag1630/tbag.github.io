@@ -26,7 +26,20 @@
   "submitted_without_billing": [
    "V25-7cd431761bc2",
    "V53-86aa14a62240"
-  ]
+  ],
+  "open_records": {
+   "reservations_never_closed": [
+    "V33-cc425a86699c",
+    "V67-003579ebc77b"
+   ],
+   "executed_without_verdict": [
+    "V02-a0dec5bdea15",
+    "V04-307c43d3c84b",
+    "V06-3f58e4dd348a",
+    "V41-35d7bed2f778",
+    "V42-d673f2cfebf1"
+   ]
+  }
  },
  "other": {
   "image_jobs": 98,

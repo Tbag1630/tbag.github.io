@@ -26,7 +26,7 @@ Evidence for every line is in `EP05_postmortem.md` and `defect_registry.json` (s
 | 6 | Confirm the credit balance for the planned batch (B4) | Producer | Ledger `decision` naming the balance |
 | 7 | Move the EP05 masters and `project/EP05` evidence out of the container to private storage (B5); never into this public repository | Producer | Storage link plus matching hashes |
 | 8 | Record the owed EP05 human reviews: 17 pinned clips, 11 mute windows, 9 masked joins, the whole-film watch (B2, B9) | Producer | Dated records naming the person |
-| 9 | Release or keep the open reservations V33 and V67 (B10) | Producer | Ledger `released` or `decision` |
+| 9 | Close or keep the open records (B10): V33 and V67, plus verdicts for V02, V04, V06, V41 and V42. A video-reservation close function is needed first. | Producer, then lead | `freeze.open_records` empty, or a `decision` per item |
 | 10 | Approve the EP05 lessons gate (`EP05_postmortem.md` §10) | Producer | A ledger `decision` quoting the approval |
 | 11 | Run the episode-start test set (section 7) | Lead | All green; tooling stamped |
 

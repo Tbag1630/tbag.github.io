@@ -17,7 +17,7 @@ Stage gate SA-6 means walking this file line by line and signing it in the episo
 | B7 | **The guard can be reverted from the agent shell** (AUD-30) | Producer (the guard refuses the agent) | Apply the patch in `production_gate_report.md` R4, then remove the strict xfail | `test_the_guard_cannot_be_switched_off_from_the_agent_shell` passes |
 | B8 | **No person-only signing route in cloud sessions** (AUD-33). An agent can transcribe `by="user"`. | Producer | Run the probe in `operator_guide.md`; record the route, or sign in a local session | ledger `decision` naming the route |
 | B9 | **The EP05 human reviews are owed** (`production_gates.md`, human-review criteria H4–H7): the 17 pinned clips, the 11 mute windows and the 9 masked joins in v5 | Producer | Review each one and record it | dated records naming the person |
-| B10 | **Open records** (LL-34): V33 (684.6) and V67 (365.1) are reserved and never closed | Producer | Decide to release them (`firewall.release_reservation`) or keep V67 for B6 | ledger `released`, or a `decision` |
+| B10 | **Open records** (LL-34; `freeze.open_records`): V33 (684.6) and V67 (365.1) are reserved and never closed, and V02, V04, V06, V41 and V42 have no verdict | Producer, then lead | Decide whether to close V33 and V67 or keep V67 for B6. No function closes an unsent video reservation yet (`release_reservation` covers image reservations only), so build one first. Record a verdict or "replaced by" for the five takes. Freeze EP05's `video_pilot`, which is still `AUTHORIZED` (cap 39,500) from R6. | `freeze.open_records` empty, or each item named in a `decision` |
 
 ## Mandatory changes, with the status of each control
 
@@ -35,7 +35,7 @@ Stage gate SA-6 means walking this file line by line and signing it in the episo
 | M10 | A delivery channel planned before the session; masters never live only in the container | Stage gate SE-5 | Process |
 | M11 | Metrics computed at the end of the episode and compared with `metrics/EP05_2026-10-15.json` (planning baseline included) | `ulac/metrics.py` | Implemented; a provider job is counted once (2026-10-15) |
 | M12 | No transition over an unresolved rendered break | `edit.join_plan` must read the continuity contracts (AUD-31) | **Not implemented**; detection only (`transitions.json` `masked_break`) |
-| M13 | Every opened record closed before the freeze (SE-7) | proposed check in `freeze` (LL-34) | **Not implemented** |
+| M13 | Every opened record closed before the freeze (SE-7) | `freeze.open_records` (detector, CODE); refusal at the freeze proposed (LL-34) | Detection implemented and regression-protected; **refusal not implemented** |
 | M14 | A human review per item in `production_gates.md` §Human-review criteria, by a named person | RECORD | Process; none exists for EP05 |
 
 ## Change-impact review: where each lesson applies
