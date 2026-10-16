@@ -49,6 +49,8 @@ audio verified and locked
 | `key_images[]` | `seqs`, `image`, `why_specific`. At least three. | CR-AUD-05, CR-CON-03 |
 | `repetition_reasons` | Optional. `{"move:push": "why"}` answers an episode-wide repetition finding | CR-CRAFT-03 |
 
+`seqs` name sequence folders (`SEQ_004`) or the plan id a folder records in its `prompt.json` `seq_id` (`S04`). An id that no folder records, or that two folders claim, names nothing. A REJECT's evidence may cite either form.
+
 **`SEQUENCES/<SEQ>/CREATIVE.json`** answers the mandate's five questions, plus the planned camera:
 
 | Field | Question | Criteria |

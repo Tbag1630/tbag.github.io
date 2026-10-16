@@ -109,6 +109,18 @@ def _clips(root: Path) -> dict[str, float | None]:
     return out
 
 
+def _aliases(root: Path, clips) -> dict[str, str]:
+    """Each sequence's plan id (its prompt.json `seq_id`) where it differs from the folder name, so a brief written in
+    the plan's ids names real sequences. An id two folders claim, or one that is itself a folder name, is no alias."""
+    seen: dict[str, list[str]] = {}
+    for clip in clips:
+        pj = Path(root) / "SEQUENCES" / clip / "prompt.json"
+        sid = bp._j(pj).get("seq_id") if pj.exists() else None
+        if isinstance(sid, str) and sid.strip() and sid != clip:
+            seen.setdefault(sid, []).append(clip)
+    return {a: c[0] for a, c in seen.items() if len(c) == 1 and a not in clips}
+
+
 def creative_contract(root: Path) -> dict:
     from . import contracts as C
     root = Path(root)
@@ -133,7 +145,7 @@ def creative_contract(root: Path) -> dict:
         except json.JSONDecodeError:
             seqs[clip] = {"duration": dur, "_unreadable": True}
     body = {"brief": brief, "order": list(clips), "sequences": seqs, "missing": missing,
-            "durations": clips, "criteria_sha256": criteria_sha(), "provenance": prov}
+            "durations": clips, "aliases": _aliases(root, clips), "criteria_sha256": criteria_sha(), "provenance": prov}
     return C._doc("creative", "creative", body, validate(body))
 
 
@@ -150,6 +162,8 @@ def stale(root: Path, doc: dict) -> list[str]:
             why.append(f"{clip}/{INTENT} was added after the creative contract was built")
     if _clips(root) != b["durations"]:
         why.append("the sequences or their durations changed after the creative contract was built")
+    if "aliases" in b and _aliases(root, b["order"]) != b["aliases"]:
+        why.append("the sequences' plan ids changed after the creative contract was built")
     if criteria_sha() != b["criteria_sha256"]:
         why.append("the creative criteria changed after the creative contract was built")
     return why
@@ -181,7 +195,7 @@ def _camera_problems(cams) -> list[str]:
     return out
 
 
-def _validate_brief(b, clips: list[str], out: list) -> None:
+def _validate_brief(b, clips: list[str], out: list, aliases: dict | None = None) -> None:
     E = "EPISODE"
     if not isinstance(b, dict):
         _f(out, E, "BRIEF_MISSING", BLOCK, f"no readable {BRIEF}: concepts must be compared before storyboards (CR-CON-01)")
@@ -209,7 +223,7 @@ def _validate_brief(b, clips: list[str], out: list) -> None:
     ids = [c.get("id") for c in concepts]
     if b.get("chosen") not in ids or not _answered(b.get("why_chosen")):
         _f(out, E, "BRIEF_INCOMPLETE", BLOCK, f"chosen={b.get('chosen')!r} must name one of {ids}, with why_chosen")
-    known = set(clips)
+    known = set(clips) | (set(aliases) if isinstance(aliases, dict) else set())
 
     def _seqs_ok(item) -> bool:
         s = item.get("seqs")
@@ -295,7 +309,7 @@ def _validate_sequences(body: dict, out: list) -> None:
 
 def validate(body: dict) -> list[dict]:
     out: list[dict] = []
-    _validate_brief(body.get("brief"), body.get("order") or [], out)
+    _validate_brief(body.get("brief"), body.get("order") or [], out, body.get("aliases"))
     _validate_sequences(body, out)
     return out
 
@@ -379,10 +393,15 @@ def review(root: Path, *, lens: str, reviewer: str, verdict: str, criteria_ids=(
     if verdict == "REJECT":
         if not criteria_ids:
             raise CreativeError("a REJECT cites at least one criterion id")
-        if not evidence or any(not isinstance(e, str) or len(e.strip()) < MIN_EVIDENCE
-                               or not re.search(r"\b(SEQ_\d{3}|BRIEF)\b", e) for e in evidence):
-            raise CreativeError(f"a REJECT gives evidence: each item names a sequence id or BRIEF and what was judged "
-                                f"({MIN_EVIDENCE} characters or more)")
+        plan_ids = doc["body"].get("aliases") or {}
+
+        def _names(e: str) -> bool:
+            return bool(re.search(r"\b(SEQ_\d{3}|BRIEF)\b", e)) or any(re.search(rf"\b{re.escape(a)}\b", e)
+                                                                       for a in plan_ids)
+        if not evidence or any(not isinstance(e, str) or len(e.strip()) < MIN_EVIDENCE or not _names(e)
+                               for e in evidence):
+            raise CreativeError(f"a REJECT gives evidence: each item names a sequence id (or its plan id) or BRIEF "
+                                f"and what was judged ({MIN_EVIDENCE} characters or more)")
     led = read_ledger(root)
     revs = {r["id"]: r for r in _reviews(led)}
     for rid in re_checks:

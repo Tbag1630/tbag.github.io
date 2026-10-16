@@ -237,6 +237,35 @@ def test_distinction_and_key_images_must_name_real_sequences(ep):
     assert {"DISTINCTION_THIN", "KEY_IMAGES_FEW"} <= _codes(creative.validate(body), C.BLOCK)
 
 
+def _set_plan_ids(root, ids):
+    for clip, sid in ids.items():
+        p = root / "SEQUENCES" / clip / "prompt.json"
+        p.write_text(json.dumps({**json.loads(p.read_text()), "seq_id": sid}))
+
+
+def test_a_brief_may_cite_the_plan_ids_its_sequence_folders_record(ep):
+    _set_plan_ids(ep, {"SEQ_001": "S01", "SEQ_002": "S02"})
+    bf = ep / "CREATIVE" / "brief.json"
+    b = json.loads(bf.read_text())
+    for item in b["distinction"] + b["key_images"]:
+        item["seqs"] = ["S01", "S02"]
+    bf.write_text(json.dumps(b))
+    _rebuild(ep)
+    doc = C.load(ep, "creative")
+    assert doc["body"]["aliases"] == {"S01": "SEQ_001", "S02": "SEQ_002"}
+    assert not {"DISTINCTION_THIN", "KEY_IMAGES_FEW"} & _codes(doc["findings"])
+    r = _reject(ep, ev=("S02: the picture only restates the narration",))     # a REJECT may cite the plan id
+    assert r["verdict"] == "REJECT"
+    with pytest.raises(creative.CreativeError, match="evidence"):
+        _reject(ep, ev=("S07: no such sequence in this episode at all",))
+    _set_plan_ids(ep, {"SEQ_002": "S01"})                                    # two folders claim S01: no alias
+    assert any("plan ids changed" in w for w in creative.stale(ep, doc))
+    _rebuild(ep)
+    doc = C.load(ep, "creative")
+    assert doc["body"]["aliases"] == {}
+    assert {"DISTINCTION_THIN", "KEY_IMAGES_FEW"} <= _codes(doc["findings"], C.BLOCK)
+
+
 def _plan(seqs):
     """A creative body for `seqs` [(id, duration, camera, extra)] with complete, distinct answers."""
     order = [s[0] for s in seqs]
