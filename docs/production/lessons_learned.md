@@ -98,6 +98,7 @@ These are durable production rules. Each has a status, and nothing is promoted w
 | LL-81 | **A reference's status is a claim until a person signs it.** Every earlier character grid and the hall master were marked approved and locked by the agent; none was compared with the client's originals, and one master reached no video at all. The bible records each reference's status (original, accepted, derived, candidate, awaited, rejected) and becomes authority only through a person's approval of its hash; a character's original counts only while the signed cast lock names that file. | Regression-protected | `tests/test_bible.py` | Every reference before it is used |
 | LL-82 | **Derive occupancy from the geometry the checks use, then read the joins.** Writing every sequence's first and last state from the geometry checker found eleven joins where a person or prop changes across a cut with no recorded action (a stand-up, a walk to another room, a prop already in hand). Each needs a staging change, an action inside a sequence, or a person's reasoned waiver. | Observed (one episode) | Private continuity contracts | Every plan before keyframes |
 | LL-83 | **Edit source with the file tools, not with shell scripts that mention signing commands.** The paid-generation hook refused a shell script that edited the contracts module because its text named the module and the word for an approval. The refusal was right to fire on the text; the edit went through the file-edit tool, which the hook guards by path. | Observed | Session record | Every edit to the approval code |
+| LL-84 | **A paid call cut off by a restart is an uncertain send: reconcile it from billing, never resend it.** A worker restart came between the guard's allow (logged) and the tool's result, and the harness replayed the same call. The sent-once rule refused the replay, which is what it is for. The job id, if any job exists, comes only from the provider's billing feed; until a bill or a fact-only closure settles it, the attempt is neither free nor retried. Check before a paid send that the session can also reach the provider's download host: here the egress policy refused it, so even a finished job could not have been ingested or shown to the person. | Observed | Guard log 2026-10-16 15:47:26 (allow) and 16:00:08 (refused replay); proxy status | Every paid send; every session restart during a paid call |
 
 ## Lesson classes (2026-10-15)
 
@@ -111,7 +112,7 @@ These are durable production rules. Each has a status, and nothing is promoted w
 |---|---|
 | Prevent | LL-01, LL-02, LL-03, LL-04, LL-06, LL-08, LL-09, LL-10, LL-14, LL-16, LL-21, LL-22, LL-23, LL-27, LL-28, LL-29, LL-35, LL-36, LL-37, LL-40, LL-42, LL-43, LL-44, LL-45, LL-46, LL-48, LL-50, LL-52, LL-54, LL-58, LL-61, LL-62, LL-64, LL-65, LL-66, LL-68, LL-70, LL-71, LL-72, LL-75, LL-76, LL-77, LL-78, LL-80, LL-81, LL-83 |
 | Detect | LL-07, LL-12, LL-13, LL-15, LL-25, LL-30, LL-31, LL-33, LL-34, LL-39, LL-47, LL-49, LL-51, LL-53, LL-55, LL-56, LL-57, LL-59, LL-60, LL-63, LL-67, LL-69, LL-73, LL-74, LL-79, LL-82 |
-| Recover | LL-17, LL-18, LL-32 |
+| Recover | LL-17, LL-18, LL-32, LL-84 |
 | Optimize | LL-11, LL-24 |
 | Preserve | LL-05, LL-19, LL-20 (push-ins, and the shared-frame match rule now tested through `join_plan` in `test_xfade.py`), LL-38, LL-41 |
 | No longer applies | LL-26 (Rejected) |
