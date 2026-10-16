@@ -169,8 +169,16 @@ def attempts_used(root: Path, tid: str, state_count: int = 0) -> int:
 def next_attempt(root: Path, tid: str, state_count: int = 0) -> int:
     """The attempt a freshly compiled graph would be: one past the last ingested attempt. An unspent reservation does
     not advance it (compiling the same graph twice stays attempt n); a paid-but-uningested one blocks in reserve()."""
-    done = [r["attempt"] for r in read_ledger(root) if r.get("target") == tid and r["event"] in ("ingested", "backfilled")]
-    return max(int(state_count or 0), max(done) if done else 0) + 1
+    done = [r["attempt"] for r in read_ledger(root) if r.get("target") == tid and r["event"] in ("ingested", "backfilled",
+                                                                                                  "failed")]
+    return max(int(state_count or 0), max(done) if done else 0) + 1      # a failed attempt is used, never free (LL-84)
+
+
+def _sent(cur: dict) -> bool:
+    """Did the guard let this reservation's exact graph leave? A sent graph is spent whether or not a job id came back."""
+    from . import paidguard
+    g = cur.get("graph_sha256") or cur.get("config_hash")
+    return bool(g) and paidguard._sent_before(g)
 
 
 def approved(root: Path, tid: str, attempt: int) -> dict | None:
@@ -281,7 +289,7 @@ def reserve(root: Path, *, tid: str, kind: str, attempt: int, prompt_sha: str, r
     live = _live_reservations(root, tid)
     cur = live.get(attempt)
     if cur:
-        paid = cur.get("job_id") or cur.get("last_event") in ("submitted", "ingested", "accepted", "failed")
+        paid = cur.get("job_id") or cur.get("last_event") in ("submitted", "ingested", "accepted", "failed") or _sent(cur)
         if cur.get("prompt_sha256") == prompt_sha and cur.get("ref_hashes") == ref_hashes and not paid:
             return {**cur, "reused": True}          # a paid reservation is never handed back as if it were unspent
         if paid:
@@ -662,9 +670,33 @@ def release_reservation(root: Path, tid: str, attempt: int, reason: str) -> dict
     if cur.get("job_id") or cur.get("last_event") in ("submitted", "ingested", "accepted", "failed"):
         raise FirewallError(f"{tid} attempt {attempt} was already submitted (job {cur.get('job_id')}): it is spent and "
                             "cannot be released")
+    if _sent(cur):                                  # LL-84: sent with no job id recorded is still sent
+        raise FirewallError(f"{tid} attempt {attempt}: the guard's log shows its graph was sent; reconcile it against "
+                            "billing (record its job id, or close it with unconfirmed_send), never release it")
     if not str(reason).strip():
         raise FirewallError("say why the reservation is released")
     return record(root, "released", target=tid, attempt=attempt, reason=reason)
+
+
+def unconfirmed_send(root: Path, tid: str, attempt: int, *, evidence: str) -> dict:
+    """Close an image or environment attempt that the guard's log shows as sent, with no job id recorded and no bill
+    found (a restart between the guard's allow and the tool's result; LL-84). Fact-only: it records the attempt as failed,
+    which spends it under the ceiling and never frees it, and cites the evidence (the guard's log line, the queue, the
+    billing check and its time). If a bill for it turns up later, backfill it with that job id."""
+    cur = _live_reservations(root, tid).get(attempt)
+    if cur is None:
+        raise FirewallError(f"{tid} attempt {attempt} has no live reservation")
+    if cur.get("job_id") or cur.get("last_event") not in (None, "reserved"):
+        raise FirewallError(f"{tid} attempt {attempt} is {cur.get('last_event')} (job {cur.get('job_id')}): reconcile "
+                            "it with its job id instead")
+    if not _sent(cur):
+        raise FirewallError(f"{tid} attempt {attempt}: the guard's log shows no send; an unsent reservation is released")
+    if len(str(evidence).strip()) < 40:
+        raise FirewallError("cite the evidence that no job and no bill exist (the guard's log line, the queue, the billing "
+                            "check and its time; 40 characters or more)")
+    return record(root, "failed", target=tid, attempt=attempt, kind=cur.get("kind"), reason="sent, unconfirmed and "
+                  "unbilled: the guard's log shows the send, no job id came back and billing shows no job",
+                  evidence=str(evidence).strip(), graph_sha256=cur.get("graph_sha256"), unconfirmed=True)
 
 
 def tooling_check(root: Path, timeout: int = 900) -> dict:

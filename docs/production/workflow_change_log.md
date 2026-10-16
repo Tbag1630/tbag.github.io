@@ -4,6 +4,13 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: A sent graph is spent even with no job id (LL-84)
+
+| Change | Why | Evidence |
+|---|---|---|
+| `firewall.reserve` and `firewall.release_reservation`: a reservation whose graph the guard's log shows as sent counts as spent. It is never released, and never re-compiled into a new graph. | A worker restart came between the guard's allow and the tool's result, so no job id was recorded. `reserve` would then have released the attempt and re-reserved a new prompt, and the guard would pass that new graph: a possible double payment. `video_release` already had this check. | `test_a_sent_graph_is_never_released_or_recompiled_into_a_new_one` |
+| `firewall.unconfirmed_send`: a fact-only closure for an image or environment attempt the guard's log shows as sent, with no job id and no bill. It records the attempt as failed, citing the evidence, so it stays spent. `next_attempt` counts failed attempts, so the next compile is attempt n+1 under the same ceiling. | EP03's dusk-hall attempt 1: the guard allowed it at 15:47:26 UTC, the replay was refused at 16:00:08, and two hours later the queue was empty and billing showed no job. | `test_the_closure_spends_the_attempt_and_moves_to_the_next`, `test_a_recorded_job_is_reconciled_with_its_id_not_closed` |
+
 ## 2026-10-16: Three continuity holes from the workstream-D audit (H1, H4, H5)
 
 | Change | Why | Evidence |
