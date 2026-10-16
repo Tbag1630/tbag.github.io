@@ -12,6 +12,14 @@ Each entry gives the change, why it was made, the evidence and its verification 
 | The watch page streams only; its "Download MP4" (a join of segments) is gone. A separate download page (`templates/download.html`, `deliver.parts`, `deliver.download_page`) rebuilds the delivery file byte for byte from parts under the artifact limits (named `.mp4`, a type artifacts serve; they refuse `.m4s`) and checks its SHA-256 before it offers to save | The joined segments were a fragmented MP4; the chat's file transfer stops at 30 MiB, so the real file had never arrived | `test_a_progressive_mp4_is_a_delivery_file_and_its_parts_rejoin_byte_for_byte`; `test_the_watch_page_no_longer_offers_a_joined_download` |
 | `python3 -m ulac tooling-check project/<EP>` stamps an episode before its ULAC pack exists | It built the episode's relay first and failed with FileNotFoundError on EP03 (no `ULAC/ulac.json` in pre-production), so the stamp had been taken by calling `firewall.tooling_check` directly, not by the documented command | `tests/test_cli_tooling.py` |
 
+## 2026-10-16: Creative review round 7 (EP03, private package v5.5)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The private sightline adapter (v10) runs a fifth reading of the lamps (the second unknown with the room's measured scale held), makes a lamp's edge or cord across a face a finding, counts a line within 1 mm of an edge as hidden, and can lower a character in a second setup; it reproduces the round-7 craft tables with the face test off | A sensitivity reading ran one way only (LL-59); a defect through a face was only a note (LL-60) | Private CHECK_NOTES v5.5 calibration section |
+| A gesture hidden behind the set is fixed in the performance, with one recorded height per physical feature | A camera-height fix depended on a centimetre of an uncalibrated body model (LL-61) | Private plan v5.5; round-8 review |
+| `ulac.contracts status` reports an episode without sequences instead of crashing | Documented commands must work in pre-production (LL-62) | `tests/test_cli_tooling.py::test_contracts_status_reports_an_episode_in_pre_production` |
+
 ## 2026-10-16: Creative review round 6 (EP03, private package v5.4)
 
 | Change | Why | Evidence |

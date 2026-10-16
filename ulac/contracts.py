@@ -1126,6 +1126,8 @@ def target_problems(root: Path, target: str, kind: str) -> list[str]:
 # ---------------------------------------------------------------------------------------------------------- report
 def status(root: Path) -> dict:
     root = Path(root)
+    if not (root / "SEQUENCES").is_dir():         # pre-production: no clips yet (it used to crash on EP03, 2026-10-16)
+        return {}
     led = _ledger(root)
     out = {}
     for s in bp.sequences(root):
@@ -1143,7 +1145,9 @@ def _main(a: list[str]) -> None:
     if cmd == "build":
         print(json.dumps(build(ep, Path(get("--final-edl")) if get("--final-edl") else None), indent=1)[:4000])
     elif cmd == "status":
-        print(json.dumps(status(ep), indent=1))
+        st = status(ep)
+        print(json.dumps(st if st or (ep / "SEQUENCES").is_dir() else
+                         {"clips": 0, "note": f"{ep} has no SEQUENCES folder yet (pre-production): no clip has a state"}, indent=1))
     elif cmd == "approve":
         wv: dict = {}
         for i, x in enumerate(a):

@@ -13,3 +13,11 @@ def test_tooling_check_runs_on_an_episode_without_a_ulac_config(tmp_path, monkey
     assert seen == [tmp_path] and '"ok": true' in capsys.readouterr().out
     monkeypatch.setattr(firewall, "tooling_check", lambda root: {"ok": False, "sha256": "x", "result": "1 failed"})
     assert cli.main(["tooling-check", str(tmp_path)]) == 2
+
+
+def test_contracts_status_reports_an_episode_in_pre_production(tmp_path, capsys):
+    """`python3 -m ulac.contracts status project/<EP>` crashed with FileNotFoundError before an episode has SEQUENCES (EP03)."""
+    from ulac import contracts
+    assert contracts.status(tmp_path) == {}
+    contracts._main(["status", str(tmp_path)])
+    assert '"clips": 0' in capsys.readouterr().out
