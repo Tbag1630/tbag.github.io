@@ -160,7 +160,8 @@ def audio_contract(root: Path, audio: dict) -> dict:
                              "transcript_text": "unverified until a person approves this ledger after listening"},
             "measured_findings": audio["problems"],
             "provenance": {"narration": audio["audio_sha256"], "transcript": _fsha(tr),
-                           **{f"SEQUENCES/{s['clip']}/prompt.json#timing": _timing_sha(root, s["clip"]) for s in segs}}}
+                           **{f"SEQUENCES/{s['clip']}/prompt.json#timing": _timing_sha(root, s["clip"]) for s in segs},
+                           **{f"SEQUENCES/{s['clip']}#bound": _bound_sha(root, s["clip"]) for s in segs}}}
     return _doc("audio_ledger", "audio_ledger", body, validate_audio(body))
 
 
@@ -176,6 +177,15 @@ def _timing_sha(root: Path, clip: str) -> str | None:
     return _h({k: pj.get(k) for k in TIMING_KEYS})
 
 
+def _bound_sha(root: Path, clip: str) -> str:
+    """The other per-clip words the audio ledger binds (its beat and purpose), so an edit to them voids the approval
+    before the next build, not only after it."""
+    d = Path(root) / "SEQUENCES" / clip
+    pj = bp._j(d / "prompt.json") if (d / "prompt.json").exists() else {}
+    it = bp._j(d / "INTENT.json") if (d / "INTENT.json").exists() else {}
+    return _h({"goal": pj.get("goal"), **{k: it.get(k) for k in ("title", "narrative_purpose", "dramatic_objective")}})
+
+
 def validate_audio(body: dict) -> list[dict]:
     """Structural invariants recomputed from the body, plus the measured findings recorded at build time."""
     out = [dict(p) for p in body.get("measured_findings", [])]
@@ -187,6 +197,10 @@ def validate_audio(body: dict) -> list[dict]:
         if not s["end"] > s["start"]:
             out.append({"clip": s["clip"], "code": "INVALID_INTERVAL", "severity": BLOCK,
                         "detail": f"end {s['end']} is not after start {s['start']}"})
+        sfx = (s.get("events") or {}).get("sfx")
+        if isinstance(sfx, str) and "[TO AUTHOR]" in sfx:
+            out.append({"clip": s["clip"], "code": "SFX_UNAUTHORED", "severity": BLOCK,
+                        "detail": "the sound line is still the pack's placeholder; the approval would bind it"})
         if s["duration"] > RENDER_CONFIG["max_seconds"] and not any(
                 p["code"] == "OVER_15S" and p["clip"] == s["clip"] for p in out):
             out.append({"clip": s["clip"], "code": "OVER_15S", "severity": BLOCK, "detail": f"{s['duration']} s"})
@@ -439,11 +453,11 @@ def build(root: Path, final_edl_path: Path | None = None, *, samples=None, sil=N
     root = Path(root)
     edl = bp._j(root / final_edl_path) if final_edl_path else None
     audio = bp.audio_ledger(root, samples=samples, sil=sil)
+    A = audio_contract(root, audio)                 # first: the audio stage needs no storyboard, state or reference
+    _write(root, "audio_ledger", A)
     shots = bp.shot_specs(root, audio)
     bnd = bp.boundary_ledger(root, shots, edl)
     refs = bp.reference_manifest(root, shots, bnd)
-    A = audio_contract(root, audio)
-    _write(root, "audio_ledger", A)
     from . import creative
     K = creative.creative_contract(root)
     _write(root, "creative", K)
@@ -470,10 +484,15 @@ def stale(root: Path, doc: dict | None) -> list[str]:
         for k, v in b["provenance"].items():
             if k.endswith("#timing"):
                 now = _timing_sha(root, k.split("/")[1])
+            elif k.endswith("#bound"):
+                now = _bound_sha(root, k.split("/")[1].split("#")[0])
             else:
                 now = _fsha(root / ("AUDIO/narration.wav" if k == "narration" else "AUDIO/transcript_word.json"))
             if now != v:
                 why.append(f"{k} changed after the audio ledger was built")
+        clips = [s["clip"] for s in b.get("segments", [])]
+        if clips and bp.sequences(root) != clips:     # a sequence added, removed or renamed since the build
+            why.append("the sequence folders changed after the audio ledger was built")
     elif doc["contract"] == "storyboard":
         d = root / "SEQUENCES" / b["clip"]
         why += [f"{b['clip']}/{k} changed after the storyboard contract was built" for k, v in b["provenance"].items()
@@ -551,7 +570,7 @@ def current(root: Path, kind: str, id_: str, *, led: list | None = None, clip: s
     else:
         why += _signature_problems(ap, kind, id_, doc["sha256"])
     fs = _findings_now(root, doc)
-    if clip:
+    if clip and kind != "audio_ledger":              # the audio ledger is approved whole: any clip's block holds every clip
         fs = [p for p in fs if p["clip"] in (clip, "EPISODE")]
     open_ = _blocking(fs, (ap or {}).get("waivers"))
     if open_:

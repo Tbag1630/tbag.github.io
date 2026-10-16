@@ -4,6 +4,18 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: The narration, creative review round 11 and the storyboards (EP03, private package v5.9)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The episode's narration word-timed offline (forced alignment) and every sequence, cut window and quoted time re-measured on it; no sequence over 15 s | The audio is the master clock; estimates from transcript chunks were within about a second, and quoted times inside the prose moved too (LL-75) | Private alignment report: every word aligned; chunk times within a median 0.03 s |
+| Round 11's one blocking finding (a staging the check did not model) resolved: the private sightline adapter (v13) takes per-shot positions, byte-identical without them (LL-73) | A character's recorded lean put her behind her partner's head in the last frame, while the check held her upright | Private CHECK_NOTES v5.9: 0 findings in 75 shots; the lamp-provisional list unchanged |
+| A private edge scan of everyone present in every shot; ten heads cut by an edge re-framed or recorded (LL-74) | The check tested only the people a shot lists | Private CHECK_NOTES v5.9 |
+| A storyboard plan for every sequence, written from the records by four planners and reviewed by the lead; their record findings folded into the plan | The storyboard stage needs every sheet's references and states before any image job; the planners found gaps the reviews had not | Private plans and notes; every sheet and prompt compiles with 0 errors |
+| `ulac.storyboard`: locked and full-action one-shot options (LL-77) | A locked shot was described as a move or as consecutive shots | `tests/test_storyboard_locked.py` |
+| One identity attribute corrected across the records (LL-76) | Hard rule 3 | Private change log |
+| Contracts: the audio ledger is written first and builds from a pack whose storyboards and states are not authored yet; an episode with no sequence folders reports instead of crashing; a transcript aligned on another recording, or a sound line still holding the pack's placeholder, blocks the audio approval; a block on any clip holds every clip's audio state (the approval is all-or-nothing); an edited beat or a changed sequence list voids the approval before the next build (LL-78) | A read-only review traced each gap line by line while the next episode's pack was built | `tests/test_contracts_pack_robustness.py`; the next episode's audio ledger builds with 0 findings |
+
 ## 2026-10-16: Creative review round 10 and the delegated decisions (EP03, private package v5.8)
 
 | Change | Why | Evidence |

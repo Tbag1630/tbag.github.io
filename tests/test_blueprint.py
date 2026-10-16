@@ -41,7 +41,8 @@ def _episode(root: Path, authored: bool = True) -> Path:
         w.setnchannels(1), w.setsampwidth(2), w.setframerate(R)
         w.writeframes((x * 32767).astype(np.int16).tobytes())
     (root / "AUDIO" / "transcript_word.json").write_text(json.dumps(
-        {"words": [{"word": w, "start": a, "end": b} for w, a, b in WORDS], "audio_sha256": "x"}))
+        {"words": [{"word": w, "start": a, "end": b} for w, a, b in WORDS],
+         "audio_sha256": bp._sha(root / "AUDIO" / "narration.wav")}))      # aligned on this narration
     for i, (s, (a, b)) in enumerate(SLOTS.items()):
         d = root / "SEQUENCES" / s
         d.mkdir(parents=True)

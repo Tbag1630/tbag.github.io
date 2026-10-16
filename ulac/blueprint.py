@@ -55,7 +55,10 @@ def _sha(p: Path) -> str:
 
 
 def sequences(root: Path) -> list[str]:
-    return sorted(p.name for p in (Path(root) / "SEQUENCES").iterdir() if p.is_dir() and p.name.startswith("SEQ_"))
+    d = Path(root) / "SEQUENCES"
+    if not d.is_dir():                         # an episode in pre-production has no sequence folders yet
+        return []
+    return sorted(p.name for p in d.iterdir() if p.is_dir() and p.name.startswith("SEQ_"))
 
 
 def _f(problems: list, seq: str, code: str, severity: str, detail: str) -> None:
@@ -146,6 +149,9 @@ def audio_ledger(root: Path, *, samples=None, sil=None) -> dict:
         _f(problems, "EPISODE", "WORDS_UNCOVERED", BLOCK, f"{len(lost)} words belong to no slot: {lost[:8]}")
     if suspect:
         _f(problems, "EPISODE", "TIMESTAMP_SUSPECT", REVIEW, f"{len(suspect)} word timestamps sit in near-silence or overlap")
+    if tr.get("audio_sha256") and tr["audio_sha256"] != _sha(wav):     # the word times were aligned on another recording
+        _f(problems, "EPISODE", "TRANSCRIPT_AUDIO_MISMATCH", BLOCK,
+           f"the transcript was aligned on audio {tr['audio_sha256'][:12]}, not on this narration ({_sha(wav)[:12]})")
     long_sil = [list(s[:2]) for s in S if s[1] - s[0] >= 0.5]          # copies: the caller's list is not changed
     for s in long_sil:
         s.append(next((q["clip"] for q in out_seqs if q["start"] <= s[0] < q["end"]), None))
@@ -185,7 +191,8 @@ def shot_specs(root: Path, audio: dict) -> dict:
     out, problems = {}, []
     for s in sequences(root):
         d = root / "SEQUENCES" / s
-        pj, plan = _j(d / "prompt.json"), _j(d / "storyboard_plan.json")
+        pj = _j(d / "prompt.json")
+        plan = _j(d / "storyboard_plan.json") if (d / "storyboard_plan.json").exists() else {}   # not authored yet
         led = _j(d / "PANEL_LEDGER.json") if (d / "PANEL_LEDGER.json").exists() else {"panels": []}
         intent = _j(d / "INTENT.json") if (d / "INTENT.json").exists() else {}
         qc = _j(d / "qc_contract.json") if (d / "qc_contract.json").exists() else {}
@@ -270,7 +277,7 @@ def shot_specs(root: Path, audio: dict) -> dict:
 # ------------------------------------------------------------------------------------------------------- C. boundaries
 def _state(root: Path, s: str, which: str) -> dict:
     p = Path(root) / "SEQUENCES" / s / f"state_{which}.json"
-    return _j(p)["X"] if p.exists() else {}
+    return (_j(p).get("X") or {}) if p.exists() else {}      # a fresh pack writes {"X": null} until the state is authored
 
 
 def _diff(a: dict, b: dict) -> list[str]:
