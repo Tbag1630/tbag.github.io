@@ -13,11 +13,14 @@ ULAC bindings (the only additions to the skill template):
 
 Plan (authored, SEQUENCES/SEQ_n/storyboard_plan.json):
 {title, mood, genre, energy, priority, premise, location, prop_effect_state, must_read,
- characters: {C1: anchors}, identity_ref: "C1" | null, emotional_arc, style_lock, effect_lock,
+ characters: {C1: anchors}, identity_ref: "C1" | null, identity_refs: {C1: "image 2", ...} | null, emotional_arc,
+ style_lock, effect_lock,
  environment_lock, spatial_lock | null, grid, continuous, same_lens, master_panel,
  panels: [{lens, beat, camera, action, rhythm, escalation, state, style, video_beat}],
  environment, emotional_guidance, visual_style, audio: {sounds, room} | null, master_rule | null}
 (master_rule: in a chained sequence the geography can be carried by image 1 instead of a new master panel)
+identity_refs names one identity reference image for each character on the sheet (the image model takes up to 16), so every
+character's face, body and wardrobe come from its own locked sheet; identity_ref (one character) is kept for older plans.
 """
 from __future__ import annotations
 
@@ -77,15 +80,29 @@ def _chain(panels, key, fmt=None) -> str:
     return " -> ".join(fmt(i, p) if fmt else f"P{i:02d} {_c(p[key])}" for i, p in enumerate(panels, start=1))
 
 
+def _idents(plan: dict) -> dict:
+    """{character ID: image label} for every identity reference on the sheet (identity_refs, else the single identity_ref)."""
+    refs = plan.get("identity_refs")
+    if refs:
+        return dict(refs)
+    return {plan["identity_ref"]: "image 2"} if plan.get("identity_ref") else {}
+
+
+def _and(items: list) -> str:
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> str:
     P = plan["panels"]
     ident = plan.get("identity_ref")
+    idents = _idents(plan)
     # a chained sequence normally inherits the room from image 1; when the previous ending is a close shot with no
     # room in it, plan["ref_note"] says what image 1 does control, so the prompt never asks a close-up for geometry
     image1 = plan.get("ref_note") or f"image 1 ({env_ref}) controls set geometry and P01 opens on its exact layout"
     ref_priority = (image1 + "; "
                     "loose props and their states follow PROP / EFFECT STATE, not image 1; "
-                    + (f"image 2 identity reference controls {ident} identity; " if ident else "")
+                    + ("".join(f"{img} identity reference controls {cid} identity; " for cid, img in idents.items())
+                       if plan.get("identity_refs") else (f"image 2 identity reference controls {ident} identity; " if ident else ""))
                     + "this storyboard controls staging, motion, geography, continuity; "
                     f"final panel P{len(P):02d} is the ending lock and the next sequence's first frame")
     lines = [
@@ -111,7 +128,7 @@ def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> st
         "Remove contradictory traits, invisible psychology, excessive costume detail, and backstory that cannot appear in a panel.",
         "[IDENTITY CONSISTENCY]",
         ("identity reference controls face, body, wardrobe, proportions; storyboard controls staging only; "
-         if ident else "") + "keep character IDs, silhouette, wardrobe, key prop, and screen side consistent; "
+         if idents else "") + "keep character IDs, silhouette, wardrobe, key prop, and screen side consistent; "
                              "do not redesign or merge characters",
         "[STORYBOARD PURITY]",
         PURITY + (f" Never draw: {_c(negative)}." if negative else ""),
@@ -151,13 +168,18 @@ def storyboard_text(rec: dict, plan: dict, *, env_ref: str, negative: str) -> st
 
 def video_text(plan: dict) -> str:
     ident = plan.get("identity_ref")
+    idents = _idents(plan)
     lines = [BLUEPRINT]
     if plan.get("continuous"):
         lines.append(CONTINUOUS)
         if plan.get("same_lens"):
             lines.append(SAME_LENS)
-    lines.append(f"Use @image2 as the authoritative {ident} character reference." if ident
-                 else "Use the identity details in this prompt as the character reference.")
+    if plan.get("identity_refs"):                  # one sentence, as the skill requires, naming every reference image
+        lines.append(f"Use {_and(['@' + v.replace(' ', '') for v in idents.values()])} as the authoritative "
+                     f"{_and(list(idents))} character reference.")
+    else:
+        lines.append(f"Use @image2 as the authoritative {ident} character reference." if ident
+                     else "Use the identity details in this prompt as the character reference.")
     lines += [f"ENVIRONMENT: {_c(plan['environment'])}.",
               f"EMOTIONAL GUIDANCE: {_c(plan['emotional_guidance'])}.",
               f"VISUAL STYLE: {_c(plan['visual_style'])}.",
