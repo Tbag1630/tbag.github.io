@@ -4,6 +4,15 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: Creative review round 6 (EP03, private package v5.4)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The private sightline adapter reads the hanging lamps under two unknowns (their size and the horizon their height is read against), models each lamp's cord to an assumed ceiling, notes the top of a head behind a lamp, reports a background head cut at the frame's edge up to 97 % inside, excludes a toucher's own head from tangents at a contact point, and tests a setup's "hidden" list | Round-6 craft and audience reviews: the size sweep left a second unknown, cords were not modelled, a cut chin passed, a hidden person was unchecked (LL-55) | Private adapter v9; it reproduces the round-6 craft per-setup counts on the reviewed version; port to `ulac/sightline.py` with tests after the pending environment job |
+| Pass policy with a second unknown: the gate is every value of the first; a setup that fails another reading is listed as provisional in the environment approval and checked on its keyframe; re-sites are made only where a fix holds under every reading | A fix chosen for one reading can break another; the measurement on the approved reference settles it | Private CHECK_NOTES v5.4 |
+| A repeated finding triggers a sweep of its defect class across the whole plan | The same class (the shot's real subject untested) recurred in consecutive rounds (LL-56) | Private plan v5.4: four gesture beats made checked points, one hidden beat re-sited |
+| Two producer questions that interact are put as one decision with a grid of their combinations | The lamps' height decides which last frame works; asked separately, each answer pre-empts the other | Private `p01_scan.py` v9 (the grid of both questions); the decisions file is written from its output |
+
 ## 2026-10-15: Creative review round 5 (EP03, private package v5.3)
 
 | Change | Why | Evidence |
