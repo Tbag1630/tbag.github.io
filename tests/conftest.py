@@ -115,6 +115,7 @@ def clean_episode(root, clips=("SEQ_001", "SEQ_002"), seconds=4.0, rate=16000):
     put(root / "IDENTITY" / "identity_board.png", "board")
     put(root / "IDENTITY" / "CHARACTERS" / "MARIA_grid.png", "maria")
     put(root / "PENV" / "PENV_A_DRESSED_MASTER.png", "room")
+    write_bible(root, clips, seconds)
     joins = [f"START->{clips[0]}"] + [f"{a}->{b}" for a, b in zip(clips, clips[1:])] + [f"{clips[-1]}->END"]
     reg = {}
     for k, j in enumerate(joins):
@@ -217,6 +218,61 @@ def write_creative(root, clips):
         (d / "CREATIVE.json").write_text(_json.dumps(creative_intent(i, s)))
 
 
+def _sha_of(p):
+    import hashlib
+    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+
+def write_bible(root, clips, seconds=4.0):
+    """A minimal asset bible (ulac/bible.py) that satisfies every check: MARIA's look from her cast-locked sheet, the
+    room from its master and a derived plan, one light, one camera with a derived view, and each sequence bound to them
+    with its occupancy timed on its narration interval and a derived occupied-state reference at both ends."""
+    import json as _json
+    root = Path(root)
+
+    def put(rel, seed):
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if not p.exists():
+            p.write_bytes(b"\x89PNG test asset " + str(seed).encode())
+        return {"path": rel, "sha256": _sha_of(p)}
+    reg = {
+        "characters": {"MARIA": {
+            "role": "principal", "height_m": 1.15,
+            "identity": {k: f"fixture {k}: as her original sheet shows" for k in
+                         ("silhouette", "proportions", "colours", "face", "costume", "details")},
+            "never_drift": ["her face, hair and clothes as on the sheet"], "allowed_variation": ["expression and pose"],
+            "views_required": ["front", "three_quarter"],
+            "references": [{**put("IDENTITY/CHARACTERS/MARIA_grid.png", "maria"), "status": "ORIGINAL",
+                            "source": "fixture original sheet"}]}},
+        "props": {},
+        "environments": {"PENV_A": {
+            "room": "PENV_A", "scale": "fixture room, 6 m by 4 m", "lighting": "LIGHT_A", "permitted_changes": [],
+            "landmarks": {"DOOR": [0.0, 2.0], "WINDOW": [6.0, 2.0], "TABLE": [3.0, 2.0, 0.75]},
+            "plan": {**put("BIBLE/plans/PENV_A_plan.png", "plan"), "status": "DERIVED"},
+            "references": [{**put("PENV/PENV_A_DRESSED_MASTER.png", "room"), "status": "ORIGINAL", "view": "master"}]}},
+        "lighting": {"LIGHT_A": {"sources": {"WINDOW": "daylight from the window wall"},
+                                 "rules": ["the light does not change inside the episode"]}},
+        "cameras": {"CAM_WIDE": {"environment": "PENV_A", "pos": [3.0, 0.5, 1.2], "yaw_deg": 90.0, "lens_mm": 28,
+                                 "framing": "wide on the table from the door side",
+                                 "references": [{**put("BIBLE/cameras/CAM_WIDE.png", "cam"), "status": "DERIVED"}]}}}
+    (root / "BIBLE").mkdir(parents=True, exist_ok=True)
+    (root / "BIBLE" / "bible.json").write_text(_json.dumps(reg))
+    for i, s in enumerate(clips):
+        a, b = i * seconds, (i + 1) * seconds
+        occ = {side: {"t": t, "reference": {**put(f"BIBLE/occupancy/{s}_{side}.png", f"{s}{side}"), "status": "DERIVED"}}
+               for side, t in (("start", a), ("end", b))}
+        (root / "SEQUENCES" / s / "ASSETS.json").write_text(_json.dumps({
+            "seq_id": s, "environments": ["PENV_A"], "lighting": "LIGHT_A", "cameras": ["CAM_WIDE"],
+            "characters": ["MARIA"], "props": [], "occupancy": {**occ, "events": []}}))
+
+
+def pass_bible(root, by="producer", statement="test fixture: compared every registered asset with its references"):
+    """A person's approval of the asset bible (storyboards and cast jobs wait for it)."""
+    from ulac import contracts
+    return contracts.approve(root, kind="bible", ids=None, by=by, statement=statement)
+
+
 def pass_creative(root, by="producer", statement="test fixture: read the brief, every sequence intent and all reviews"):
     """Three lens reviews with no REJECT, then a person's creative approval (storyboards wait for it)."""
     from ulac import contracts, creative
@@ -239,6 +295,7 @@ def authorize_clips(root, clips=("SEQ_001", "SEQ_002"), cap=100000.0):
     by, st = "producer", "test fixture: listened to the ledger, checked the boards and the boundary keyframes"
     contracts.approve(root, kind="audio", ids=None, by=by, statement=st)
     pass_creative(root, by=by)
+    pass_bible(root, by=by)
     contracts.approve(root, kind="storyboard", ids=list(clips), by=by, statement=st)
     contracts.approve(root, kind="continuity", ids=episode_joins(clips), by=by, statement=st)
     contracts.compile_plan(root)

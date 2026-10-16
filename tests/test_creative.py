@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import clean_episode, creative_intent, pass_creative, sign_cast
+from conftest import clean_episode, creative_intent, pass_bible, pass_creative, sign_cast
 from ulac import contracts as C
 from ulac import creative, firewall
 
@@ -60,6 +60,7 @@ def test_storyboards_wait_for_the_creative_approval_and_the_state_names_it(ep):
     st, why = C.state(ep, "SEQ_001")
     assert st == "STORYBOARD_DRAFT" and any("creative" in w for w in why)
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     assert C.state(ep, "SEQ_001")[0] == "STORYBOARD_APPROVED"
 
@@ -76,6 +77,7 @@ def test_the_creative_contract_waits_for_the_audio_ledger(tmp_path):
 
 def test_a_creative_change_after_approval_drops_every_storyboard_back_to_draft(ep):
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     _edit_intent(ep, "SEQ_002", picture_adds="The lamp behind her flickers whenever the narrator hesitates.")
     for clip in CLIPS:
@@ -85,6 +87,7 @@ def test_a_creative_change_after_approval_drops_every_storyboard_back_to_draft(e
 
 def test_an_unrebuilt_creative_edit_is_stale(ep):
     pass_creative(ep)
+    pass_bible(ep)
     p = ep / "SEQUENCES" / "SEQ_001" / "CREATIVE.json"
     p.write_text(json.dumps({**json.loads(p.read_text()), "sound": "a different sound plan, never rebuilt"}))
     assert any("CREATIVE.json changed" in w for w in C.current(ep, "creative", "creative"))
@@ -178,11 +181,13 @@ def test_a_person_overrules_a_reject_only_with_a_reason_named_in_the_statement(e
     rec = C.approve(ep, kind="creative", ids=None, by=BY, statement=f"{ST}; overruled {r['id']}",
                     overrules={r["id"]: "the insert is a deliberate callback the audience needs"})[0]
     assert rec["overrules"] == {r["id"]: "the insert is a deliberate callback the audience needs"}
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
 
 
 def test_a_reject_recorded_after_the_approval_holds_the_storyboards(ep):
     pass_creative(ep)
+    pass_bible(ep)
     r = _reject(ep, lens="audience", crit=("CR-AUD-01",), ev=("SEQ_001: the key beat exists only in the words",))
     assert any(r["id"] in w for w in C.current(ep, "creative", "creative"))
     with pytest.raises(C.ContractError, match="approved creative contract"):

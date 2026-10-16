@@ -4,6 +4,16 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: The asset bible gate and creative review round 12 (EP03, private package v5.10)
+
+| Change | Why | Evidence |
+|---|---|---|
+| `ulac/bible.py`: one registry per episode (`BIBLE/bible.json`: characters, props, rooms, lighting, cameras, each reference with a path, hash and status) and one binding per sequence (`ASSETS.json`: its rooms, light, cameras, characters and props by id, its occupancy at its first and last narration second with an occupied-state reference, and any new asset). It blocks a missing registry or binding, an unregistered id, an unknown prop state, a holder who is not present, two people in one seat, a camera in another room, a reference that is only a candidate or awaited, a character sheet the cast lock does not name, an occupancy off the audio ledger, a changed reference and the word UNRESOLVED (LL-80, LL-81) | The producer's directive: no shot invents an asset, a look or a layout that should already have an authoritative reference; an empty room is spatial authority, never the occupied state at a moment | `tests/test_bible.py` (24 tests) |
+| Contracts: a `bible` contract kind. A person approves it (`contracts approve --kind bible`, refused from the agent by the hook) after the audio ledger is locked; storyboard approvals, the STORYBOARD_APPROVED state and paid board jobs wait for it; a job that makes one asset's reference (`ASSET_<id>`) must name a registered asset. Existing contract bodies are unchanged, so no earlier approval's hash moves | Storyboards decided who was present from identity files on disk: an episode with no `IDENTITY/` folder had nobody present and no missing-reference finding (LL-80) | `tests/test_bible.py`; the full suite |
+| Creative review round 12 recorded on the creative contract: three lenses, NO_REJECT each; round 11's blocking craft finding confirmed resolved by the craft lens | The contract needs every lens on its current hash before a person may approve it | Private reviews and the firewall ledger (`creative_review` events) |
+| The next episode's bible written from its records and its geometry checker: occupancy at every sequence boundary, one schematic per planned camera setup, a floor plan and a camera map. Deriving the states found 11 joins where a character or prop changes across a cut without a recorded action (LL-82) | Occupancy written by hand would describe a staging the checks do not; derived from the same geometry, the two cannot disagree (LL-73) | Private bible and continuity contracts |
+| Five read-only audits (assets, storyboard and narration, environment, continuity code, economics) ran in parallel before any shared record changed | The producer's directive: parallelize independent discovery, sequence dependent decisions | Private audit reports |
+
 ## 2026-10-16: The narration, creative review round 11 and the storyboards (EP03, private package v5.9)
 
 | Change | Why | Evidence |

@@ -461,6 +461,9 @@ def build(root: Path, final_edl_path: Path | None = None, *, samples=None, sil=N
     from . import creative
     K = creative.creative_contract(root)
     _write(root, "creative", K)
+    from . import bible
+    W = bible.bible_contract(root)                  # the episode's world: storyboards and cast jobs wait for it
+    _write(root, "bible", W)
     sbs = {}
     for s in bp.sequences(root):
         sbs[s] = storyboard_contract(root, s, A, shots, refs, bnd)
@@ -469,7 +472,8 @@ def build(root: Path, final_edl_path: Path | None = None, *, samples=None, sil=N
     for rec in bnd["boundaries"]:
         ccs[rec["boundary"]] = continuity_contract(root, rec, sbs, refs)
         _write(root, cc_name(rec["boundary"]), ccs[rec["boundary"]])
-    return {"audio_ledger": A["sha256"], "creative": K["sha256"], "storyboards": {k: v["sha256"] for k, v in sbs.items()},
+    return {"audio_ledger": A["sha256"], "creative": K["sha256"], "bible": W["sha256"],
+            "storyboards": {k: v["sha256"] for k, v in sbs.items()},
             "continuity": {k: v["sha256"] for k, v in ccs.items()}}
 
 
@@ -506,6 +510,9 @@ def stale(root: Path, doc: dict | None) -> list[str]:
     elif doc["contract"] == "creative":
         from . import creative
         why += creative.stale(root, doc)
+    elif doc["contract"] == "bible":
+        from . import bible
+        why += bible.stale(root, doc)
     elif doc["contract"] == "continuity":
         for side in ("upstream", "downstream"):
             clip = b[side]
@@ -543,20 +550,21 @@ def _blocking(findings: list[dict], waivers: dict | None = None) -> list[dict]:
 
 def _findings_now(root: Path, doc: dict) -> list[dict]:
     """Findings recomputed from the body, plus the cast lock, which is live state."""
-    from . import castlock
-    from . import creative
+    from . import bible, castlock, creative
     fn = {"audio_ledger": validate_audio, "storyboard": validate_storyboard, "continuity": validate_continuity,
-          "creative": creative.validate}[doc["contract"]]
+          "creative": creative.validate, "bible": bible.validate}[doc["contract"]]
     out = fn(doc["body"])
     if doc["contract"] == "storyboard":
         out += [{"clip": doc["id"], "code": "CAST_LOCK", "severity": BLOCK, "detail": c} for c in castlock.problems(root)]
+    if doc["contract"] == "bible":
+        out += bible.live_problems(root, doc)
     return out
 
 
 def current(root: Path, kind: str, id_: str, *, led: list | None = None, clip: str | None = None) -> list[str]:
     """Why the approval of one contract does not hold now. Empty: approved, current and clear."""
     name = {"audio_ledger": lambda: "audio_ledger", "storyboard": lambda: sb_name(id_), "continuity": lambda: cc_name(id_),
-            "creative": lambda: "creative"}[kind]()
+            "creative": lambda: "creative", "bible": lambda: "bible"}[kind]()
     doc = load(root, name)
     why = stale(root, doc)
     if doc is None:
@@ -646,6 +654,10 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
         targets = [("creative", "creative", "creative")]
         if why := current(root, "audio_ledger", "audio_ledger", led=led):
             raise ContractError("the creative contract waits for a locked audio ledger: " + "; ".join(why))
+    elif kind == "bible":
+        targets = [("bible", "bible", "bible")]
+        if why := current(root, "audio_ledger", "audio_ledger", led=led):
+            raise ContractError("the bible's occupancy is timed on a locked audio ledger: " + "; ".join(why))
     elif kind == "storyboard":
         targets = [("storyboard", c, sb_name(c)) for c in ids or []]
         if why := current(root, "audio_ledger", "audio_ledger", led=led):
@@ -653,6 +665,10 @@ def approve(root: Path, *, kind: str, ids: list[str] | None, by: str, statement:
         if why := current(root, "creative", "creative", led=led):
             raise ContractError("storyboards wait for an approved creative contract (creative_standard.md): "
                                 + "; ".join(why))
+        for c in ids or []:
+            if why := current(root, "bible", "bible", led=led, clip=c):
+                raise ContractError(f"{c}: storyboards wait for an approved, current asset bible (ulac/bible.py): "
+                                    + "; ".join(why))
     elif kind == "continuity":
         targets = [("continuity", j, cc_name(j)) for j in ids or []]
     else:
@@ -984,7 +1000,8 @@ def state(root: Path, clip: str, *, led: list | None = None, upto: str = STATES[
     if why := stale(root, sb):
         return cur, why
     cur = "STORYBOARD_DRAFT"
-    if why := current(root, "creative", "creative", led=led) + current(root, "storyboard", clip, led=led):
+    if why := (current(root, "creative", "creative", led=led) + current(root, "bible", "bible", led=led, clip=clip)
+               + current(root, "storyboard", clip, led=led)):
         return cur, why
     cur = "STORYBOARD_APPROVED"
     if stop <= STATES.index(cur):
@@ -1122,6 +1139,26 @@ def keyframe_problems(root: Path, kid: str, *, led: list | None = None, need_aut
         return [f"keyframe gate could not be evaluated for {kid}: {type(e).__name__}: {e}"]
 
 
+ASSET_PREFIX = "ASSET_"
+
+
+def asset_target_problems(root: Path, asset_id: str) -> list[str]:
+    """A job that makes a reference for one asset (a character view, a prop sheet) names an asset the built, current
+    bible registers. Making the reference does not wait for the bible's approval: the approval accepts what it made."""
+    from . import bible
+    doc = load(root, "bible")
+    why = stale(root, doc)
+    if doc is None:
+        return why
+    reg = doc["body"].get("registry") if isinstance(doc["body"].get("registry"), dict) else {}
+    if not any(asset_id in (reg.get(s) or {}) for s in bible.SECTIONS):
+        why.append(f"{asset_id} is not registered in {bible.REGISTRY}: register the asset before making its reference")
+    if asset_id in (reg.get("characters") or {}):    # a character's reference shows the cast, whatever the job is called
+        from . import castlock
+        why += castlock.problems(root)
+    return why
+
+
 def target_problems(root: Path, target: str, kind: str) -> list[str]:
     """The hook's single question: may a paid job for this reservation leave the session now?"""
     try:
@@ -1137,6 +1174,9 @@ def target_problems(root: Path, target: str, kind: str) -> list[str]:
             st, w = state(root, target, upto="AUDIO_LOCKED")
             if st != "AUDIO_LOCKED":
                 why += w
+            why += current(root, "bible", "bible", clip=target)     # a board composes from the approved world
+        elif target.startswith(ASSET_PREFIX):
+            why += asset_target_problems(root, target[len(ASSET_PREFIX):])
         return why
     except Exception as e:
         return [f"gate could not be evaluated for {target}: {type(e).__name__}: {e}"]

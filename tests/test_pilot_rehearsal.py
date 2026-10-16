@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from conftest import clean_episode, episode_joins, sign_cast, pass_creative
+from conftest import clean_episode, episode_joins, sign_cast, pass_bible, pass_creative
 from ulac import comfy, contracts as C, firewall
 
 CLIPS = ["SEQ_001", "SEQ_002"]
@@ -34,6 +34,7 @@ def test_the_first_clip_plan_runs_on_person_commands_alone_and_the_cap_is_hard(t
     assert other["authorized"] is False                                 # not in the person's scope
     # steps 4-5: storyboards approved; the boundary keyframes are authorized and reserved
     pass_creative(tmp_path)
+    pass_bible(tmp_path)
     C.approve(tmp_path, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     C.authorize(tmp_path, scope=["K0", "K1"], cap_credits=1000, by=BY, statement=ST)
     k0 = firewall.reserve(tmp_path, tid="K0", kind="keyframe", attempt=1, est_credits=17, **KW)

@@ -18,7 +18,7 @@ You are the Lead Animation Systems Architect and production orchestrator for thi
 
 ## Default operating sequence (EP05 postmortem, 2026-10-15)
 
-`audio verified and locked → semantic segmentation approved → creative contract approved (concepts compared, three-lens review, a person's approval; docs/production/creative_standard.md) → storyboards designed sequentially → references validated → adjacent handoffs approved → render plan compiled → paid generation authorized → independent clip generation → audio-led assembly → continuity and whole-film QC`
+`audio verified and locked → semantic segmentation approved → creative contract approved (concepts compared, three-lens review, a person's approval; docs/production/creative_standard.md) → asset bible approved (every character, prop, room, light and camera registered with an authoritative reference; every sequence bound to it with timed occupancy; `ulac/bible.py`) → storyboards designed sequentially → references validated → adjacent handoffs approved → render plan compiled → paid generation authorized → independent clip generation → audio-led assembly → continuity and whole-film QC`
 
 - Each arrow is a computed contract state (`ulac.contracts`); no stage starts on an unapproved predecessor.
 - Segmentation is checked on the shipped frame grid (LL-27).
@@ -176,6 +176,7 @@ Available now:
 | `python3 -m ulac.contracts build\|status\|plan project/<EP>` | Contracts A/B/C, each clip's computed state, and the render plan compiled from approved contracts (`docs/production/operator_guide.md`). |
 | `python3 -m ulac.contracts approve\|release\|authorize\|revoke project/<EP> ...` | Person only. The hook refuses these from the agent. Any change to an input voids every approval downstream of it. `--kind creative` comes before storyboards. |
 | `python3 -m ulac.creative status\|review project/<EP> ...` | The creative contract's findings, lens coverage and open REJECTs. A review is REJECT or NO_REJECT only, and the lead never records one (R11). |
+| `python3 -m ulac.bible status\|matrix project/<EP>` | The asset bible's findings and the shot-to-asset dependency matrix. A person approves it with `contracts approve --kind bible`; storyboards, boards and cast jobs wait for that approval. |
 | `python3 -m ulac.evidence verify\|protect project/<EP>` | Accepted takes and records against the frozen manifest; makes accepted media read-only. |
 
 **Paid-generation hook.** `ulac/paidguard.py` runs before every MCP, Bash and file-writing call (`.claude/settings.json`).

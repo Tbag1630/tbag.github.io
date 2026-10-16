@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import authorize_clips, clean_episode, episode_joins, sign_cast, pass_creative
+from conftest import authorize_clips, clean_episode, episode_joins, sign_cast, pass_bible, pass_creative
 from ulac import contracts as C
 from ulac import firewall
 
@@ -40,6 +40,7 @@ def _rebuild(root):
 def _through_continuity(root):
     C.approve(root, kind="audio", ids=None, by=BY, statement=ST)
     pass_creative(root)
+    pass_bible(root)
     C.approve(root, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     C.approve(root, kind="continuity", ids=episode_joins(CLIPS), by=BY, statement=ST)
 
@@ -50,6 +51,7 @@ def test_a_clean_episode_reaches_generation_authorized_one_state_at_a_time(ep):
     C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
     assert C.state(ep, "SEQ_001")[0] == "STORYBOARD_DRAFT"             # AUDIO_LOCKED, and a storyboard exists
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     assert C.state(ep, "SEQ_001")[0] == "STORYBOARD_APPROVED"
     C.approve(ep, kind="continuity", ids=episode_joins(CLIPS), by=BY, statement=ST)
@@ -123,6 +125,7 @@ def test_storyboards_wait_for_a_locked_ledger_and_untimed_boards_are_refused(ep)
     p.write_text(json.dumps({**json.loads(p.read_text()), "visual_progression": {"0-7": "a", "7-15": "b"}}))
     _rebuild(ep)
     pass_creative(ep)
+    pass_bible(ep)
     with pytest.raises(C.ContractError, match="PANELS_NOT_TIMED_TO_AUDIO"):
         C.approve(ep, kind="storyboard", ids=["SEQ_001"], by=BY, statement=ST)
 
@@ -149,6 +152,7 @@ def test_human_review_items_are_listed_and_never_marked_verified(ep):
 def test_a_join_without_a_locked_colour_frame_cannot_be_approved(ep):
     C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     (ep / "PROD" / "K1" / "LOCK.json").unlink()
     _rebuild(ep)
@@ -181,6 +185,7 @@ def test_an_unpermitted_state_change_needs_a_reasoned_waiver_and_some_codes_neve
     _rebuild(ep)
     C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     j = "SEQ_001->SEQ_002"
     with pytest.raises(C.ContractError, match="STATE_HANDOFF_MISMATCH"):
@@ -261,6 +266,7 @@ def test_a_status_field_cannot_be_flipped_and_agents_cannot_approve(ep):
 def test_the_render_plan_excludes_unapproved_clips_and_refuses_a_changed_plan(ep):
     C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     C.approve(ep, kind="continuity", ids=["START->SEQ_001", "SEQ_001->SEQ_002"], by=BY, statement=ST)
     plan = C.compile_plan(ep)
@@ -314,6 +320,7 @@ def test_a_keyframe_needs_both_storyboards_and_its_own_authorization(ep):
     assert any("not been approved" in w for w in C.keyframe_problems(ep, "K1"))
     C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
     pass_creative(ep)
+    pass_bible(ep)
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     assert C.keyframe_problems(ep, "K1", need_authorization=False) == []
     assert "authorization" in " ".join(C.keyframe_problems(ep, "K1"))
