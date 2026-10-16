@@ -18,9 +18,15 @@ Generation servers (Cloud_Comfy, Higgsfield, OpenArt, and any server whose name 
   * A rerun by `from_prompt_id` never passes: it cannot be matched to a reservation.
   * A graph already sent once never passes again: an uncertain submission is reconciled, not retried.
 
+Bash: a human signing command (cast lock, contract approval, render-plan release, generation authorization,
+  approve-extra) is never allowed. It becomes an approval card only when all of these hold (AUD-04 as amended
+  2026-10-16): it is one plain invocation (`python3 -m ulac...`, at most a `ULAC_PROJECT=project/<id>` prefix, and no
+  shell control character anywhere, so nothing rides behind the card); it is the main session's call, not a subagent's;
+  the permission mode is one in which the app asks the person (ASK_MODES: the hooks reference says a hook's "ask" forces
+  the prompt even in auto mode, where the classifier may deny it but cannot approve it; never bypass, dontAsk or plan);
+  and it runs in this repository, so it loads this repository's ulac. The app then shows the
+  person the exact command and it runs only if they click Allow. Anything else that names a signing command is refused.
 Bash: refused when it would
-  * run a human signing command (cast lock, contract approval, render-plan release, generation authorization,
-    approve-extra);
   * write a sanctioned approval event from the command line; or
   * write, move or delete the ledger, the firewall, the approval files, the evidence manifest, keyframe locks or
     take files.
@@ -37,7 +43,9 @@ Residual bypasses the repository cannot close:
   * a person disabling hooks or editing .claude/settings.json (the test suite asserts the hook is installed, so the
     tooling stamp, and with it every reservation, fails);
   * code the agent writes to a file and then runs, which calls the signing functions or writes the ledger directly.
-    It is caught after the fact by `evidence.verify` and by `firewall._user`, not prevented.
+    It is caught after the fact by `evidence.verify` and by `firewall._user`, not prevented. The same holds for a card:
+    it shows the command, not the code under ulac/ the command will load;
+  * a person who clicks Allow on a card they did not read, or who answers cards from a mode this guard cannot see.
 """
 from __future__ import annotations
 
@@ -74,6 +82,17 @@ SIGNERS = [
     (re.compile(r"\b(video_accept_price|approve_extra|video_qc_record)\s*\("), "a human-approval function"),
     (re.compile(r"\b(castlock|blueprint|contracts)\s*\.\s*(sign|approve|release_plan|authorize)\s*\("), "a signing function"),
 ]
+# A plain, single invocation of a person-only command: an optional ULAC_PROJECT=project/<id> prefix (no other variable,
+# so no PYTHONPATH can swap the code), then python3 -m ulac.<module> <verb> and its arguments, with no shell control
+# character anywhere (nothing can ride along behind the card).
+ASK_CMD = re.compile(r"^\s*(?:ULAC_PROJECT=project/[A-Za-z0-9_-]+\s+)?python3?\s+-m\s+ulac(?:\.(?:contracts\s+(?:approve|"
+                     r"authorize|release)|castlock\s+sign|blueprint\s+sign)|\s+approve-extra)\s[^;&|`$<>\n\r\\]*$")
+# Permission modes in which an "ask" reaches the person (in auto mode the classifier may deny it, never approve it).
+# Every other mode, and a missing one, keeps the refusal.
+ASK_MODES = {"default", "acceptEdits", "auto"}
+ASK = None                                   # decide() returns this instead of True or False: the person decides in the app
+
+
 PROTECTED = re.compile(r"(CREDIT_LEDGER\.jsonl|FIREWALL\.json|CAST_LOCK\.json|BLUEPRINT_RELEASE\.json|TOOLING_OK\.json|"
                        r"evidence_manifest\.json|PAIDGUARD_LOG\.jsonl|PROD/[^/\s]+/LOCK\.json|\.output\.mp4|"
                        r"\.claude/settings(\.local)?\.json|ulac/paidguard\.py)")      # the guard and its wiring guard themselves
@@ -191,11 +210,32 @@ def _writes(cmd: str) -> str | None:
     return None
 
 
-def decide_bash(cmd: str) -> tuple[bool, str, dict]:
+def _no_card(ctx: dict | None) -> str | None:
+    """Why a plain signing command cannot be shown to the person as a card here, or None when it can."""
+    ctx = ctx or {}
+    if ctx.get("agent_id"):
+        return "a subagent's call never reaches the person as a card"
+    if ctx.get("permission_mode") not in ASK_MODES:
+        return f"permission mode {ctx.get('permission_mode')!r} could answer a card without the person"
+    try:
+        here = bool(ctx.get("cwd")) and Path(str(ctx["cwd"])).resolve() == REPO
+    except (OSError, ValueError):
+        here = False
+    return None if here else "it must run in this repository, so it loads this repository's ulac"
+
+
+def decide_bash(cmd: str, ctx: dict | None = None) -> tuple[bool | None, str, dict]:
+    """ctx is the hook payload: its agent_id, permission_mode and cwd decide whether a card can reach the person."""
+    note = ""
+    if ASK_CMD.match(cmd) and "_sanctioned" not in cmd:
+        if (no := _no_card(ctx)) is None:
+            return ASK, ("a person's decision: the app shows the person this exact command, and it runs only if they "
+                         "click Allow; click Allow only if it is what you meant (AUD-04)"), {"command": cmd[:2000]}
+        note = f"; no approval card: {no}"
     for rx, what in SIGNERS:
         if rx.search(cmd):
-            return False, (f"{what} is a person's decision: they run it in their own shell, never through the agent "
-                           "(production_audit AUD-04)"), {}
+            return False, (f"{what} is a person's decision: they run it in their own shell or approve it on a card, "
+                           f"never through the agent (production_audit AUD-04){note}"), {}
     if name := _writes(cmd):
         return False, f"{name} is protected evidence or an approval record: it is appended to only by ulac code", {}
     return True, "ok", {}
@@ -214,7 +254,7 @@ def decide(payload: dict, roots: list[Path] | None = None) -> tuple[bool, str, d
     if name.startswith("mcp__"):
         return decide_mcp(name, ti, roots)
     if name == "Bash":
-        return decide_bash(str(ti.get("command") or ""))
+        return decide_bash(str(ti.get("command") or ""), payload)
     if name in ("Write", "Edit", "NotebookEdit", "MultiEdit"):
         return decide_file(name, ti)
     return True, "not guarded", {}
@@ -250,7 +290,8 @@ def installed(settings: Path = SETTINGS) -> bool:
 def _log(payload: dict, ok: bool, why: str, meta: dict) -> None:
     from orchestrator.util import utc_iso
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    rec = {"utc": utc_iso(), "tool": payload.get("tool_name"), "decision": "allow" if ok else "deny", "reason": why[:500],
+    rec = {"utc": utc_iso(), "tool": payload.get("tool_name"), "decision": "ask" if ok is ASK else "allow" if ok else "deny",
+           "reason": why[:500], "mode": payload.get("permission_mode"),
            "agent": payload.get("agent_id") or payload.get("agent_type"), **meta}
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(rec) + "\n")
@@ -272,6 +313,10 @@ def main(argv: list[str] | None = None) -> int:
     except Exception:
         if ok and meta.get("graph_sha256"):
             ok, why = False, "the send could not be logged, so a second send could not be detected"
+    if ok is ASK:                                              # the person decides: the app shows the command as a card
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "ask",
+                                                 "permissionDecisionReason": f"PAIDGUARD: {why}"}}))
+        return 0
     if ok:
         return 0
     print(f"PAIDGUARD refused {payload.get('tool_name')}: {why}", file=sys.stderr)

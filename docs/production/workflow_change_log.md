@@ -4,6 +4,12 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: Signing through an approval card (AUD-04 amended, AUD-33)
+
+| Change | Why | Evidence |
+|---|---|---|
+| `ulac/paidguard.py`: a plain signing command (`contracts approve\|authorize\|release`, `castlock sign`, `blueprint sign`, `approve-extra`) gets an `ask` decision, and the app shows the person the exact command. The card is shown only for the main session's call, in a prompting permission mode (`default`, `acceptEdits`), with this repository as the working directory. Every other form stays refused, and nothing is allowed outright. The log records `ask` decisions and the mode. | The producer's AUD-33 probe: a cloud session answers `!` with "shell commands are only available in local sessions", so the signing commands had no route. Auto mode is excluded because a classifier may answer its prompts. Only `ULAC_PROJECT` may prefix a carded command, so a `PYTHONPATH=` prefix cannot swap the code behind a card. | `tests/test_paidguard.py`: four new tests (seven card cases, ten no-card contexts, seventeen refused forms, the hook's output and log). `production_audit.md` "AUD-04 as amended"; `operator_guide.md` "The approval card". Applied by the user's merge, because the guard protects itself. |
+
 ## 2026-10-16: The asset bible gate and creative review round 12 (EP03, private package v5.10)
 
 | Change | Why | Evidence |

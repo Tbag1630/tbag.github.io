@@ -27,6 +27,10 @@ _spec.loader.exec_module(cand)
 # restated below as candidate tests instead of being re-run here.
 del test_the_guard_cannot_be_switched_off_from_the_agent_shell  # noqa: F821
 del test_live_guard_gap_routes_around_the_hook, test_live_guard_gap_a_recorded_decision_from_the_shell  # noqa: F821
+# The candidate predates AUD-04's amendment of 2026-10-16 (the approval card) and still refuses every signing command,
+# which the no-card tests check. Re-base it on the live guard before anyone applies it, or the card is lost.
+del test_a_plain_signing_command_becomes_an_approval_card_and_is_never_allowed  # noqa: F821
+del test_the_hook_shows_the_card_and_logs_it  # noqa: F821
 
 
 @pytest.fixture(autouse=True)
