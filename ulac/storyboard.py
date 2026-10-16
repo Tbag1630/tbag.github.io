@@ -15,12 +15,14 @@ Plan (authored, SEQUENCES/SEQ_n/storyboard_plan.json):
 {title, mood, genre, energy, priority, premise, location, prop_effect_state, must_read,
  characters: {C1: anchors}, identity_ref: "C1" | null, identity_refs: {C1: "image 2", ...} | null, emotional_arc,
  style_lock, effect_lock,
- environment_lock, spatial_lock | null, grid, continuous, same_lens, master_panel,
+ environment_lock, spatial_lock | null, grid, continuous, same_lens, locked, one_shot, one_shot_action, master_panel,
  panels: [{lens, beat, camera, action, rhythm, escalation, state, style, video_beat}],
  environment, emotional_guidance, visual_style, audio: {sounds, room} | null, master_rule | null}
 (master_rule: in a chained sequence the geography can be carried by image 1 instead of a new master panel)
 identity_refs names one identity reference image for each character on the sheet (the image model takes up to 16), so every
 character's face, body and wardrobe come from its own locked sheet; identity_ref (one character) is kept for older plans.
+locked: one locked-off setup (the camera never moves; only the characters do), for a continuous board or a one_shot
+first-last-frame prompt; one_shot_action: a one_shot whose action is large (a stand, a crane), so it is not called a small movement.
 """
 from __future__ import annotations
 
@@ -41,6 +43,8 @@ BLUEPRINT = ("Use @image1 as the authoritative director-approved storyboard blue
 CONTINUOUS = ("The entire video must play as one continuous developing master shot with no visible cuts; each "
               "panel is a sampled phase of the same uninterrupted camera move, not a separate shot.")
 SAME_LENS = "Use one virtual lens / same-lens continuous camera move; scale changes come from physical camera movement only."
+LOCKED = ("The entire video must play as one continuous shot with no visible cuts, from one locked-off camera: the camera "
+          "does not move, pan, push or zoom; each panel is a sampled moment of the same frame, and only the characters move.")
 PURITY = ("Panel images are visual-only low-detail monochrome light-gray rough sketches. Put panel numbers, beat "
           "names, and lens tags in the header strip outside each panel image. No color, labels, arrows, captions, "
           "subtitles, logos, watermarks, timing marks, diagrams, UI, ghost poses, duplicate bodies, or technical "
@@ -170,7 +174,9 @@ def video_text(plan: dict) -> str:
     ident = plan.get("identity_ref")
     idents = _idents(plan)
     lines = [BLUEPRINT]
-    if plan.get("continuous"):
+    if plan.get("continuous") and plan.get("locked"):   # a single locked-off setup: no camera move to describe
+        lines.append(LOCKED)
+    elif plan.get("continuous"):
         lines.append(CONTINUOUS)
         if plan.get("same_lens"):
             lines.append(SAME_LENS)
@@ -208,13 +214,29 @@ def video_text_start(plan: dict) -> str:
 FLF_ONE_SHOT = ("Animate from the first frame image, the exact starting frame, to the last frame image, the exact ending "
                 "lock. This is one continuous shot with no cut: the same camera, room and characters from the first frame "
                 "to the last; only the framing and the characters' small movements change.")
+FLF_ONE_SHOT_LOCKED = ("Animate from the first frame image, the exact starting frame, to the last frame image, the exact "
+                       "ending lock. This is one continuous shot with no cut, from one locked-off camera that does not move, "
+                       "pan, push or zoom: the same room and characters from the first frame to the last; only the characters "
+                       "move.")
+FLF_ONE_SHOT_ACTION = ("Animate from the first frame image, the exact starting frame, to the last frame image, the exact "
+                       "ending lock. This is one continuous shot with no cut: the same camera, room and characters from the "
+                       "first frame to the last; the framing and the characters move only as the panel beats describe.")
+
+
+def _flf_head(plan: dict) -> str:
+    if not plan.get("one_shot"):
+        return FLF_BLUEPRINT
+    if plan.get("locked"):
+        return FLF_ONE_SHOT_LOCKED
+    return FLF_ONE_SHOT_ACTION if plan.get("one_shot_action") else FLF_ONE_SHOT
 
 
 def video_text_flf(plan: dict) -> str:
     """The first-last-frame handoff: the same policy, audio and panel beats as video_text, with the start and end images
     in place of the storyboard and identity references. plan["one_shot"] (both ends in one view) asks for one continuous
-    shot instead of a sequence of shots."""
-    lines = [FLF_ONE_SHOT if plan.get("one_shot") else FLF_BLUEPRINT,
+    shot instead of a sequence of shots; with plan["locked"] the camera is locked off (only the characters move), and with
+    plan["one_shot_action"] a full action (a stand, a crane) is not called a small movement."""
+    lines = [_flf_head(plan),
              "The first frame image is the character and room reference for the whole clip.",
              f"ENVIRONMENT: {_c(plan['environment'])}.",
              f"EMOTIONAL GUIDANCE: {_c(plan['emotional_guidance'])}.",
@@ -264,6 +286,10 @@ def check_plan(plan: dict) -> list[str]:
         errs.append("MASTER SHOT RULE: multiple characters need the master shot at Panel 01 or 02")
     if plan.get("same_lens") and not plan.get("continuous"):
         errs.append("same_lens applies to continuous boards only")
+    if plan.get("locked") and not (plan.get("continuous") or plan.get("one_shot")):
+        errs.append("locked applies to a continuous or one_shot plan (one setup) only")
+    if plan.get("locked") and (plan.get("same_lens") or plan.get("one_shot_action")):
+        errs.append("a locked plan has no camera move: drop same_lens and one_shot_action")
     return errs
 
 
