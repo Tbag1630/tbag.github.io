@@ -12,6 +12,16 @@ Each entry gives the change, why it was made, the evidence and its verification 
 | The watch page streams only; its "Download MP4" (a join of segments) is gone. A separate download page (`templates/download.html`, `deliver.parts`, `deliver.download_page`) rebuilds the delivery file byte for byte from parts under the artifact limits (named `.mp4`, a type artifacts serve; they refuse `.m4s`) and checks its SHA-256 before it offers to save | The joined segments were a fragmented MP4; the chat's file transfer stops at 30 MiB, so the real file had never arrived | `test_a_progressive_mp4_is_a_delivery_file_and_its_parts_rejoin_byte_for_byte`; `test_the_watch_page_no_longer_offers_a_joined_download` |
 | `python3 -m ulac tooling-check project/<EP>` stamps an episode before its ULAC pack exists | It built the episode's relay first and failed with FileNotFoundError on EP03 (no `ULAC/ulac.json` in pre-production), so the stamp had been taken by calling `firewall.tooling_check` directly, not by the documented command | `tests/test_cli_tooling.py` |
 
+## 2026-10-16: Creative review round 8 (EP03, private package v5.6)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The private sightline adapter (v11) samples its lamp-tangent note across the whole band beside a face; findings and calibrations are unchanged | v10 sampled only the band's outer edge, so a cord next to a face printed nothing (craft round 8) | Private CHECK_NOTES v5.6: the round-6 and round-7 calibration tables reproduce with 0 rows differing |
+| A region-membership statement is measured against the region's full extent; a new private tool places a figure against a doorway from the floor | A tool's sampling box for one purpose was reused to bound the region for another (LL-63) | Private plan v5.6; the producer memo corrected |
+| After adding a checked point to a framed setup, the vertical frame is re-measured and setups defined by reference to it are re-stated | An aim offset restored the framing across only (LL-64) | Private plan v5.6 |
+| A reviewer's proposed action is checked against the previous shot's closing state before it is adopted | A fix's starting pose contradicted the inherited handoff (LL-65) | Private plan v5.6 |
+| A producer memo states whether a remedy is required and names each remedy's cost to the story, and withdraws any listed remedy the evidence shows does not work | A memo offered a re-framing as a remedy that its own evidence showed fails (story and audience round 8) | Private decisions file v5.6 |
+
 ## 2026-10-16: Creative review round 7 (EP03, private package v5.5)
 
 | Change | Why | Evidence |
