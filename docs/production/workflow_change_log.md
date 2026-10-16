@@ -12,6 +12,16 @@ Each entry gives the change, why it was made, the evidence and its verification 
 | The watch page streams only; its "Download MP4" (a join of segments) is gone. A separate download page (`templates/download.html`, `deliver.parts`, `deliver.download_page`) rebuilds the delivery file byte for byte from parts under the artifact limits (named `.mp4`, a type artifacts serve; they refuse `.m4s`) and checks its SHA-256 before it offers to save | The joined segments were a fragmented MP4; the chat's file transfer stops at 30 MiB, so the real file had never arrived | `test_a_progressive_mp4_is_a_delivery_file_and_its_parts_rejoin_byte_for_byte`; `test_the_watch_page_no_longer_offers_a_joined_download` |
 | `python3 -m ulac tooling-check project/<EP>` stamps an episode before its ULAC pack exists | It built the episode's relay first and failed with FileNotFoundError on EP03 (no `ULAC/ulac.json` in pre-production), so the stamp had been taken by calling `firewall.tooling_check` directly, not by the documented command | `tests/test_cli_tooling.py` |
 
+## 2026-10-16: Creative review round 9 (EP03, private package v5.7)
+
+| Change | Why | Evidence |
+|---|---|---|
+| A private tool measures a region of the frame as the camera sees it (sampled, minus every occluder) and tests every figure against it, not only the one named | Geometry boxes misjudged what the frame shows twice (LL-67) | Private CHECK_NOTES v5.7: the tool agrees with a reviewer's independent script on the spots both measured |
+| A handoff frame's people are compared with the inherited frame on every attribute before an edit; a new attitude starts on a named word inside the shot | A fix for one attribute broke another at a punch-in (LL-68) | Private plan v5.7; craft round 9's blocking finding fixed |
+| When a shot is defined as "framed as" another, both frames are matched on both axes | A returning close-up sat 2.2 degrees higher than the frame it rhymes with | Private plan v5.7 |
+| A producer memo states plainly when an option cannot deliver the record's own stated image, and puts the rewording to the producer rather than changing the record | The stated last image held as written in one option only | Private decisions file v5.7 |
+| EP05: the full-quality file is delivered when a channel can carry it; a smaller copy is labelled as such | A re-encode sized to a page limit was taken for the broken file (LL-66) | `docs/production/EP05/redelivery_2026-10-16.json` |
+
 ## 2026-10-16: Creative review round 8 (EP03, private package v5.6)
 
 | Change | Why | Evidence |
