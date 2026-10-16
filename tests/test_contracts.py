@@ -177,6 +177,59 @@ def test_a_shared_boundary_with_two_different_images_or_a_pencil_frame_is_refuse
     assert hashlib.sha256(end_lock.read_bytes()).hexdigest()
 
 
+def test_a_same_room_hard_cut_is_explicit_approvable_and_still_holds_the_state(ep):
+    """B-19 M2 (WS-D H1): a cut inside one room between two distinct locked frames of one state. Only an explicit
+    BOUNDARIES.json method makes a join one; the state handoff is still enforced across it."""
+    join = "SEQ_001->SEQ_002"
+    reg = json.loads((ep / "BOUNDARIES.json").read_text())
+    reg[join] = {"keyframe_end": "K1", "keyframe_start": "K2"}
+    (ep / "BOUNDARIES.json").write_text(json.dumps(reg))
+    _rebuild(ep)
+    assert "BOUNDARY_NOT_IDENTICAL" in {f["code"] for f in C.load(ep, C.cc_name(join))["findings"]}
+    reg[join]["method"] = "hard_cut"
+    (ep / "BOUNDARIES.json").write_text(json.dumps(reg))
+    assert "method in BOUNDARIES.json changed" in " ".join(C.stale(ep, C.load(ep, C.cc_name(join))))
+    _rebuild(ep)
+    doc = C.load(ep, C.cc_name(join))
+    assert doc["body"]["method"] == "hard_cut" and "inside one room" in doc["body"]["handoff"]
+    assert not [f for f in doc["findings"] if f["severity"] == C.BLOCK]
+    C.approve(ep, kind="audio", ids=None, by=BY, statement=ST)
+    pass_creative(ep)
+    pass_bible(ep)
+    C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
+    C.approve(ep, kind="continuity", ids=[join], by=BY, statement=ST)
+    assert C.current(ep, "continuity", join) == []
+    p = ep / "SEQUENCES" / "SEQ_002" / "state_before.json"                        # somebody moves across the cut
+    x = json.loads(p.read_text())
+    x["X"]["P"]["MARIA"] = "standing by the door"
+    p.write_text(json.dumps(x))
+    _rebuild(ep)
+    assert "STATE_HANDOFF_MISMATCH" in {f["code"] for f in C.load(ep, C.cc_name(join))["findings"]}
+
+
+def test_bible_state_records_compile_into_plain_prompt_words(ep):
+    """WS-D H4: the bible's dict-valued states used to reach the prompt as "{'seat': ...}", which the lint refuses as
+    a template leak, so every bible-governed clip dropped out of the render plan. Strings are untouched (EP05)."""
+    assert C._fmt("seated L2") == "seated L2" and C._fmt(None) is None
+    for s in CLIPS:
+        for which in ("before", "after"):
+            p = ep / "SEQUENCES" / s / f"state_{which}.json"
+            x = json.loads(p.read_text())
+            x["X"]["P"] = {"MARIA": {"xy": [3.85, 4.29], "seat": "E5", "pose": "seated", "facing_deg": 270},
+                           "MARIA_PLATE": {"at": "on the table at E5", "holder": None, "state": "on the table at E5"},
+                           "CRAYON": {"at": "at E5", "holder": "MARIA", "state": "in her hand"},
+                           "BASKET": {"at": None, "holder": None, "state": "absent"}}
+            p.write_text(json.dumps(x))
+    _rebuild(ep)
+    sb = C.load(ep, C.sb_name("SEQ_001"))
+    layers = C._layers(ep, sb)
+    assert "MARIA in seat E5, seated then in seat E5, seated" in layers["L2_continuity"]
+    assert "MARIA_PLATE on the table at E5" in layers["L2_continuity"]
+    assert "CRAYON in her hand, at E5, held by MARIA" in layers["L2_continuity"]
+    assert "BASKET" not in layers["L2_continuity"] and "{" not in layers["L4_compiled"] and "3.85" not in layers["L4_compiled"]
+    assert not [w for w in C.lint_prompt(sb, layers) if "TEMPLATE" in w]
+
+
 def test_an_unpermitted_state_change_needs_a_reasoned_waiver_and_some_codes_never_waive(ep):
     p = ep / "SEQUENCES" / "SEQ_002" / "state_before.json"
     x = json.loads(p.read_text())
@@ -324,6 +377,13 @@ def test_a_keyframe_needs_both_storyboards_and_its_own_authorization(ep):
     C.approve(ep, kind="storyboard", ids=CLIPS, by=BY, statement=ST)
     assert C.keyframe_problems(ep, "K1", need_authorization=False) == []
     assert "authorization" in " ".join(C.keyframe_problems(ep, "K1"))
+    bj = ep / "BIBLE" / "bible.json"                       # WS-D H5: the world changes after the approvals
+    reg = json.loads(bj.read_text())
+    reg["environments"][next(iter(reg["environments"]))]["scale"] += ", repainted green"
+    bj.write_text(json.dumps(reg))
+    _rebuild(ep)
+    assert C.current(ep, "storyboard", "SEQ_001") == []     # the storyboard alone would not notice
+    assert any("bible" in w for w in C.keyframe_problems(ep, "K1", need_authorization=False))
 
 
 def test_code_price_acceptance_is_derived_from_a_person_never_written_as_user(tmp_path):

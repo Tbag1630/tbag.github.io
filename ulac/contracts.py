@@ -359,6 +359,9 @@ def continuity_contract(root: Path, rec: dict, sbs: dict, refs: dict) -> dict:
     elif rec.get("scene_change"):
         method = "scene_cut"
         up, down = _keyframe_asset(root, reg.get("keyframe_end")), _keyframe_asset(root, reg.get("keyframe_start"))
+    elif reg.get("method") == "hard_cut":          # B-19 M2: a cut inside one room, between two distinct locked frames of
+        method = "hard_cut"                        # one state; only an explicit BOUNDARIES.json entry makes a join one
+        up, down = _keyframe_asset(root, reg.get("keyframe_end")), _keyframe_asset(root, reg.get("keyframe_start"))
     else:
         method = "shared_keyframe"
         up = _keyframe_asset(root, reg.get("keyframe_end") or reg.get("keyframe"))
@@ -378,7 +381,10 @@ def continuity_contract(root: Path, rec: dict, sbs: dict, refs: dict) -> dict:
             "required_references": [r["role"] for r in refs["clips"].get(B or A, []) if r.get("mandatory")],
             "handoff": ("both clips are pinned to the same keyframe image (FLF first/last frame)" if method == "shared_keyframe"
                         else "hard cut between rooms: an old-room end keyframe and a new-room start keyframe"
-                        if method == "scene_cut" else "the film's opening or closing frame"),
+                        if method == "scene_cut" else
+                        "hard cut inside one room: two locked keyframes, the upstream close and the downstream open, of one "
+                        "state; nobody and nothing moves across the cut" if method == "hard_cut"
+                        else "the film's opening or closing frame"),
             "post_generation": "an identical input image does not prove the rendered frames match: the rendered join is "
                                "checked separately (rendered_join, joins check)",
             "rendered_join": rec.get("rendered"),
@@ -529,6 +535,10 @@ def stale(root: Path, doc: dict | None) -> list[str]:
                 f = _resolve(root, x.get("path"))
                 if f and _fsha(f) != x.get("file_sha256"):
                     why.append(f"{b['join']}: keyframe image {x['asset']} changed")
+        if b["method"] in ("hard_cut", "shared_keyframe"):     # the join's method is part of what was approved
+            reg = bp._j(root / "BOUNDARIES.json").get(b["join"], {}) if (root / "BOUNDARIES.json").exists() else {}
+            if (reg.get("method") == "hard_cut") != (b["method"] == "hard_cut"):
+                why.append(f"{b['join']}: its method in BOUNDARIES.json changed after the contract was built")
     return why
 
 
@@ -723,6 +733,20 @@ def _audio_impact(root: Path, old_sha: str, doc: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------------------------- render plan (L1-L4)
+def _fmt(v):
+    """A state value as prompt words. A string is returned unchanged, so EP05's string states keep their prompt hashes.
+    A bible record (a character's {seat or zone, pose, xy, facing_deg}, a prop's {at, holder, state}) becomes plain
+    words: no braces, which the lint refuses as a template leak, and no coordinates, which the keyframes carry."""
+    if not isinstance(v, dict):
+        return v
+    if {"at", "holder", "state"} & set(v):
+        state, at = str(v.get("state") or "").strip(), str(v.get("at") or "").strip()
+        words = state if not at or at in state else ", ".join(x for x in (state, at) if x)
+        return words + (f", held by {v['holder']}" if v.get("holder") else "")
+    where = f"in seat {v['seat']}" if v.get("seat") else str(v.get("zone") or "").strip()
+    return ", ".join(x for x in (where, str(v.get("pose") or "").strip()) if x)
+
+
 def _layers(root: Path, sb: dict) -> dict:
     """The four prompt layers. L1-L3 come from the approved records; L4 is compiled from them by the repository's own
     first-last-frame builder (storyboard.video_text_flf), so it carries the sound-only policy blocks exactly once."""
@@ -738,9 +762,9 @@ def _layers(root: Path, sb: dict) -> dict:
           "visual_style": plan.get("visual_style") or "finished full-colour production frame, never a sketch"}
     audio = plan.get("audio") if isinstance(plan.get("audio"), dict) else \
         ({"sounds": pj["sfx"], "room": "natural room tone of this room"} if pj.get("sfx") else None)
-    zones = [f"{c['id']} {c['start_zone'] or 'enters'} then {c['end_zone'] or 'leaves'}" for c in b["characters"]]
-    props = [f"{k} {v}" for k, v in (b["outgoing_state"].get("P") or {}).items()
-             if k not in {c['id'] for c in b["characters"]} and str(v).lower() != "absent" and not k.endswith("_LIGHTS")]
+    zones = [f"{c['id']} {_fmt(c['start_zone']) or 'enters'} then {_fmt(c['end_zone']) or 'leaves'}" for c in b["characters"]]
+    props = [f"{k} {_fmt(v)}" for k, v in (b["outgoing_state"].get("P") or {}).items()
+             if k not in {c['id'] for c in b["characters"]} and _fmt(v).lower() != "absent" and not k.endswith("_LIGHTS")]
     L2 = "; ".join(zones + (["props: " + ", ".join(props)] if props else []) + ["one instance of each named character"])
     beats = [{"video_beat": f"{' '.join(x for x in (p['camera'].get('lens'), p['camera'].get('setup')) if x)}: "
                             f"{p.get('action') or p.get('beat')}"} for p in b["panels"]]
@@ -1132,6 +1156,7 @@ def keyframe_problems(root: Path, kid: str, *, led: list | None = None, need_aut
             for c in (a, b):
                 if c.startswith("SEQ_"):
                     why += current(root, "storyboard", c, led=led)
+                    why += current(root, "bible", "bible", led=led, clip=c)   # the keyframe draws the approved world
         if need_authorization:
             why += authorization_problems(root, kid, led=led)
         return why

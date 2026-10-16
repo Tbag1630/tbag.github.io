@@ -4,6 +4,16 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: Three continuity holes from the workstream-D audit (H1, H4, H5)
+
+| Change | Why | Evidence |
+|---|---|---|
+| `contracts.continuity_contract`: a join whose `BOUNDARIES.json` entry says `"method": "hard_cut"` is a cut inside one room between two distinct locked keyframes (`keyframe_end`, `keyframe_start`). The state handoff is still enforced across it. A change of the entry's method makes the contract stale. | B-19 M2. EP03 cuts inside one room between a close and an open keyframe at every join. Under `shared_keyframe` each join raised BOUNDARY_NOT_IDENTICAL, which no waiver clears, so no join could be approved and no render plan could compile. The method is explicit per join, so EP05's bodies and hashes are unchanged. | `test_a_same_room_hard_cut_is_explicit_approvable_and_still_holds_the_state` |
+| `contracts._fmt` in `_layers`: a bible state record (a character's seat or zone and pose, a prop's state, place and holder) becomes plain words in the continuity line. Strings are returned unchanged. | The bible's records reached the prompt as `{'seat': ...}`. The lint refused that as a template leak, so every bible-governed clip dropped out of the render plan. EP05's string states keep their prompt hashes. | `test_bible_state_records_compile_into_plain_prompt_words` |
+| `contracts.keyframe_problems`: each side's bible must be current too. | A keyframe could be generated from a world changed after its approval, because the storyboard contract carries no bible hash. | `test_a_keyframe_needs_both_storyboards_and_its_own_authorization` (bible edited after approval) |
+
+Full suite: 751 passed, 2 skipped, 6 xfailed. Still open from the audit: H3 (registry-aware references), H6 (bible-bound keyframe references), H7 (`ASSET_` authorization), H8 (per-sequence bible approval), H9 (the 11 state mismatches), H10–H14.
+
 ## 2026-10-16: Signing through an approval card (AUD-04 amended, AUD-33)
 
 | Change | Why | Evidence |
