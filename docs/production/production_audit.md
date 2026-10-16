@@ -134,7 +134,7 @@ Three read-only research agents (Haiku; Read, Grep and Glob were meant to be the
 |---|---|---|
 | AUD-01, AUD-02, AUD-15 | Tested. The hook is live in this session: a Bash denial and a free MCP call were logged, and the log also shows subagent calls passing through it. | `project/PAIDGUARD_LOG.jsonl`; `tests/test_paidguard.py` |
 | AUD-03 | Tested: `video_accept_derived` replaces every `by="user"` in code | `test_code_price_acceptance_is_derived_from_a_person_never_written_as_user` |
-| AUD-04 | Tested for the hook and for model names. Residual: AUD-27. | `tests/test_paidguard.py` |
+| AUD-04 | Tested for the hook and for model names. Residual: AUD-27. Amended 2026-10-16: a plain signing command becomes an approval card, shown only where a person answers it (see "AUD-04 as amended" below). | `tests/test_paidguard.py` |
 | AUD-05 | Tested: keyframe reservations need approved storyboards and an authorization | `test_a_keyframe_needs_both_storyboards_and_its_own_authorization` |
 | AUD-06, AUD-07, AUD-08, AUD-11 | Tested: `ulac/contracts.py`, with approvals bound to hashes and states computed | `tests/test_contracts.py` |
 | AUD-09 | Documented in the operator guide: ulac with the contracts is the only authority for releases | `docs/production/operator_guide.md` |
@@ -151,3 +151,17 @@ Three read-only research agents (Haiku; Read, Grep and Glob were meant to be the
 | AUD-31 | `edit.join_plan` (SD-5) | A blanket rule (cut at a shared frame, dissolve elsewhere) put 9 dissolves over rendered breaks in v5 | Medium | A per-join transition rule recorded with the continuity contract (`assembly_audio_qc_plan.md`) | none yet | Open (rule documented, not coded) |
 | AUD-32 | gate D | `disableAllHooks` in local or user settings silenced the guard without touching the hashed project file | High | `firewall.hooks_disabled` in `gate_tooling` | `test_hooks_switched_off_in_any_settings_source_stop_every_reservation` | Tested |
 | AUD-33 | operating model | Signing must run in the container but not as an agent tool call. A person-only route in cloud sessions is unverified. | High (operational) | A safe probe in `operator_guide.md` | none | Open (user) |
+
+### AUD-04 as amended 2026-10-16: the approval card
+
+The AUD-33 probe came back from the producer on 2026-10-16: the cloud app answers `!` with "shell commands are only available in local sessions". A cloud session therefore has no shell of the person's own, and the signing commands had no route at all. The amendment gives them one: the person's click on the app's permission card.
+
+| Item | Rule |
+|---|---|
+| What becomes a card | A plain `python3 -m ulac.contracts approve\|authorize\|release`, `ulac.castlock sign`, `ulac.blueprint sign` or `ulac approve-extra`. It may carry at most a `ULAC_PROJECT=project/<id>` prefix, and no shell control character anywhere (`; & \| $ \` < >`, newline, backslash). The hook answers `ask`, and the app shows the person the exact command. It runs only if they click Allow. |
+| Where a card is shown | Only the main session's call (no `agent_id`), only in a permission mode that prompts the person (`default`, `acceptEdits`), and only with this repository as the working directory. In auto mode a classifier may answer a prompt, so there the command stays refused. It also stays refused in bypass, dontAsk and plan, when the mode is missing, for a subagent, and in another directory. |
+| What stays refused | Every other form that names a signing command: compound commands, pipes, redirects, substitutions, `env`/`sudo`/`PYTHONPATH` prefixes, `python -c`, `_sanctioned`, and the direct writes AUD-27 lists. Nothing is ever allowed outright. |
+| Residual | The card shows the command, not the code it loads. A change under `ulac/` is visible in git and voids every authorization through the tooling stamp, but it is not prevented. A person who clicks Allow without reading is not prevented either. The `ask` decision's behaviour in each permission mode is the client's: the probe below checks it once after the merge. |
+| Probe after the merge | Before any real signature, the agent runs a card for a command that cannot write (its project path lies under `/proc`), and the person clicks **Deny**. If the command runs without a card, the amendment is broken: no reservation follows, and the user reverts it. |
+
+Regression tests: `test_a_plain_signing_command_becomes_an_approval_card_and_is_never_allowed`, `test_no_card_where_a_person_might_not_be_the_one_who_answers`, `test_nothing_rides_behind_a_card_and_every_other_route_is_refused`, `test_the_hook_shows_the_card_and_logs_it`.

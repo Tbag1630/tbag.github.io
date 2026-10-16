@@ -172,6 +172,67 @@ def test_signing_and_evidence_writes_are_refused_in_the_agent_shell(cmd):
     assert not _bash(cmd)
 
 
+# A cloud session has no shell of the person's own, so a plain signing command becomes an approval card: the app shows
+# the person the exact command and only their Allow runs it (AUD-04 as amended 2026-10-16). It is never allowed outright,
+# and it is a card only where the card reaches a person: the main session, a prompting mode, this repository.
+PLAIN = ('python3 -m ulac.contracts authorize project/EP05 --scope SEQ_001 --cap 9 --hours 72 '
+         '--by producer --statement "I authorize SEQ_001, cap 9 credits"')
+CARD = {"permission_mode": "default", "cwd": str(paidguard.REPO)}
+
+
+def _card(cmd, **ctx):
+    return paidguard.decide({"tool_name": "Bash", "tool_input": {"command": cmd}, **{**CARD, **ctx}})[0]
+
+
+@pytest.mark.parametrize("cmd", [
+    PLAIN,
+    "python3 -m ulac.castlock sign project/EP05 --by Glenn --statement x",
+    "python3 -m ulac.contracts approve project/EP05 --kind audio --by Glenn --statement x",
+    "python3 -m ulac.contracts release project/EP05 --clips SEQ_001 --by Glenn --statement x",
+    "python3 -m ulac.blueprint sign project/EP05 --by Glenn --clips SEQ_001 --statement x",
+    "python3 -m ulac approve-extra project/EP05 --target SEQ_001 --attempt 3 --by Glenn --quote x",
+    "ULAC_PROJECT=project/EP05 python3 -m ulac.contracts approve project/EP05 --kind bible --by producer --statement \"it's right\"",
+])
+def test_a_plain_signing_command_becomes_an_approval_card_and_is_never_allowed(cmd):
+    assert _card(cmd) is paidguard.ASK
+    assert _card(cmd, permission_mode="acceptEdits") is paidguard.ASK
+    assert _card(cmd, permission_mode="auto") is paidguard.ASK  # hooks reference: a hook's ask still prompts the person
+    assert _bash(cmd) is False                                  # no hook context: refused, as before the amendment
+
+
+@pytest.mark.parametrize("ctx", [
+    {"permission_mode": "bypassPermissions"}, {"permission_mode": "dontAsk"},
+    {"permission_mode": "plan"}, {"permission_mode": None}, {"permission_mode": "Default"},
+    {"agent_id": "a1b2c3"}, {"cwd": "/tmp"}, {"cwd": str(paidguard.REPO / "project")}, {"cwd": None},
+])
+def test_no_card_where_a_person_might_not_be_the_one_who_answers(ctx):
+    assert _card(PLAIN, **ctx) is False                         # no prompt, a subagent, another checkout
+
+
+@pytest.mark.parametrize("cmd", [
+    PLAIN + "; echo done", PLAIN + " && rm -f x", PLAIN + " || true", PLAIN + " | tee log", PLAIN + " > out.txt",
+    PLAIN + " 2>&1", PLAIN + "\necho x", "echo hi; " + PLAIN, "cd /tmp && " + PLAIN,
+    PLAIN.replace("producer", "$(whoami)"), PLAIN.replace("producer", "`whoami`"),
+    "PYTHONPATH=/tmp/x " + PLAIN, "ULAC_PROJECT=/tmp/x " + PLAIN, "env " + PLAIN, "sudo " + PLAIN,
+    "python3 -c 'from ulac import contracts; contracts.authorize(r, scope=[], cap_credits=1, by=\"x\", statement=\"y\")'",
+    "python3 -m ulac.contracts approve project/EP05 --kind audio --by x --statement _sanctioned=True",
+])
+def test_nothing_rides_behind_a_card_and_every_other_route_is_refused(cmd):
+    assert _card(cmd) is False
+
+
+def test_the_hook_shows_the_card_and_logs_it(monkeypatch, capsys):
+    call = {"tool_name": "Bash", "tool_input": {"command": PLAIN}, **CARD}
+    assert _main(monkeypatch, json.dumps(call), "local") == 0
+    card = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert card["hookEventName"] == "PreToolUse" and card["permissionDecision"] == "ask"
+    rec = json.loads(paidguard.LOG.read_text().splitlines()[-1])
+    assert rec["decision"] == "ask" and rec["mode"] == "default"
+    for bad in ({**call, "tool_input": {"command": PLAIN + "; echo x"}}, {**call, "permission_mode": "dontAsk"}):
+        assert _main(monkeypatch, json.dumps(bad), "local") == 2
+        assert capsys.readouterr().out == ""
+
+
 @pytest.mark.parametrize("cmd", [
     "python3 -m pytest -q tests", "python3 -m ulac.castlock status project/EP05", "python3 -m ulac.contracts status project/EP05",
     "tail -3 project/EP05/CREDIT_LEDGER.jsonl 2>&1", "cp project/EP05/VIDEO/V01-x.output.mp4 /tmp/v.mp4",

@@ -71,6 +71,16 @@ In a local Claude Code terminal, the person's own shell works. In a claude.ai/co
 - **The lock status prints:** `!` is your signing route.
 - **PAIDGUARD refuses it:** hooks apply to `!` as well. Signing then has no route in cloud sessions until one is designed, and that is your decision.
 
+**Probe result (2026-10-16):** the cloud app answers `!` with "shell commands are only available in local sessions". The route designed for this is below.
+
+### The approval card (cloud sessions; AUD-04 as amended 2026-10-16)
+
+The agent proposes the signing command as its own Bash call. The guard answers `ask` instead of refusing, and the app shows you a permission card with the exact command. **Click Allow only if the command is exactly what you meant**, including the scope, the cap, the hours and the statement in your words. Deny otherwise. The command runs only on your Allow.
+
+- A card appears only for the main session's call, in a permission mode that prompts you (`default` or `acceptEdits`), with this repository as the working directory. In auto mode a classifier might answer the card, so there the guard keeps refusing. Switch back to the default mode to sign.
+- A command with anything around it (`;`, `&&`, a pipe, a redirect, `$()`, a `PYTHONPATH=` prefix) is refused, never carded. Nothing can ride along behind your Allow.
+- Before the first real card, the agent runs one probe card for a command that cannot write. **Click Deny on it.** If it ran without a card, stop: the route does not work, and nothing is reserved.
+
 ## 3. Approve (a person, in your own terminal)
 
 Approvals run in order, and each needs the previous one to be current. In the approval statement, say what you checked, including the human-review items the contract lists. Those are things the code cannot see: positions on the board, left and right, hands, the room against its master, and the emotional read.

@@ -174,7 +174,7 @@ Available now:
 | `python3 -m ulac.freeze project/<EP> --final-edl ... --out ...` | Hashed evidence manifest and take classification at the end of an episode. |
 | `python3 -m ulac.metrics project/<EP> --final-edl ... --registry docs/production/defect_registry.json` | Episode metrics, compared against the previous episode. |
 | `python3 -m ulac.contracts build\|status\|plan project/<EP>` | Contracts A/B/C, each clip's computed state, and the render plan compiled from approved contracts (`docs/production/operator_guide.md`). |
-| `python3 -m ulac.contracts approve\|release\|authorize\|revoke project/<EP> ...` | Person only. The hook refuses these from the agent. Any change to an input voids every approval downstream of it. `--kind creative` comes before storyboards. |
+| `python3 -m ulac.contracts approve\|release\|authorize\|revoke project/<EP> ...` | Person only. The hook refuses these from the agent. In the main session, in a mode that prompts the person, a plain approve, release or authorize becomes an approval card that runs only on the person's Allow (AUD-04 as amended 2026-10-16). Any change to an input voids every approval downstream of it. `--kind creative` comes before storyboards. |
 | `python3 -m ulac.creative status\|review project/<EP> ...` | The creative contract's findings, lens coverage and open REJECTs. A review is REJECT or NO_REJECT only, and the lead never records one (R11). |
 | `python3 -m ulac.bible status\|matrix project/<EP>` | The asset bible's findings and the shot-to-asset dependency matrix. A person approves it with `contracts approve --kind bible`; storyboards, boards and cast jobs wait for that approval. |
 | `python3 -m ulac.evidence verify\|protect project/<EP>` | Accepted takes and records against the frozen manifest; makes accepted media read-only. |
@@ -184,6 +184,7 @@ Available now:
 - Paid tool calls leave only as the exact graph of a reserved, GENERATION_AUTHORIZED target.
 - Never work around a refusal. Report it.
 - Refused signing commands belong to the user.
+- An approval card is the person's act, not the agent's. Propose the exact command, tell the person what it does and that they should click Allow only if it matches, and never put a signing command in a mode, a subagent or a wrapper where the guard refuses it.
 
 Not built yet (build them in `ulac/` with tests before use; never call them as if they exist):
 
