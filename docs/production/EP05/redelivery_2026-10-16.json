@@ -41,5 +41,14 @@
   },
   "not_verified": "An import into Premiere Pro itself: the container and codec checks are what an editor needs, but only an import proves it for this file."
  },
- "watch_page": "Republished to stream only; its download button is gone and it links the download page instead (templates/watch.html, test_the_watch_page_no_longer_offers_a_joined_download)."
+ "watch_page": "Republished to stream only; its download button is gone and it links the download page instead (templates/watch.html, test_the_watch_page_no_longer_offers_a_joined_download).",
+ "full_quality_copy": {
+  "why": "the producer asked for the full-quality file; the 224 MB replacement had been re-encoded to fit a page version's 256 MB limit and looked to them like the old file",
+  "file": "The_Family_Drawing_EP05_1080p.mp4 (EDIT/v5_final, the original finish)",
+  "bytes": 489089384,
+  "sha256": "bb6782b25334f9479ce070f33881b882b156487a05a37d91086f24a320abd8dc",
+  "delivery_problems": [],
+  "how": "34 byte parts of 14 MiB in a private page's asset store (1 GiB quota), rebuilt and SHA-256-checked by the page before saving; the parts were read back and rebuilt to the same hash, and the page was run end to end in headless Chromium",
+  "date": "2026-10-16"
+ }
 }
