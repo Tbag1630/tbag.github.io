@@ -47,7 +47,7 @@ def img(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
     refs = [(t, frame(n)) for t, n in spec["refs"]]      # out:<TID> names a locked keyframe; refused if unlocked
     attempt = firewall.next_attempt(_root(), tid)
-    g = comfy.gpt_image(spec["prompt"], refs, prefix=f"ULAC/EP05/PROD/{tid}_a{attempt}", size=spec.get("size", "1280x720"),
+    g = comfy.gpt_image(spec["prompt"], refs, prefix=f"ULAC/{_root().name}/PROD/{tid}_a{attempt}", size=spec.get("size", "1280x720"),
                         quality=spec.get("quality", "high"),
                         out_size=tuple(spec["out_size"]) if spec.get("out_size") else None)
     psha = hashlib.sha256(spec["prompt"].encode()).hexdigest()
@@ -71,6 +71,9 @@ def env(tid: str, spec_path: str) -> dict:
     The spec's refs are rooms only: a ref tagged as identity or cast, or not tagged as a room, is refused here, and the
     firewall refuses the job again if it names or references the cast."""
     spec = json.loads(Path(spec_path).read_text())
+    if not spec.get("size"):              # EP03 dusk spec v9: no size, so the job was built at 1280x720 while quoted at 3840x2160
+        raise SystemExit("GATE: an environment reference names its output size (normally its master's own, e.g. 3840x2160); "
+                         "the spec names none, so the graph would not be the one quoted")
     refs = [(t, n) for t, n in spec["refs"]]
     bad = [t for t, _ in refs if not any(k in t.lower() for k in ENV_REF_KEYS)
            or any(k in t.lower() for k in ("identity", "cast", "character"))]
@@ -78,7 +81,7 @@ def env(tid: str, spec_path: str) -> dict:
         raise SystemExit(f"GATE: environment refs must be rooms only (tag them master/environment/room); refused: {bad}")
     attempt = firewall.next_attempt(_root(), tid)
     g = comfy.gpt_image(spec["prompt"], refs, prefix=f"ULAC/{_root().name}/ENV/{tid}_a{attempt}",
-                        size=spec.get("size", "1280x720"), quality=spec.get("quality", "high"),
+                        size=spec["size"], quality=spec.get("quality", "high"),
                         out_size=tuple(spec["out_size"]) if spec.get("out_size") else None)
     psha = hashlib.sha256(spec["prompt"].encode()).hexdigest()
     rec = firewall.reserve(_root(), tid=tid, kind=firewall.ENV_KIND, attempt=attempt, prompt_sha=psha,
@@ -115,7 +118,7 @@ def flf(tid: str, spec_path: str) -> dict:
     secs = int(spec["seconds"])
     seq = spec["seq"]                  # attempts and scope count against the real sequence, never the repair's own id
     res = spec.get("resolution", "720p")
-    g = comfy.seedance_flf(prompt, spec["first"], spec.get("last"), seconds=secs, prefix=f"ULAC/EP05/PROD/{tid}",
+    g = comfy.seedance_flf(prompt, spec["first"], spec.get("last"), seconds=secs, prefix=f"ULAC/{_root().name}/PROD/{tid}",
                            resolution=res)
     rate = RATES[res]
     credits = round(secs * rate, 1)
@@ -172,7 +175,7 @@ def sound(tid: str, spec_path: str) -> dict:
     spec = json.loads(Path(spec_path).read_text())
     prov, secs = spec["provider"], float(spec["seconds"])
     attempt = firewall.next_attempt(_root(), tid)
-    prefix = f"ULAC/EP05/AUDIO/{tid}_a{attempt}"
+    prefix = f"ULAC/{_root().name}/AUDIO/{tid}_a{attempt}"
     if prov == "ace15":
         g = audio.ace_step_15(spec["prompt"], seconds=secs, bpm=int(spec["bpm"]), keyscale=spec["key"], prefix=prefix,
                               seed=int(spec.get("seed", 0)))
@@ -199,7 +202,7 @@ def crop(tid: str, source: str, x: str, y: str, w: str, h: str) -> dict:
     """Zero-cost derived keyframe: a crop of a locked keyframe (out:<TID>) or a verified cloud frame, model-upscaled to
     1280x720 on the cloud. Recorded with its source and box for provenance; it still needs the reviewer before LOCK."""
     src = frame(source)
-    g = comfy.crop_zoom(src, (int(x), int(y), int(w), int(h)), prefix=f"ULAC/EP05/PROD/{tid}_crop")
+    g = comfy.crop_zoom(src, (int(x), int(y), int(w), int(h)), prefix=f"ULAC/{_root().name}/PROD/{tid}_crop")
     out = _dir(tid) / "graph_crop.json"
     out.write_text(json.dumps(g, indent=1))
     firewall.record(_root(), "derived_planned", target=tid, kind="crop", source=source, source_cloud=src,

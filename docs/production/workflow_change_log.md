@@ -4,6 +4,16 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: Creative review round 10 and the delegated decisions (EP03, private package v5.8)
+
+| Change | Why | Evidence |
+|---|---|---|
+| The open last-frame and lamp-height decision, and the ending's hold, decided by the lead under the producer's delegation, recorded with the delegation quoted, the evidence, confidence and rejected alternatives; approvals, the cast lock and spending stay person-only (LL-72) | The producer delegated routine and creative decisions; the system requires a person for signatures | Private decisions file v5.8 |
+| Doorway margins reported in pixels, millimetres on a phone and centimetres in the room, with a 3-5 cm sensitivity, by a private tool (v3; its earlier output unchanged) | A ring threshold had been reported as a yes or no three rounds running (LL-69) | Private CHECK_NOTES v5.8; three reviewers' margins reproduced |
+| The private sightline adapter (v12) checks a static shot whose subject changes state twice in one frame (its first state, and its end state without re-centring) | A character lowers inside a static shot; re-centring on the new state would have tested a frame the camera never makes | Private CHECK_NOTES v5.8: every other setup's output byte-identical to v11 |
+| `ulac.prod env` refuses a spec with no output size; every `ulac.prod` job saves under the named episode | A quote made at one size would have bought another (LL-70); outputs were filed under the first episode's folder (LL-71) | `tests/test_prod_episode_paths.py` |
+| A free offline word-timing route for narration (pocketsphinx forced alignment, the PyPI wheel's own model) checked on a delivered narration: word ends within 0.03 s median of the reference, 1,222 of 1,226 words | The usual speech model's host is blocked from the session | Private scratch evaluation; becomes a `ulac` command with tests when the next narration arrives |
+
 ## 2026-10-16: delivery files are standard progressive MP4s (EP05 client report)
 
 | Change | Why | Evidence |
