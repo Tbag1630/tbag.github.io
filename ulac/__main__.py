@@ -247,6 +247,13 @@ def main(argv=None) -> int:
             stamp = firewall.tooling_check(Path(args.ep))
             _p(stamp)
             return 0 if stamp["ok"] else 2
+        if c == "approve-extra":         # a firewall record: the episode folder only, no ULAC config (EP03, 2026-10-16)
+            try:
+                _p(firewall.approve_extra(Path(args.ep), args.target, args.attempt, args.by, args.quote))
+            except firewall.FirewallError as e:
+                print(f"ULAC: {e}", file=sys.stderr)
+                return 3
+            return 0
         ep = Episode(Path(args.ep))
         if c == "START":
             st = ep.start()
@@ -348,13 +355,6 @@ def main(argv=None) -> int:
         elif c == "spent":
             firewall.record(Path(args.ep), "submitted", target=args.seq, attempt=args.attempt, job_id=args.job)
             _p({"recorded": "submitted", "target": args.seq, "attempt": args.attempt, "job": args.job})
-            return 0
-        elif c == "approve-extra":
-            try:
-                _p(firewall.approve_extra(Path(args.ep), args.target, args.attempt, args.by, args.quote))
-            except firewall.FirewallError as e:
-                print(f"ULAC: {e}", file=sys.stderr)
-                return 3
             return 0
         elif c == "ledger":
             if args.backfill:
