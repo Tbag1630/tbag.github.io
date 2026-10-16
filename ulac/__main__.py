@@ -243,6 +243,10 @@ def main(argv=None) -> int:
         if c == "author":
             _p({"authored": author(Path(args.ep), json.loads(Path(args.file).read_text()), plan_only=tuple(args.plan_only))})
             return 0
+        if c == "tooling-check":         # needs the episode folder only, not a ULAC config (EP03 has none before its pack)
+            stamp = firewall.tooling_check(Path(args.ep))
+            _p(stamp)
+            return 0 if stamp["ok"] else 2
         ep = Episode(Path(args.ep))
         if c == "START":
             st = ep.start()
@@ -341,10 +345,6 @@ def main(argv=None) -> int:
                 _p({"gates": {g: (m or "pass") for g, m in rep.items()}, "prompt_checked": bool(prompt)})
                 return 0 if not any(rep.values()) else 2
             return 0
-        elif c == "tooling-check":
-            stamp = firewall.tooling_check(Path(args.ep))
-            _p(stamp)
-            return 0 if stamp["ok"] else 2
         elif c == "spent":
             firewall.record(Path(args.ep), "submitted", target=args.seq, attempt=args.attempt, job_id=args.job)
             _p({"recorded": "submitted", "target": args.seq, "attempt": args.attempt, "job": args.job})

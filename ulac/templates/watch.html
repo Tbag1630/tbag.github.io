@@ -38,7 +38,8 @@ button { font: 700 15px/1 var(--body); color: var(--night); background: var(--cr
 button:hover { filter: brightness(1.08); }
 button:focus-visible, .chap:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 button:disabled { opacity: .6; cursor: progress; }
-#dlstate { color: var(--muted); font-size: 14px; min-height: 1.4em; font-variant-numeric: tabular-nums; }
+.getfile { font: 700 15px/1 var(--body); color: var(--night); background: var(--crayon); border-radius: 999px; padding: 12px 20px; text-decoration: none; }
+.getfile:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 .chapters { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
 .chap { display: grid; gap: 2px; text-align: left; background: var(--wall); color: var(--paper); border: 1px solid var(--line);
         border-radius: 8px; padding: 12px 14px; font: inherit; cursor: pointer; }
@@ -69,10 +70,7 @@ h2 { font: 700 13px/1 var(--body); letter-spacing: .12em; text-transform: upperc
       <span><b>24</b> fps</span>
       <span><b>Stereo</b> mix at −16 LUFS</span>
     </div>
-    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <span id="dlstate"></span>
-      <button id="dl" type="button" hidden>Download MP4</button>
-    </div>
+    __DOWNLOAD__
   </div>
 
   <h2>Chapters</h2>
@@ -101,7 +99,7 @@ function say(text) { notice.textContent = text; notice.hidden = !text; }
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = "index.m3u8";
   } else {
-    say("This browser cannot stream the film. Use the Download MP4 button instead.");
+    say("This browser cannot stream the film.");
   }
 })();
 
@@ -117,32 +115,4 @@ for (const c of CHAPTERS) {
   box.appendChild(b);
 }
 
-(async () => {
-  const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-  if (!downloads) return;
-  const btn = document.getElementById("dl"), state = document.getElementById("dlstate");
-  btn.hidden = false;
-  btn.addEventListener("click", async () => {
-    btn.disabled = true;
-    try {
-      const names = [MANIFEST.init].concat(MANIFEST.segments);
-      const parts = []; let got = 0;
-      for (let i = 0; i < names.length; i++) {
-        const r = await fetch(names[i]);
-        if (!r.ok) throw { code: "fetch", message: names[i] };
-        const b = await r.blob(); parts.push(b); got += b.size;
-        state.textContent = "Preparing " + Math.round(100 * got / MANIFEST.total_bytes) + "%";
-      }
-      state.textContent = "Ready to save";
-      const res = await downloads.save({ filename: "The_Family_Drawing_1080p.mp4", data: new Blob(parts, { type: "video/mp4" }) });
-      state.textContent = res && (res.status === "saved" || res.status === "delivered") ? "Saved" : "";
-    } catch (e) {
-      const code = e && e.code;
-      state.textContent = code === "declined" ? "Download cancelled" :
-        code === "too_large" ? "This app cannot save a file this size. Open the page in a browser." :
-        code === "fetch" ? "A part of the film did not load. Try again." :
-        "Saving is not available here.";
-    } finally { btn.disabled = false; }
-  });
-})();
 </script>

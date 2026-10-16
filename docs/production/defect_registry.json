@@ -1706,6 +1706,44 @@
    "episode": "EP05",
    "added": "2026-10-15 readiness review",
    "detection_note": "post_delivery (readiness review)"
+  },
+  {
+   "id": "EP05-G09",
+   "where": "ulac/templates/watch.html (download button); the EP05 watch page",
+   "category": "delivery",
+   "severity": "MATERIAL",
+   "stage_origin": "assembly_qc",
+   "stage_should_detect": "assembly_qc",
+   "stage_detected": "post_delivery",
+   "symptom": "The client could not import the delivered EP05 file into Premiere Pro. It was the watch page's 'Download MP4': init.mp4 joined to 79 HLS segments, a fragmented MP4 (styp, sidx and moof boxes) that plays in browsers and in ffmpeg but that editors refuse.",
+   "evidence": "The delivered file's size (223,392,743 bytes) equals init.mp4 plus the 79 segments of the watch-page package exactly; that package's manifest names the v5 master (sha256 a92c5ed8...) as its source.",
+   "fact_class": "verified",
+   "root_cause": "RC12",
+   "contributing_factors": [
+    "The chat's file transfer stops at 30 MiB, so the 466 MiB master never reached the producer",
+    "The watch page offered a joined download as a convenience, and it became the delivery path",
+    "The packaging test checked that the join decodes, not that it is a file an editor imports"
+   ],
+   "failed_safeguards": [
+    "tests/test_deliver.py (decode check only)",
+    "finish QC, which checked the master and not the rendition that was delivered"
+   ],
+   "rework": "re-encode of the master as a progressive MP4 and a download page (no credits)",
+   "corrective_action": "deliver.delivery_problems checks the box layout and codecs an editor needs; the watch page no longer offers a download; a separate page rebuilds the checked file byte for byte from parts and verifies its SHA-256 before saving.",
+   "regression_test": [
+    "tests/test_deliver.py::test_package_segments_fit_and_their_join_is_not_a_delivery_file",
+    "tests/test_deliver.py::test_a_progressive_mp4_is_a_delivery_file_and_its_parts_rejoin_byte_for_byte",
+    "tests/test_deliver.py::test_delivery_check_names_what_an_editor_refuses",
+    "tests/test_deliver.py::test_the_watch_page_no_longer_offers_a_joined_download"
+   ],
+   "status": "fixed in code; the replacement file reaches the client through the producer",
+   "remaining_risk": "The check covers the container and codecs; a human import test in the client's editor is still the only proof for a given file.",
+   "lesson": "LL-58",
+   "lesson_class": "Prevent",
+   "process_change": "A delivery file passes `python3 -m ulac.deliver check` before it leaves; streaming packages are never offered as downloads.",
+   "episode": "EP05",
+   "added": "2026-10-16 client report",
+   "detection_note": "post_delivery (client import failure)"
   }
  ],
  "corrections": [

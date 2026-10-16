@@ -1,0 +1,45 @@
+{
+ "episode": "EP05",
+ "date": "2026-10-16",
+ "why": "The client reported that the delivered file would not import into Premiere Pro (LL-58, registry EP05-G09). It was the private watch page's 'Download MP4': init.mp4 joined to the 79 HLS segments, a fragmented MP4.",
+ "what_the_client_received": {
+  "how": "the watch page's join of its streaming package (deliver.joined), rebuilt here from the package that is still in the container",
+  "bytes": 223392743,
+  "sha256": "4cfd4b09fb6150b6810bce32e8cb65e3acb4607ec4dc3f5fc006d796d59988cc",
+  "evidence": "its size equals init.mp4 plus the 79 segments exactly, and equals the size of the file the producer shared; deliver.delivery_problems: fragmented MP4 (moof, mvex, sidx, styp)",
+  "amends": "delivery_manifest.json's note said this rendition was never hashed and is not in the container; its package was in the session's scratch storage, and this is its hash"
+ },
+ "replacement": {
+  "file": "The_Family_Drawing_EP05_1080p.mp4 (private copy: project/EP05/DELIVERY/, read-only)",
+  "bytes": 234928554,
+  "sha256": "3db5f4ce61198c6b3563d6bf816faf616eb389eb47d60cde0b4a0a754717a1c8",
+  "source": {
+   "path": "EDIT/v5_final/EP05_v5_candidate_master.mp4",
+   "sha256": "a92c5ed86c122db19070fc6f3d7454ab263b175dbdec806fcdf16b4086621ca2",
+   "note": "the same master the watch page was packaged from (its manifest's source_sha256)"
+  },
+  "encode": "two-pass x264, preset slow, 3700 kb/s (maxrate 6000k, bufsize 12000k), High@4.0, yuv420p, GOP 48, BT.709 tags; audio stream copied; brand mp42; +faststart",
+  "verified": {
+   "deliver.delivery_problems": [],
+   "top_level_boxes": [
+    "ftyp",
+    "moov",
+    "free",
+    "mdat"
+   ],
+   "video": "H.264 High, level 4.0, 1920x1080, yuv420p, 24/1 constant (r_frame_rate = avg_frame_rate), 11376 frames, 474.000 s: the master's frame count and duration",
+   "audio": "AAC-LC 48 kHz stereo, 474.000 s; packet MD5 identical to the master's audio stream (17aa20b0dae0a4305e85769e418143ce)",
+   "full_decode": "ffmpeg decode to null: no errors",
+   "ssim_vs_master": {
+    "Y": 0.985288,
+    "U": 0.992463,
+    "V": 0.992353,
+    "All": 0.987661
+   },
+   "frames_viewed": "0:03, 2:00, 5:00 and 7:51 side by side with the master (lead): no visible difference",
+   "parts": "17 parts of at most 14 MiB; rejoined byte for byte (deliver.rejoin) and, in headless Chromium, rebuilt by the download page with the same SHA-256 before saving"
+  },
+  "not_verified": "An import into Premiere Pro itself: the container and codec checks are what an editor needs, but only an import proves it for this file."
+ },
+ "watch_page": "Republished to stream only; its download button is gone and it links the download page instead (templates/watch.html, test_the_watch_page_no_longer_offers_a_joined_download)."
+}

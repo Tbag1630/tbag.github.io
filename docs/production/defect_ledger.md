@@ -30,7 +30,7 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | RC9 | MCP submit tools sit outside the firewall; discipline is the only control. | 4 | 3 |
 | RC10 | Final QA ends at machine measurement; no human watch/listen is required before delivery or claims. | 1 | 1 |
 | RC11 | Billing feed not reconciled into the ledger at ingest. | 2 | 0 |
-| RC12 | No planned delivery channel for large masters; media lives only in an ephemeral container. | 2 | 2 |
+| RC12 | No planned delivery channel for large masters; media lives only in an ephemeral container. | 3 | 2 |
 | RC13 | No credit-balance check before a batch; the provider fails mid-batch. | 1 | 1 |
 | RC14 | Planning images (pencil END_LOCKs) reachable as frame sources. | 2 | 0 |
 | RC15 | Audio-locked slot arithmetic ignored in audit/splice plans. | 3 | 0 |
@@ -155,6 +155,7 @@ Generated from `defect_registry.json`, which is the source; edit the JSON, not t
 | EP05-G06 | process | MATERIAL | post_delivery | open (candidate ready; a person applies it, decision B-04) † | RC9 | Routes around the live guard: session-spawning remote tools, GitHub-connector edits of the guard, Artifact pages declaring a generation connector, remote agents  |
 | EP05-G07 | process | MATERIAL | post_delivery | regression-protected | RC25 | The paid keyframe and video paths hardcoded ROOT = project/EP05, so a next-episode job would have been reserved, quoted and recorded in EP05's ledger. |
 | EP05-G08 | delivery | MATERIAL | post_delivery | open (existing files: owner's decision B-07) | RC26 | 38 EP05 frames and contact sheets, the cast comparison, the client's feedback and ledger copies (quoted directives, a private artifact link) are tracked in a pu  |
+| EP05-G09 | delivery | MATERIAL | post_delivery | fixed in code; the replacement file reaches the client through the producer | RC12 | The client could not import the delivered EP05 file into Premiere Pro. It was the watch page's 'Download MP4': init.mp4 joined to 79 HLS segments, a fragmented   |
 
 ## Successes
 

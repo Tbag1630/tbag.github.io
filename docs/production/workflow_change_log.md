@@ -4,6 +4,14 @@ Each entry gives the change, why it was made, the evidence and its verification 
 
 
 
+## 2026-10-16: delivery files are standard progressive MP4s (EP05 client report)
+
+| Change | Why | Evidence |
+|---|---|---|
+| `deliver.delivery_problems` checks a file an editor will import: ftyp first, one moov before the media, no fragment boxes, H.264 High/Main 4:2:0, AAC-LC at 48 kHz, constant frame rate; `python3 -m ulac.deliver check <file>` | The client could not import EP05's file into Premiere Pro: it was the watch page's join of fragmented-MP4 streaming segments (LL-58) | `tests/test_deliver.py` |
+| The watch page streams only; its "Download MP4" (a join of segments) is gone. A separate download page (`templates/download.html`, `deliver.parts`, `deliver.download_page`) rebuilds the delivery file byte for byte from parts under the artifact limits (named `.mp4`, a type artifacts serve; they refuse `.m4s`) and checks its SHA-256 before it offers to save | The joined segments were a fragmented MP4; the chat's file transfer stops at 30 MiB, so the real file had never arrived | `test_a_progressive_mp4_is_a_delivery_file_and_its_parts_rejoin_byte_for_byte`; `test_the_watch_page_no_longer_offers_a_joined_download` |
+| `python3 -m ulac tooling-check project/<EP>` stamps an episode before its ULAC pack exists | It built the episode's relay first and failed with FileNotFoundError on EP03 (no `ULAC/ulac.json` in pre-production), so the stamp had been taken by calling `firewall.tooling_check` directly, not by the documented command | `tests/test_cli_tooling.py` |
+
 ## 2026-10-16: Creative review round 6 (EP03, private package v5.4)
 
 | Change | Why | Evidence |
